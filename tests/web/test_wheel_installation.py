@@ -15,12 +15,13 @@ class WheelInstallationTests(unittest.TestCase):
     """Verify the built wheel serves the browser outside a source checkout."""
 
     def test_installed_wheel_serves_index(self) -> None:
-        """Build, install, import, and request ``/`` in a clean environment."""
+        """Serve the page and favicon from a wheel installed outside the repository."""
         with TemporaryDirectory() as temporary_directory:
             temporary_root = Path(temporary_directory)
             distribution_directory = temporary_root / "dist"
             environment_directory = temporary_root / "venv"
 
+            # Build and install in isolation so a passing test cannot rely on source files.
             subprocess.run(
                 [
                     "uv",
@@ -63,14 +64,16 @@ class WheelInstallationTests(unittest.TestCase):
                 text=True,
             )
 
+            # Exercise both packaged resources through one application and client instance.
             smoke_script = (
                 "from fastapi.testclient import TestClient\n"
                 "from news.api.app import create_configured_app\n"
                 "app = create_configured_app()\n"
-                "response = TestClient(app).get('/')\n"
+                "client = TestClient(app)\n"
+                "response = client.get('/')\n"
                 "assert response.status_code == 200, response.text\n"
                 "assert 'Point-in-Time News' in response.text\n"
-                "favicon = TestClient(app).get('/static/favicon.svg')\n"
+                "favicon = client.get('/static/favicon.svg')\n"
                 "assert favicon.status_code == 200, favicon.text\n"
                 "assert favicon.headers['content-type'].startswith('image/svg+xml')\n"
             )
