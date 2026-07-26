@@ -8,9 +8,7 @@ import unittest
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 INDEX_HTML_PATH = PROJECT_ROOT / "src" / "news" / "web" / "static" / "index.html"
-APP_JS_PATH = (
-    PROJECT_ROOT / "src" / "news" / "web" / "static" / "scripts" / "app.js"
-)
+APP_JS_PATH = PROJECT_ROOT / "src" / "news" / "web" / "static" / "scripts" / "app.js"
 RENDER_JS_PATH = (
     PROJECT_ROOT / "src" / "news" / "web" / "static" / "scripts" / "render.js"
 )
