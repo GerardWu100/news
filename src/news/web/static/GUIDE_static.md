@@ -9,6 +9,7 @@ CSS file, and a small set of JavaScript modules. These assets ship as package
 data so the browser works from both a source checkout and an installed wheel.
 The frontend is dependency-light and focuses only on retrieval:
 
+- explaining the point-in-time research method before the form,
 - restoring searches from the browser URL,
 - keeping the inclusive publication window visible as an information boundary,
 - rendering the current provider page,
@@ -19,6 +20,14 @@ The frontend is dependency-light and focuses only on retrieval:
 - and opening an in-app article detail dialog.
 
 It no longer renders analytics cards or breakdown charts.
+
+The visual hierarchy follows the research workflow. The editorial masthead
+states the purpose and the information-set rule; the numbered search workspace
+collects inputs; the numbered archive section presents evidence. Before the
+first search, that archive section teaches a short cutoff-read-record routine
+instead of appearing empty. On wider screens, the first returned article is
+featured and later articles use a two-column grid; the layout collapses to one
+column on smaller screens.
 
 ### Logic spine
 
@@ -43,6 +52,7 @@ It no longer renders analytics cards or breakdown charts.
 
 ```text
 static/
+├── favicon.svg           -- Packaged browser-tab mark matching the masthead.
 ├── GUIDE_static.md       -- This documentation file.
 ├── index.html            -- HTML shell for the search interface and results area.
 ├── styles.css            -- Shared editorial theme, layout, cards, and dialog styles.
@@ -59,16 +69,19 @@ static/
 ### `index.html`
 
 - Defines the purpose statement, labelled historical-window form, advanced
-  controls, information-boundary banner, result actions, pagination, and dialog.
+  controls, research-method card, first-use instructions, information-boundary
+  banner, result actions, pagination, and dialog.
 - Places exact-page JSON/CSV downloads and the copy-link button beside the
   rendered meta summary.
-- Loads `/static/styles.css` and `/static/scripts/app.js`.
+- Loads the packaged SVG favicon, stylesheet, and JavaScript entrypoint.
 
 ### `styles.css`
 
-- Defines the warm editorial visual language, responsive form layout, result cards, and dialog styling.
-- Styles the research-mode explanation, primary field labels, visible
-  information boundary, and compact result actions responsively.
+- Defines the editorial masthead, numbered workflow hierarchy, responsive form,
+  selected-source states, first-use instructions, featured result, card grid,
+  information boundary, result actions, and dialog styling.
+- Provides visible keyboard focus, reduced-motion behavior, two responsive
+  breakpoints, and one-column fallbacks for forms, instructions, and results.
 
 ### `scripts/api.js`
 
@@ -123,3 +136,5 @@ static/
 ## Part 4 -- Short Journal
 
 - 2026-07-26: Moved the browser assets into the Python package so installed wheels can serve them without locating a repository root.
+- 2026-07-26: Kept the dependency-free editorial theme while making the
+  research sequence—not decoration—the basis of the page hierarchy.

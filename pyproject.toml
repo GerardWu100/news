@@ -23,7 +23,7 @@ build-backend = "setuptools.build_meta"
 where = ["src"]
 
 [tool.setuptools.package-data]
-"news.web" = ["default_config.toml", "static/*.html", "static/*.css", "static/scripts/*.js"]
+"news.web" = ["default_config.toml", "static/*.html", "static/*.css", "static/*.svg", "static/scripts/*.js"]
 
 [dependency-groups]
 dev = [

@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#f1ede4">
     <title>News Search Engine</title>
+    <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
@@ -11,17 +13,54 @@
 </head>
 <body>
     <header class="hero">
-        <p class="eyebrow">Historical Retrieval</p>
-        <h1>News Explorer</h1>
-        <p class="hero-copy">
-            Reconstruct what the news looked like inside a chosen time window. Explore
-            market narratives without accidentally reading later coverage.
-        </p>
-        <div class="hero-rule" aria-hidden="true"></div>
+        <div class="topline">
+            <div class="brand">
+                <span class="brand-mark" aria-hidden="true">N</span>
+                <span>Point-in-Time News</span>
+            </div>
+            <span class="workspace-label">Research workspace</span>
+        </div>
+
+        <div class="hero-grid">
+            <div class="hero-message">
+                <p class="eyebrow">Historical retrieval for market research</p>
+                <h1>See the story<br>before the outcome.</h1>
+                <p class="hero-copy">
+                    Reconstruct what the news looked like inside a chosen time window.
+                    Explore market narratives without accidentally reading later coverage.
+                </p>
+                <div class="hero-features" aria-label="Research features">
+                    <span>Inclusive dates</span>
+                    <span>Multiple sources</span>
+                    <span>Export-ready</span>
+                </div>
+            </div>
+
+            <aside class="hero-principle">
+                <span class="principle-number">Research rule 01</span>
+                <strong>Freeze the information set before forming a view.</strong>
+                <p>
+                    Choose an end date, inspect only the records inside that boundary,
+                    then write down what you would have believed at the time.
+                </p>
+            </aside>
+        </div>
     </header>
 
     <main class="layout">
-        <section class="glass-panel">
+        <section class="glass-panel search-workspace">
+            <div class="panel-heading">
+                <span class="section-index">01</span>
+                <div>
+                    <p class="section-kicker">Define the information set</p>
+                    <h2>Build a historical search</h2>
+                </div>
+                <p class="panel-guidance">
+                    Start broad. Narrow by source or provider-specific filters only when
+                    the first result set is too noisy.
+                </p>
+            </div>
+
             <form class="search-form" id="search-form">
                 <div class="research-note">
                     <strong>Point-in-time research mode</strong>
@@ -167,6 +206,13 @@
         </section>
 
         <section class="results-shell">
+            <div class="results-heading">
+                <span class="section-index">02</span>
+                <div>
+                    <p class="section-kicker">Review the archive</p>
+                    <h2>Evidence available at the time</h2>
+                </div>
+            </div>
             <div class="window-banner" id="window-banner" hidden></div>
             <div class="meta-bar">
                 <div id="meta-bar"></div>
@@ -177,7 +223,29 @@
                 </div>
             </div>
             <div class="status-strip" id="status-strip"></div>
-            <div class="results" id="results"></div>
+            <div class="results" id="results">
+                <div class="research-start">
+                    <p class="research-start-kicker">A disciplined first pass</p>
+                    <h3>Search, inspect, then form a view.</h3>
+                    <div class="research-steps">
+                        <div>
+                            <span>1</span>
+                            <strong>Set the cutoff</strong>
+                            <p>Choose the last date your historical self is allowed to know.</p>
+                        </div>
+                        <div>
+                            <span>2</span>
+                            <strong>Read across sources</strong>
+                            <p>Look for disagreement, missing context, and changes in tone.</p>
+                        </div>
+                        <div>
+                            <span>3</span>
+                            <strong>Record the thesis</strong>
+                            <p>Write the signal before checking what the market did next.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <div class="pagination-shell" id="pagination-shell" hidden>
                 <button class="pager-btn" id="previous-page-btn" type="button">Previous</button>
                 <span class="pagination-label" id="pagination-label">Page 1</span>

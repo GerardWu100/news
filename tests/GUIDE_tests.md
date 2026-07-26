@@ -109,7 +109,8 @@ Package marker files are omitted from the tree.
 ### Web and fixtures
 
 - `web/test_static.py` checks security-sensitive article-link rendering plus
-  point-in-time labels and active-page export wiring.
+  point-in-time labels, guided first-use structure, reduced-motion support, and
+  active-page export wiring.
 - `web/test_wheel_installation.py` builds and installs a clean wheel, then
   requests `/` outside the source checkout.
 - `fixtures/search_results.py` builds schema-complete results and provider

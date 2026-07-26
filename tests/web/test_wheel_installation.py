@@ -69,7 +69,10 @@ class WheelInstallationTests(unittest.TestCase):
                 "app = create_configured_app()\n"
                 "response = TestClient(app).get('/')\n"
                 "assert response.status_code == 200, response.text\n"
-                "assert 'News Explorer' in response.text\n"
+                "assert 'Point-in-Time News' in response.text\n"
+                "favicon = TestClient(app).get('/static/favicon.svg')\n"
+                "assert favicon.status_code == 200, favicon.text\n"
+                "assert favicon.headers['content-type'].startswith('image/svg+xml')\n"
             )
             subprocess.run(
                 [str(python_executable), "-c", smoke_script],
