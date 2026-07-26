@@ -22,6 +22,7 @@ class AppRouteTests(unittest.TestCase):
 
     def setUp(self) -> None:
         """Create an isolated app with deterministic provider dependencies."""
+
         async def fake_search_executor(
             _options: SourceSearchOptions,
             _source_names: Sequence[str] | None,

@@ -17,9 +17,7 @@ class OpenApiContractTests(unittest.TestCase):
 
     def test_generated_openapi_matches_checked_in_contract(self) -> None:
         """Generated routes and models should equal the committed schema."""
-        committed_schema = json.loads(
-            OPENAPI_CONTRACT_PATH.read_text(encoding="utf-8")
-        )
+        committed_schema = json.loads(OPENAPI_CONTRACT_PATH.read_text(encoding="utf-8"))
         generated_schema = create_configured_app().openapi()
 
         self.assertEqual(

@@ -17,6 +17,7 @@ from news.web.config import CacheSettings
 
 from .models import SearchRequest, SearchResult
 
+
 class SearchResultCache:
     """TTL cache keyed by the fully validated ``SearchRequest`` object."""
 

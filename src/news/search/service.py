@@ -19,6 +19,8 @@ SearchExecutor = Callable[
     [SourceSearchOptions, Sequence[str] | None],
     Awaitable[tuple[list[Article], list[SourceQueryReport]]],
 ]
+
+
 async def run_search(
     request: SearchRequest,
     executor: SearchExecutor = search_all_detailed,

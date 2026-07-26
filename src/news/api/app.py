@@ -69,9 +69,7 @@ def create_app(
         Fully configured application with routes and packaged static assets.
     """
     active_cache = (
-        build_search_cache(settings.cache)
-        if search_cache is None
-        else search_cache
+        build_search_cache(settings.cache) if search_cache is None else search_cache
     )
     static_assets = static_dir()
     application = FastAPI(

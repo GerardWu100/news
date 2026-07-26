@@ -157,7 +157,9 @@ def _reject_unknown_keys(
     unknown_keys = sorted(set(values) - allowed_keys)
     if unknown_keys:
         joined_keys = ", ".join(unknown_keys)
-        raise SettingsError(f"Unknown configuration key(s) in {location}: {joined_keys}")
+        raise SettingsError(
+            f"Unknown configuration key(s) in {location}: {joined_keys}"
+        )
 
 
 def _merge_tables(
@@ -166,8 +168,7 @@ def _merge_tables(
 ) -> dict[str, Any]:
     """Overlay external table values on independent copies of defaults."""
     merged = {
-        table_name: dict(table_values)
-        for table_name, table_values in defaults.items()
+        table_name: dict(table_values) for table_name, table_values in defaults.items()
     }
     for table_name, table_values in overrides.items():
         merged[table_name].update(table_values)
