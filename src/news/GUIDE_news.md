@@ -12,7 +12,8 @@ news retrieval.
 - `sources/`: source registry, fan-out, retry behavior, and provider adapters.
 - `exports/`: CSV, JSON, and SQLite serialization.
 - `cli/`: command-line parser, fetch paths, output rendering, and workflow orchestration.
-- `web/`: project-root path and configuration helpers.
+- `web/`: installed static browser assets, packaged defaults, and external
+  configuration-path helpers.
 
 ## Runtime Flow
 

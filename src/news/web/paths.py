@@ -1,37 +1,70 @@
-"""Path helpers for project-level runtime resources.
+"""Resolve operator-owned files and installed package resources.
 
-The package lives under ``src/news`` while runtime resources such as
-``config.toml``, ``.env``, and ``frontend/`` live at the project root. This
-module centralizes that relationship so API and CLI modules do not duplicate
-fragile parent-directory arithmetic.
+Static browser assets ship inside :mod:`news.web`. Configuration and dotenv
+files remain operator-owned and are resolved relative to the process working
+directory, so an installed wheel never depends on a source checkout.
 """
 
 from __future__ import annotations
 
+import os
+from importlib import resources
 from pathlib import Path
 
+CONFIG_ENVIRONMENT_VARIABLE = "NEWS_CONFIG"
+CONFIG_FILENAME = "config.toml"
+DOTENV_FILENAME = ".env"
 
-def project_root() -> Path:
-    """Return the repository root for a source checkout.
+
+def env_path() -> Path:
+    """Return the optional dotenv path in the current working directory.
 
     Returns
     -------
     Path
-        Absolute path to the project root directory.
+        Absolute path to ``.env``. The file need not exist.
     """
-    return Path(__file__).resolve().parents[3]
+    return Path.cwd() / DOTENV_FILENAME
 
 
-def env_path() -> Path:
-    """Return the project-root dotenv file path."""
-    return project_root() / ".env"
+def config_path(explicit_path: Path | str | None = None) -> Path | None:
+    """Resolve the optional external configuration path.
+
+    Resolution order is an explicit caller path, the ``NEWS_CONFIG``
+    environment variable, then ``config.toml`` in the current working
+    directory. ``None`` means the packaged defaults should be used.
+
+    Parameters
+    ----------
+    explicit_path : Path | str | None, optional
+        Configuration path supplied by a command-line or application caller.
+
+    Returns
+    -------
+    Path | None
+        Absolute external configuration path, or ``None`` when no external
+        file was selected.
+    """
+    if explicit_path is not None:
+        return Path(explicit_path).expanduser().resolve()
+
+    environment_path = os.getenv(CONFIG_ENVIRONMENT_VARIABLE, "").strip()
+    if environment_path:
+        return Path(environment_path).expanduser().resolve()
+
+    working_directory_path = Path.cwd() / CONFIG_FILENAME
+    if working_directory_path.is_file():
+        return working_directory_path
+    return None
 
 
-def config_path() -> Path:
-    """Return the project-root TOML configuration path."""
-    return project_root() / "config.toml"
+def static_dir() -> Path:
+    """Return the installed static-asset directory.
 
-
-def frontend_dir() -> Path:
-    """Return the static frontend asset directory."""
-    return project_root() / "frontend"
+    Returns
+    -------
+    Path
+        Filesystem path to the package-owned HTML, CSS, and JavaScript assets.
+    """
+    static_resource = resources.files("news.web").joinpath("static")
+    return Path(str(static_resource))

@@ -5,8 +5,8 @@
 ### Purpose
 
 The project root coordinates a historical multi-source news search product. It
-connects the importable `src/news/` package, a static browser client, project
-configuration, credential bootstrap, tests, and documentation.
+connects the importable `src/news/` package, its packaged browser client,
+operator configuration, credential bootstrap, tests, and documentation.
 
 The system retrieves provider records, normalizes them into one article model,
 applies local filters and optional deduplication, and exposes the results
@@ -27,8 +27,11 @@ article bodies or provide a general data-science workspace.
 
 ### Local state
 
-- `.env` contains provider credentials and is never tracked.
-- `config.toml` contains documented frontend and cache settings.
+- `.env` in the process working directory contains provider credentials and is
+  never tracked.
+- `config.toml` contains documented frontend and cache settings. An explicit
+  server option or `NEWS_CONFIG` can select a different file; packaged defaults
+  keep wheel installations runnable without one.
 - Exports are created only when a caller requests them; no empty output tree is
   tracked.
 - `.venv`, caches, logs, and generated artifacts are ignored.
@@ -43,8 +46,7 @@ article bodies or provide a general data-science workspace.
 ├── uv.lock
 ├── GUIDE_ROOT.md
 ├── GUIDE_OVERVIEW.md
-├── src/                 -- Importable Python product package.
-├── frontend/            -- Current static browser client.
+├── src/                 -- Importable product code and packaged browser assets.
 ├── scripts/             -- Credential bootstrap command.
 ├── tests/               -- Offline regression and contract tests.
 └── docs/
@@ -60,8 +62,7 @@ are in `docs/plans/PROJECT_REFACTOR_PLAN.md`.
 ### Folder ownership
 
 - `src/news/` owns the API, CLI, search pipeline, provider adapters, export
-  formats, and runtime web/configuration helpers.
-- `frontend/` owns the current HTML, CSS, and JavaScript browser interface.
+  formats, runtime configuration, and packaged browser interface.
 - `scripts/` contains the ACLED OAuth bootstrap wrapper.
 - `tests/` protects validation, filtering, deduplication, provider
   normalization, cache behavior, retries, exports, routes, CLI behavior, and
@@ -90,9 +91,10 @@ are in `docs/plans/PROJECT_REFACTOR_PLAN.md`.
 - `src/news/cli/`
   - Owns terminal parsing, API/direct fetch paths, rendering, and export flow.
 - `src/news/web/`
-  - Currently resolves repository-root configuration and frontend paths.
-- `frontend/`
-  - See `frontend/GUIDE_frontend.md`.
+  - Resolves external configuration and current-directory credentials, and
+    owns installed static resources.
+- `src/news/web/static/`
+  - See `src/news/web/static/GUIDE_static.md`.
 - `scripts/`
   - See `scripts/GUIDE_scripts.md`.
 - `tests/`
@@ -101,3 +103,4 @@ are in `docs/plans/PROJECT_REFACTOR_PLAN.md`.
 ## Part 4 -- Short Journal
 
 - 2026-07-26: Removed the notebook research workspace, Jupyter dependencies, empty placeholder folders, and completed historical plans; future cleanup follows `docs/plans/PROJECT_REFACTOR_PLAN.md`.
+- 2026-07-26: Packaged the browser assets and defaults so wheel installations no longer depend on repository-parent path traversal.

@@ -40,8 +40,9 @@ async def fetch_direct_page(
 ) -> dict[str, Any]:
     """Fetch one provider page by calling the package pipeline directly.
 
-    The direct path loads the root ``.env`` and bypasses HTTP while preserving
-    the same validation and search orchestration used by the FastAPI app.
+    The direct path loads ``.env`` from the current working directory and
+    bypasses HTTP while preserving the same validation and search
+    orchestration used by the FastAPI app.
     """
     load_dotenv(env_path())
 

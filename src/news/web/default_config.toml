@@ -1,10 +1,10 @@
 [frontend]
-# Show only English-language results when the browser first loads.
-default_english_only = true
+# Show all languages when no operator configuration is present.
+default_english_only = false
 
-# Preselect these providers in the browser.
+# Start with no preselected credential-dependent providers.
 # Allowed values: acled, gdelt, guardian, mediacloud, newsapi, nyt.
-default_sources = ["guardian", "nyt"]
+default_sources = []
 
 [cache]
 # Keep an in-memory search result for this many seconds.

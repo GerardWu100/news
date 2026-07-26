@@ -25,8 +25,10 @@ clean, provider-aware search and export workflow for research.
 - Optional language, deduplication, exact-phrase, exclude-term, and
   include/exclude-domain filters.
 - Optional provider ranking mode and provider-specific section filters.
-- Provider credentials from the root `.env`, created from `.env.example`.
-- Frontend and cache defaults from `config.toml`.
+- Provider credentials from an optional `.env` in the process working
+  directory, created from `.env.example`.
+- Frontend and cache settings from an explicit server option, `NEWS_CONFIG`,
+  current-directory `config.toml`, or packaged defaults, in that order.
 
 ### Outputs
 
@@ -75,6 +77,8 @@ clean, provider-aware search and export workflow for research.
   only to some sources.
 - Missing credentials do not crash the app; unavailable providers are surfaced
   in source status and source reports.
+- Browser assets and baseline configuration ship in the wheel, so runtime
+  resources do not depend on a repository checkout.
 
 ## User Overrides
 

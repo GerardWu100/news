@@ -90,18 +90,18 @@ represented by tracked `.gitkeep` files.
 **Objective:** make the web application work from an installed package, not
 only from this repository checkout.
 
-- [ ] Move `frontend/` to `src/news/web/static/`.
-- [ ] Declare the static files as package data in `pyproject.toml`.
-- [ ] Replace repository-parent traversal in `news.web.paths` with
+- [x] Move `frontend/` to `src/news/web/static/`.
+- [x] Declare the static files as package data in `pyproject.toml`.
+- [x] Replace repository-parent traversal in `news.web.paths` with
   `importlib.resources` for packaged static assets.
-- [ ] Define an explicit configuration path:
+- [x] Define an explicit configuration path:
   1. a command-line option when supplied;
   2. a `NEWS_CONFIG` environment variable;
   3. `config.toml` in the current working directory;
   4. packaged defaults.
-- [ ] Keep `.env` optional and local; document its lookup rather than deriving
+- [x] Keep `.env` optional and local; document its lookup rather than deriving
   it from the installed module path.
-- [ ] Add a wheel smoke test that builds the package, installs it into a clean
+- [x] Add a wheel smoke test that builds the package, installs it into a clean
   temporary environment, starts the application, and requests `/`.
 
 **Acceptance:** `news-server` serves the browser shell from both `uv run` in the

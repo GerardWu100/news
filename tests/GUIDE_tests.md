@@ -15,7 +15,8 @@ It focuses on deterministic logic that should remain stable in this workspace:
 - cache behavior,
 - retry behavior,
 - adapter normalization,
-- and route wiring.
+- route wiring,
+- and installed-wheel runtime resources.
 
 ### Why these tests exist
 
@@ -46,7 +47,8 @@ tests/
 ├── test_export.py         -- CSV, JSON, and SQLite export tests.
 ├── test_frontend_static.py -- Static checks for security-sensitive frontend rendering.
 ├── test_retry.py          -- Retry helper tests.
-└── test_search_service.py -- Search-pipeline and adapter normalization tests.
+├── test_search_service.py -- Search-pipeline and adapter normalization tests.
+└── test_wheel_installation.py -- Clean-wheel browser smoke test.
 ```
 
 ## Part 3 -- Code Reference
@@ -57,7 +59,8 @@ tests/
 - Verifies config and source-status routes return JSON successfully.
 - Verifies the search and export routes return the structured response contract.
 - Verifies project-owned validation errors are mapped to HTTP 422 responses.
-- Verifies runtime path helpers locate `config.toml` and `frontend/` from the `src/news/` package.
+- Verifies runtime lookup uses package assets, explicit configuration paths,
+  and packaged defaults.
 
 ### `test_search_service.py`
 
@@ -122,6 +125,12 @@ tests/
 - Verifies timeouts are retried.
 - Verifies HTTP 5xx responses are retried.
 - Verifies HTTP 4xx responses fail immediately.
+
+### `test_wheel_installation.py`
+
+- Builds the wheel into a temporary directory.
+- Installs it and its dependencies into a clean temporary environment.
+- Requests `/` from the installed application outside the source checkout.
 
 ### How to run
 

@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import unittest
+from pathlib import Path
+from tempfile import TemporaryDirectory
 from unittest.mock import AsyncMock, patch
 
 from fastapi.testclient import TestClient
@@ -156,15 +158,38 @@ class AppRouteTests(unittest.TestCase):
 
 
 class RuntimePathTests(unittest.TestCase):
-    """Verify project-root resource helpers resolve expected files."""
+    """Verify installed resources and operator-owned paths resolve correctly."""
 
-    def test_runtime_paths_find_frontend_and_config(self) -> None:
-        """Path helpers should locate root resources from the src package."""
-        from news.web.paths import config_path, frontend_dir, project_root
+    def test_static_path_finds_packaged_frontend(self) -> None:
+        """Static assets should live under the importable package."""
+        from news.web.paths import static_dir
 
-        self.assertTrue((project_root() / "pyproject.toml").exists())
-        self.assertTrue(config_path().exists())
-        self.assertTrue((frontend_dir() / "index.html").exists())
+        self.assertTrue((static_dir() / "index.html").exists())
+
+    def test_config_path_prefers_explicit_path(self) -> None:
+        """An explicit config path should override environment and CWD lookup."""
+        from news.web.paths import config_path
+
+        with TemporaryDirectory() as temporary_directory:
+            explicit_path = Path(temporary_directory) / "custom.toml"
+            explicit_path.write_text("", encoding="utf-8")
+
+            with patch.dict("os.environ", {"NEWS_CONFIG": "/ignored.toml"}):
+                self.assertEqual(config_path(explicit_path), explicit_path.resolve())
+
+    def test_missing_external_config_uses_packaged_defaults(self) -> None:
+        """An installed app should start without a local config file."""
+        from news.web.config import read_config
+
+        with TemporaryDirectory() as temporary_directory:
+            with (
+                patch("pathlib.Path.cwd", return_value=Path(temporary_directory)),
+                patch.dict("os.environ", {}, clear=True),
+            ):
+                config = read_config()
+
+        self.assertEqual(config["cache"]["ttl_seconds"], 300)
+        self.assertEqual(config["frontend"]["default_sources"], [])
 
 
 if __name__ == "__main__":

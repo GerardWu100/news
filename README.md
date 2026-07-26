@@ -11,8 +11,9 @@ uv run news-search "inflation" -s 2025-01-01 -e 2025-03-01
 ```
 
 Copy `.env.example` to `.env` and fill in whichever provider credentials you
-want to enable. GDELT works without credentials; MediaCloud, ACLED, NYT,
-Guardian, and NewsAPI require their respective keys or tokens.
+want to enable. Commands look for this optional file in the current working
+directory. GDELT works without credentials; MediaCloud, ACLED, NYT, Guardian,
+and NewsAPI require their respective keys or tokens.
 
 ```bash
 cp .env.example .env
@@ -23,6 +24,10 @@ For ACLED, add the OAuth login fields and generate the short-lived bearer token:
 ```bash
 uv run python scripts/acled_oauth_token.py
 ```
+
+The server resolves configuration in this order: `news-server --config PATH`,
+the `NEWS_CONFIG` environment variable, `config.toml` in the current working
+directory, then package defaults.
 
 ## Documentation
 

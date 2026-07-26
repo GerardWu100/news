@@ -6,6 +6,8 @@ request parsing, config reads, and response serialization in one place.
 
 from __future__ import annotations
 
+import argparse
+import os
 from typing import Any
 
 from dotenv import load_dotenv
@@ -25,10 +27,10 @@ from news.search import run_search
 from news.search.errors import SearchValidationError
 from news.sources import get_source_status
 from news.web.config import read_frontend_config
-from news.web.paths import env_path, frontend_dir
+from news.web.paths import CONFIG_ENVIRONMENT_VARIABLE, env_path, static_dir
 
 load_dotenv(env_path())
-FRONTEND_DIR = frontend_dir()
+STATIC_DIR = static_dir()
 
 app = FastAPI(
     title="Historical News Search Engine",
@@ -39,13 +41,13 @@ app = FastAPI(
     version="0.1.0",
 )
 
-app.mount("/static", StaticFiles(directory=str(FRONTEND_DIR)), name="static")
+app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 
 @app.get("/")
 async def index() -> FileResponse:
     """Serve the browser app."""
-    return FileResponse(str(FRONTEND_DIR / "index.html"))
+    return FileResponse(str(STATIC_DIR / "index.html"))
 
 
 @app.get("/api/config", response_model=FrontendConfigResponse)
@@ -99,9 +101,27 @@ async def _run_search_request(params: SearchQueryParams):
     return await run_search(request)
 
 
-def main() -> None:
-    """Start the local FastAPI development server."""
+def main(argv: list[str] | None = None) -> None:
+    """Start the local FastAPI server.
+
+    Parameters
+    ----------
+    argv : list[str] | None, optional
+        Command arguments. ``None`` reads the process arguments.
+    """
     import uvicorn
+
+    parser = argparse.ArgumentParser(description="Run the news search server.")
+    parser.add_argument(
+        "--config",
+        help=(
+            "TOML configuration path. Overrides NEWS_CONFIG and the "
+            "current-directory config.toml."
+        ),
+    )
+    args = parser.parse_args(argv)
+    if args.config:
+        os.environ[CONFIG_ENVIRONMENT_VARIABLE] = args.config
 
     uvicorn.run(
         "news.api.app:app",

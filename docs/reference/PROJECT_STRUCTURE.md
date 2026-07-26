@@ -54,17 +54,18 @@ in `docs/plans/PROJECT_REFACTOR_PLAN.md`.
 │       │       └── nyt.py
 │       └── web/
 │           ├── config.py
-│           └── paths.py
-├── frontend/
-│   ├── GUIDE_frontend.md
-│   ├── index.html
-│   ├── styles.css
-│   └── scripts/
-│       ├── api.js
-│       ├── app.js
-│       ├── form.js
-│       ├── render.js
-│       └── state.js
+│           ├── default_config.toml
+│           ├── paths.py
+│           └── static/
+│               ├── GUIDE_static.md
+│               ├── index.html
+│               ├── styles.css
+│               └── scripts/
+│                   ├── api.js
+│                   ├── app.js
+│                   ├── form.js
+│                   ├── render.js
+│                   └── state.js
 ├── scripts/
 │   ├── GUIDE_scripts.md
 │   └── acled_oauth_token.py
@@ -76,7 +77,8 @@ in `docs/plans/PROJECT_REFACTOR_PLAN.md`.
 │   ├── test_export.py
 │   ├── test_frontend_static.py
 │   ├── test_retry.py
-│   └── test_search_service.py
+│   ├── test_search_service.py
+│   └── test_wheel_installation.py
 └── docs/
     ├── plans/
     │   └── PROJECT_REFACTOR_PLAN.md
@@ -98,8 +100,7 @@ readability.
 | `src/news/exports/` | CSV, JSON, and SQLite serialization |
 | `src/news/search/` | Validated search behavior, cache, filters, deduplication, and metadata |
 | `src/news/sources/` | Provider access, retry/cooldown behavior, registry, and concurrent fan-out |
-| `src/news/web/` | Configuration and repository resource paths |
-| `frontend/` | Browser interface served by the API |
+| `src/news/web/` | Configuration lookup, package defaults, and installed browser assets |
 | `scripts/` | Local ACLED credential bootstrap |
 | `tests/` | Deterministic offline regression coverage |
 | `docs/plans/` | Forward-looking work that has not necessarily been implemented |

@@ -7,7 +7,9 @@ import unittest
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-RENDER_JS_PATH = PROJECT_ROOT / "frontend" / "scripts" / "render.js"
+RENDER_JS_PATH = (
+    PROJECT_ROOT / "src" / "news" / "web" / "static" / "scripts" / "render.js"
+)
 
 
 class FrontendStaticSecurityTests(unittest.TestCase):

@@ -1,12 +1,13 @@
-# GUIDE_frontend
+# GUIDE_static
 
 ## Part 1 -- Conceptual Explanation
 
 ### Purpose
 
-The `frontend/` folder contains the entire browser client: one HTML shell, one
-CSS file, and a small set of JavaScript modules. The frontend is still
-dependency-light, but it now focuses only on retrieval:
+The `static/` folder contains the entire browser client: one HTML shell, one
+CSS file, and a small set of JavaScript modules. These assets ship as package
+data so the browser works from both a source checkout and an installed wheel.
+The frontend is dependency-light and focuses only on retrieval:
 
 - restoring searches from the browser URL,
 - rendering the current provider page,
@@ -38,8 +39,8 @@ It no longer renders analytics cards or breakdown charts.
 ## Part 2 -- Folder Tree and File Map
 
 ```text
-frontend/
-├── GUIDE_frontend.md     -- This documentation file.
+static/
+├── GUIDE_static.md       -- This documentation file.
 ├── index.html            -- HTML shell for the search interface and results area.
 ├── styles.css            -- Shared editorial theme, layout, cards, and dialog styles.
 └── scripts/
@@ -109,3 +110,7 @@ frontend/
   - Shows the copy-link button only after a successful search.
 - `copyShareLink()`
   - Copies the current search URL and briefly acknowledges success or failure.
+
+## Part 4 -- Short Journal
+
+- 2026-07-26: Moved the browser assets into the Python package so installed wheels can serve them without locating a repository root.
