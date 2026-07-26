@@ -9,7 +9,8 @@ news retrieval.
 
 - `api/`: FastAPI app, route models, and query parameter parsing.
 - `search/`: validation, shared boundary parsing, cache, filtering, deduplication, sorting, and result metadata.
-- `sources/`: source registry, fan-out, retry behavior, and provider adapters.
+- `sources/`: source registry, fan-out, retry behavior, provider adapters, and
+  reusable ACLED OAuth bootstrap behavior.
 - `exports/`: CSV, JSON, and SQLite serialization.
 - `cli/`: command-line parser, fetch paths, output rendering, and workflow orchestration.
 - `web/`: installed static browser assets, packaged defaults, external

@@ -41,6 +41,7 @@ in `docs/plans/PROJECT_REFACTOR_PLAN.md`.
 │       │   ├── service.py
 │       │   └── validation.py
 │       ├── sources/
+│       │   ├── acled_oauth.py
 │       │   ├── base.py
 │       │   ├── common.py
 │       │   ├── registry.py
@@ -71,6 +72,7 @@ in `docs/plans/PROJECT_REFACTOR_PLAN.md`.
 │   └── acled_oauth_token.py
 ├── tests/
 │   ├── GUIDE_tests.md
+│   ├── test_acled_oauth.py
 │   ├── test_app.py
 │   ├── test_cache.py
 │   ├── test_cli.py
@@ -100,7 +102,7 @@ readability.
 | `src/news/cli/` | Command parsing, fetch modes, terminal output, and exports |
 | `src/news/exports/` | CSV, JSON, and SQLite serialization |
 | `src/news/search/` | Validated search behavior, cache, filters, deduplication, and metadata |
-| `src/news/sources/` | Provider access, retry/cooldown behavior, registry, and concurrent fan-out |
+| `src/news/sources/` | Provider access, ACLED OAuth bootstrap, retry/cooldown behavior, registry, and concurrent fan-out |
 | `src/news/web/` | Typed configuration validation, package defaults, path lookup, and installed browser assets |
 | `scripts/` | Local ACLED credential bootstrap |
 | `tests/` | Deterministic offline regression coverage |

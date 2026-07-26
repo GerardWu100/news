@@ -41,6 +41,7 @@ without requiring live API calls:
 ```text
 tests/
 ├── GUIDE_tests.md         -- This documentation file.
+├── test_acled_oauth.py    -- Offline OAuth request and persistence tests.
 ├── test_app.py            -- FastAPI route smoke tests.
 ├── test_cache.py          -- Cache TTL, eviction, and search-cache integration tests.
 ├── test_cli.py            -- CLI parser and table-rendering tests.
@@ -53,6 +54,14 @@ tests/
 ```
 
 ## Part 3 -- Code Reference
+
+### `test_acled_oauth.py`
+
+- Verifies required OAuth input fields and placeholder rejection.
+- Verifies the encoded token request through an injected offline opener.
+- Verifies HTTP errors remain available to the terminal wrapper.
+- Verifies supported token-key variants and missing-token failures.
+- Verifies deterministic timestamps and one-pass temporary dotenv updates.
 
 ### `test_app.py`
 

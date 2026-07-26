@@ -129,15 +129,15 @@ absent optional config uses documented defaults.
 
 **Objective:** keep reusable provider authentication logic in the package.
 
-- [ ] Move OAuth request, response parsing, and `.env` update logic into a
+- [x] Move OAuth request, response parsing, and `.env` update logic into a
   focused `news.sources` module.
-- [ ] Keep `scripts/acled_oauth_token.py` limited to input loading, calling the
+- [x] Keep `scripts/acled_oauth_token.py` limited to input loading, calling the
   package function, and terminal messages.
-- [ ] Inject the network request function and clock in tests so no live request
+- [x] Inject the network request function and clock in tests so no live request
   or real credential is required.
-- [ ] Test token-key variants, missing fields, Hypertext Transfer Protocol
+- [x] Test token-key variants, missing fields, Hypertext Transfer Protocol
   (HTTP) errors, and `.env` updates in a temporary directory.
-- [ ] Consider a `news-acled-token` entry point only if this remains a regular
+- [x] Consider a `news-acled-token` entry point only if this remains a regular
   user workflow.
 
 **Acceptance:** the wrapper is small, and all authentication behavior is

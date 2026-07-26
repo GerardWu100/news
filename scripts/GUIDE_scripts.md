@@ -4,8 +4,9 @@
 
 ### Purpose
 
-The `scripts/` folder holds a credential bootstrap helper outside the
-importable `src/news/` product package.
+The `scripts/` folder holds a thin credential-bootstrap command outside the
+importable `src/news/` product package. Reusable ACLED request, response
+validation, and dotenv persistence behavior lives in the source package.
 
 ### Main scripts
 
@@ -16,11 +17,16 @@ importable `src/news/` product package.
 
 - `acled_oauth_token.py`
   - Resolves the project root from `scripts/`.
-  - Reads the OAuth login fields from `.env`.
-  - Updates `.env` with the bearer token, token type, expiry, refresh token,
-    and acquisition time when those values are returned.
+  - Loads OAuth login fields from `.env`.
+  - Calls the reusable package workflow.
+  - Maps input, network, and provider errors to concise terminal messages.
+  - Prints masked token metadata after successful persistence.
   - Deliberately does not save the raw OAuth response because it contains
     credentials.
+
+Reusable behavior is in `src/news/sources/acled_oauth.py`. That module accepts
+injected network and clock functions so its tests never use a live provider or
+real credential.
 
 Run from the repository root:
 
@@ -28,9 +34,7 @@ Run from the repository root:
 uv run python scripts/acled_oauth_token.py
 ```
 
-The longer-term refactor plan moves this reusable logic into `src/news/` and
-keeps this file as a thin command wrapper.
-
 ## Part 3 -- Short Journal
 
 - 2026-07-26: Removed provider-exploration notebooks and stopped persisting raw OAuth responses to reduce stale research code and secret-bearing artifacts.
+- 2026-07-26: Kept OAuth as a script rather than adding a third package command because token bootstrap is an occasional setup workflow.
