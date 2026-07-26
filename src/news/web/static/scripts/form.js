@@ -164,6 +164,28 @@ export function buildApiParams(query, page) {
     return params;
 }
 
+/**
+ * Build a same-origin download URL for the active provider page.
+ *
+ * Parameters
+ * ----------
+ * format : string
+ *     Export representation. Valid values are ``json`` and ``csv``.
+ * query : object
+ *     Validated browser search state.
+ * page : number
+ *     Provider page currently visible in the browser.
+ *
+ * Returns
+ * -------
+ * string
+ *     Relative API URL carrying the exact active search parameters.
+ */
+export function buildExportUrl(format, query, page) {
+    const params = new URLSearchParams(buildApiParams(query, page));
+    return `/api/export/${format}?${params.toString()}`;
+}
+
 
 export function syncQueryToUrl(query, page) {
     const params = new URLSearchParams(buildApiParams(query, page));

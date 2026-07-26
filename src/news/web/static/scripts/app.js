@@ -9,6 +9,7 @@ import { fetchConfig, fetchSearch, fetchSources } from "./api.js";
 import {
     applySearchFormFromUrl,
     buildApiParams,
+    buildExportUrl,
     copyCurrentUrl,
     readSearchForm,
     setDefaultDates,
@@ -22,6 +23,8 @@ import {
     renderArticleDialog,
     renderMeta,
     renderPagination,
+    renderResearchWindow,
+    renderResultActions,
     renderResults,
     renderSourceReports,
     renderSources,
@@ -188,7 +191,11 @@ async function executeSearch(requestedPage = state.currentPage) {
         }
 
         renderMeta(payload.meta, durationSeconds);
-        copyLinkButtonElement.hidden = false;
+        renderResearchWindow(payload.meta);
+        renderResultActions(
+            buildExportUrl("json", state.activeQuery, requestedPage),
+            buildExportUrl("csv", state.activeQuery, requestedPage),
+        );
         renderSourceReports(payload.meta.source_reports || []);
         renderPagination({
             currentPage: state.currentPage,

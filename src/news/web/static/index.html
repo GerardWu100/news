@@ -14,8 +14,8 @@
         <p class="eyebrow">Historical Retrieval</p>
         <h1>News Explorer</h1>
         <p class="hero-copy">
-            Search across publisher archives, event databases, and public news indexes with
-            local deduplication and provider-aware filters.
+            Reconstruct what the news looked like inside a chosen time window. Explore
+            market narratives without accidentally reading later coverage.
         </p>
         <div class="hero-rule" aria-hidden="true"></div>
     </header>
@@ -23,10 +23,27 @@
     <main class="layout">
         <section class="glass-panel">
             <form class="search-form" id="search-form">
+                <div class="research-note">
+                    <strong>Point-in-time research mode</strong>
+                    <span>
+                        The end date is your information boundary. Search results are limited
+                        to provider records dated inside the inclusive window.
+                    </span>
+                </div>
+
                 <div class="search-row">
-                    <input type="text" id="query" placeholder="Keywords or boolean query" required>
-                    <input type="date" id="start-date" required>
-                    <input type="date" id="end-date" required>
+                    <label class="primary-field query-field">
+                        <span>Topic or company</span>
+                        <input type="text" id="query" placeholder="e.g. semiconductor demand" required>
+                    </label>
+                    <label class="primary-field date-field">
+                        <span>From</span>
+                        <input type="date" id="start-date" required>
+                    </label>
+                    <label class="primary-field date-field">
+                        <span>Through (as of)</span>
+                        <input type="date" id="end-date" required>
+                    </label>
                     <button type="submit" id="search-btn">Search</button>
                 </div>
 
@@ -150,9 +167,14 @@
         </section>
 
         <section class="results-shell">
+            <div class="window-banner" id="window-banner" hidden></div>
             <div class="meta-bar">
                 <div id="meta-bar"></div>
-                <button class="secondary-btn" id="copy-link-btn" type="button" hidden>Copy query link</button>
+                <div class="result-actions" id="result-actions" hidden>
+                    <a class="secondary-btn" id="json-export-link" href="#">JSON</a>
+                    <a class="secondary-btn" id="csv-export-link" href="#">CSV</a>
+                    <button class="secondary-btn" id="copy-link-btn" type="button">Copy query link</button>
+                </div>
             </div>
             <div class="status-strip" id="status-strip"></div>
             <div class="results" id="results"></div>

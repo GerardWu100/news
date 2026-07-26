@@ -81,8 +81,8 @@ Package marker files are omitted from the tree.
 
 ### CLI and exports
 
-- `cli/test_cli.py` checks parser flags, API parameter mapping, table output,
-  and package entry points.
+- `cli/test_cli.py` checks parser flags, structured-output and temporal-boundary
+  help, API parameter mapping, table output, and package entry points.
 - `exports/test_formats.py` checks CSV, JSON, and SQLite contracts, including
   connection cleanup and duplicate handling.
 
@@ -108,7 +108,8 @@ Package marker files are omitted from the tree.
 
 ### Web and fixtures
 
-- `web/test_static.py` checks security-sensitive article-link rendering.
+- `web/test_static.py` checks security-sensitive article-link rendering plus
+  point-in-time labels and active-page export wiring.
 - `web/test_wheel_installation.py` builds and installs a clean wheel, then
   requests `/` outside the source checkout.
 - `fixtures/search_results.py` builds schema-complete results and provider

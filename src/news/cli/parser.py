@@ -7,16 +7,50 @@ import argparse
 DEFAULT_EXPORT_MAX_PAGES = 50
 DEFAULT_SERVER_URL = "http://localhost:8000"
 DEFAULT_PROVIDER_SORT = "default"
+OUTPUT_FORMATS = ("table", "json", "jsonl")
+
+CLI_EXAMPLES = """examples:
+  Human-readable search:
+    news-search "central bank" -s 2025-01-01 -e 2025-01-31
+
+  Structured output for a large language model (LLM):
+    news-search "central bank" -s 2025-01-01 -e 2025-01-31 \\
+      --all-pages --format json
+
+  One JSON article per line for a streaming pipeline:
+    news-search "earnings" -s 2025-02-01 -e 2025-02-07 \\
+      --sources guardian,nyt --format jsonl
+
+The start and end dates are inclusive publication-date boundaries. Results can
+still be incomplete because each upstream provider has different archive and
+pagination limits.
+"""
 
 
 def build_arg_parser() -> argparse.ArgumentParser:
     """Build the CLI argument parser for search and export workflows."""
     parser = argparse.ArgumentParser(
-        description="Search historical news across multiple providers.",
+        description=(
+            "Retrieve news published within an inclusive historical date window."
+        ),
+        epilog=CLI_EXAMPLES,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    parser.add_argument("query", help="Search keywords")
-    parser.add_argument("-s", "--start", required=True, help="Start date (YYYY-MM-DD)")
-    parser.add_argument("-e", "--end", required=True, help="End date (YYYY-MM-DD)")
+    parser.add_argument("query", help="Keywords or provider-supported query expression")
+    parser.add_argument(
+        "-s",
+        "--start",
+        required=True,
+        metavar="YYYY-MM-DD",
+        help="Inclusive publication start date",
+    )
+    parser.add_argument(
+        "-e",
+        "--end",
+        required=True,
+        metavar="YYYY-MM-DD",
+        help="Inclusive publication end date (the research information boundary)",
+    )
     parser.add_argument("--sources", default="", help="Comma-separated source names")
     parser.add_argument(
         "--english", action="store_true", help="Shortcut for --language en"
@@ -75,7 +109,21 @@ def build_arg_parser() -> argparse.ArgumentParser:
         help="Safety limit for --all-pages",
     )
     parser.add_argument(
-        "--json", action="store_true", help="Print raw JSON instead of a table"
+        "--format",
+        dest="output_format",
+        choices=OUTPUT_FORMATS,
+        default="table",
+        help=(
+            "Standard-output format: table for people, json for tools/LLMs, "
+            "or jsonl for one article per line (default: table)"
+        ),
+    )
+    parser.add_argument(
+        "--json",
+        dest="output_format",
+        action="store_const",
+        const="json",
+        help=argparse.SUPPRESS,
     )
     parser.add_argument(
         "--export",

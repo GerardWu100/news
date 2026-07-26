@@ -43,8 +43,13 @@ def run_cli(args: argparse.Namespace) -> None:
             print(f"Exported {len(payload['results'])} articles to {output_path}")
         return
 
-    if args.json:
+    if args.output_format == "json":
         print(json.dumps(payload, indent=2, ensure_ascii=False))
+        return
+
+    if args.output_format == "jsonl":
+        for article in payload["results"]:
+            print(json.dumps(article, ensure_ascii=False, separators=(",", ":")))
         return
 
     print(format_table(payload["results"], payload["meta"]))

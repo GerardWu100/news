@@ -141,6 +141,23 @@ button:disabled {
     gap: 1rem;
 }
 
+.research-note {
+    display: flex;
+    gap: 0.6rem 1rem;
+    align-items: baseline;
+    padding: 0.85rem 1rem;
+    border-radius: 14px;
+    color: var(--page-muted);
+    background: rgba(196, 93, 61, 0.08);
+    border: 1px solid rgba(196, 93, 61, 0.16);
+    line-height: 1.5;
+}
+
+.research-note strong {
+    flex: 0 0 auto;
+    color: var(--page-accent-dark);
+}
+
 .search-row,
 .inline-controls,
 .source-checks,
@@ -154,15 +171,30 @@ button:disabled {
 }
 
 .search-row {
-    align-items: stretch;
+    align-items: end;
 }
 
-.search-row input[type="text"] {
+.primary-field {
+    display: grid;
+    gap: 0.38rem;
+}
+
+.primary-field > span {
+    color: var(--page-muted);
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+
+.query-field {
     flex: 1 1 340px;
 }
 
-.search-row input[type="date"] {
+.date-field {
     flex: 0 1 180px;
+}
+
+.primary-field input {
+    width: 100%;
 }
 
 input[type="text"],
@@ -311,6 +343,52 @@ select:focus {
     justify-content: space-between;
     align-items: center;
     gap: 1rem;
+}
+
+.window-banner {
+    display: grid;
+    grid-template-columns: auto auto 1fr;
+    gap: 0.45rem 0.85rem;
+    align-items: baseline;
+    padding: 0.9rem 1rem;
+    border-left: 4px solid var(--page-accent);
+    border-radius: 4px 14px 14px 4px;
+    color: var(--page-muted);
+    background: rgba(255, 250, 241, 0.72);
+}
+
+.window-banner[hidden],
+.result-actions[hidden] {
+    display: none;
+}
+
+.window-banner > span {
+    color: var(--page-accent);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.window-banner > strong {
+    color: var(--page-ink);
+}
+
+.window-banner > small {
+    line-height: 1.5;
+}
+
+.result-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.result-actions a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
 }
 
 #meta-bar {
@@ -568,6 +646,21 @@ select:focus {
 
     .search-row {
         flex-direction: column;
+    }
+
+    .primary-field,
+    .query-field,
+    .date-field {
+        width: 100%;
+        flex-basis: auto;
+    }
+
+    .research-note {
+        display: grid;
+    }
+
+    .window-banner {
+        grid-template-columns: 1fr;
     }
 }
 

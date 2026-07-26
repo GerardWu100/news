@@ -15,6 +15,12 @@ The product is retrieval-first. It does not rank by proprietary relevance
 models, crawl article bodies, or compute page-level analytics. The value is a
 clean, provider-aware search and export workflow for research.
 
+The browser emphasizes human point-in-time exploration: its inclusive end date
+is shown as an information boundary beside every completed result set. The CLI
+emphasizes reproducible machine use with table, JSON, and JSONL output. Neither
+interface performs signal generation or backtesting; exports feed those
+downstream workflows.
+
 ## Project Structure
 
 ```text
@@ -51,6 +57,8 @@ The exact implemented tree is maintained in
 - Search metadata describing the current provider page, duplicate-removal
   counts, pagination state, and per-source execution reports.
 - CSV, JSON, or SQLite exports for downstream workflows.
+- Browser downloads for the exact visible provider page and CLI JSONL with one
+  normalized article per line.
 
 ## Architecture and Data Flow
 
@@ -68,7 +76,8 @@ The exact implemented tree is maintained in
 8. Optional deduplication collapses canonical-URL matches first, then obvious
    same-day syndicated headline matches.
 9. The final provider page is sorted and returned through the API.
-10. The browser renders the page directly. The CLI can print it or export it.
+10. The browser renders the page with its active date boundary and exact-page
+    download links. The CLI can print table, JSON, or JSONL and export files.
 
 ## Reliability and Operational Behavior
 
@@ -89,6 +98,9 @@ The exact implemented tree is maintained in
 - Pagination is provider-page based, not a globally merged sliding window.
 - Cache entries are process-local and intentionally short-lived.
 - Direct CLI mode bypasses the cache so ad hoc pulls stay fresh.
+- Publication-date filtering reduces look-ahead risk but does not prove when an
+  article first became tradable information. Provider timestamps, revisions,
+  missing archives, and downstream model knowledge remain research limitations.
 - Deduplication is conservative and deterministic; it does not perform fuzzy
   semantic matching.
 - Providers expose asymmetric upstream filters, so some advanced options apply

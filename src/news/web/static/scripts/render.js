@@ -8,7 +8,8 @@
 const RESULTS_CONTAINER_ID = "results";
 const META_BAR_ID = "meta-bar";
 const STATUS_STRIP_ID = "status-strip";
-const COPY_LINK_BUTTON_ID = "copy-link-btn";
+const RESULT_ACTIONS_ID = "result-actions";
+const WINDOW_BANNER_ID = "window-banner";
 
 function escapeHtml(value) {
     const div = document.createElement("div");
@@ -68,6 +69,31 @@ export function renderMeta(meta, queryDurationSeconds) {
     `;
 }
 
+/**
+ * Show the point-in-time boundary used for the completed search.
+ *
+ * The banner makes the temporal research contract visible beside the results,
+ * where it is harder to forget during discretionary market practice.
+ */
+export function renderResearchWindow(meta) {
+    const banner = document.getElementById(WINDOW_BANNER_ID);
+    banner.innerHTML = `
+        <span>Information set</span>
+        <strong>${escapeHtml(meta.start)} through ${escapeHtml(meta.end)}</strong>
+        <small>Inclusive provider publication dates; later coverage is outside this view.</small>
+    `;
+    banner.hidden = false;
+}
+
+/**
+ * Point export controls at the exact active page and reveal the action group.
+ */
+export function renderResultActions(jsonUrl, csvUrl) {
+    document.getElementById("json-export-link").href = jsonUrl;
+    document.getElementById("csv-export-link").href = csvUrl;
+    document.getElementById(RESULT_ACTIONS_ID).hidden = false;
+}
+
 
 export function renderSourceReports(reports) {
     const container = document.getElementById(STATUS_STRIP_ID);
@@ -113,7 +139,8 @@ export function renderError(message) {
 export function clearStatus() {
     document.getElementById(META_BAR_ID).innerHTML = "";
     document.getElementById(STATUS_STRIP_ID).innerHTML = "";
-    document.getElementById(COPY_LINK_BUTTON_ID).hidden = true;
+    document.getElementById(RESULT_ACTIONS_ID).hidden = true;
+    document.getElementById(WINDOW_BANNER_ID).hidden = true;
 }
 
 

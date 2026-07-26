@@ -3,9 +3,13 @@
 from __future__ import annotations
 
 import unittest
+from contextlib import redirect_stdout
+from io import StringIO
+from unittest.mock import patch
 
 from news.cli.output import format_table
 from news.cli.parser import build_api_params, build_arg_parser
+from news.cli.workflow import run_cli
 
 
 class ArgParserTests(unittest.TestCase):
@@ -19,7 +23,7 @@ class ArgParserTests(unittest.TestCase):
         self.assertEqual(args.query, "inflation")
         self.assertEqual(args.start, "2025-01-01")
         self.assertEqual(args.end, "2025-03-01")
-        self.assertFalse(args.json)
+        self.assertEqual(args.output_format, "table")
         self.assertFalse(args.direct)
         self.assertEqual(args.page, 1)
 
@@ -87,7 +91,7 @@ class ArgParserTests(unittest.TestCase):
         self.assertEqual(args.scope, "title")
         self.assertEqual(args.match, "all_terms")
         self.assertEqual(args.sort, "date_asc")
-        self.assertTrue(args.json)
+        self.assertEqual(args.output_format, "json")
         self.assertEqual(args.export, "sqlite")
         self.assertEqual(args.output, "news.db")
         self.assertTrue(args.include_content)
@@ -95,6 +99,31 @@ class ArgParserTests(unittest.TestCase):
         self.assertEqual(args.max_pages, 10)
         self.assertEqual(args.server, "http://remote:8000")
         self.assertTrue(args.quiet)
+
+    def test_jsonl_format_is_available_for_streaming_consumers(self) -> None:
+        """The CLI should expose one-record-per-line structured output."""
+        parser = build_arg_parser()
+
+        args = parser.parse_args(
+            [
+                "earnings",
+                "-s",
+                "2025-01-01",
+                "-e",
+                "2025-01-31",
+                "--format",
+                "jsonl",
+            ]
+        )
+
+        self.assertEqual(args.output_format, "jsonl")
+
+    def test_help_explains_the_inclusive_information_boundary(self) -> None:
+        """CLI help should make the temporal research contract explicit."""
+        help_text = build_arg_parser().format_help()
+
+        self.assertIn("inclusive publication end date", help_text.lower())
+        self.assertIn("large language model", help_text.lower())
 
 
 class BuildApiParamsTests(unittest.TestCase):
@@ -151,6 +180,45 @@ class TableFormatTests(unittest.TestCase):
         self.assertIn("Fed holds rates", output)
         self.assertIn("guardian", output)
         self.assertIn("2025-03-01", output)
+
+
+class StructuredOutputTests(unittest.TestCase):
+    """Test standard-output representations intended for programs."""
+
+    def test_jsonl_emits_one_compact_article_per_line(self) -> None:
+        """JSONL should contain article records without a table or metadata row."""
+        parser = build_arg_parser()
+        args = parser.parse_args(
+            [
+                "fed",
+                "-s",
+                "2025-01-01",
+                "-e",
+                "2025-03-01",
+                "--format",
+                "jsonl",
+            ]
+        )
+        payload = {
+            "results": [
+                {"title": "First", "date": "2025-01-01"},
+                {"title": "Second", "date": "2025-01-02"},
+            ],
+            "meta": {},
+        }
+        output = StringIO()
+
+        with patch("news.cli.workflow.collect_results", return_value=payload):
+            with redirect_stdout(output):
+                run_cli(args)
+
+        self.assertEqual(
+            output.getvalue().splitlines(),
+            [
+                '{"title":"First","date":"2025-01-01"}',
+                '{"title":"Second","date":"2025-01-02"}',
+            ],
+        )
 
 
 class PackageEntryPointTests(unittest.TestCase):
