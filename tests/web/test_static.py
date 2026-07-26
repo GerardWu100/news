@@ -6,7 +6,7 @@ from pathlib import Path
 import unittest
 
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 RENDER_JS_PATH = (
     PROJECT_ROOT / "src" / "news" / "web" / "static" / "scripts" / "render.js"
 )

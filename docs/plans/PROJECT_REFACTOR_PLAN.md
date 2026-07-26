@@ -147,15 +147,15 @@ covered without network access.
 
 **Objective:** make failures and ownership obvious as the provider set grows.
 
-- [ ] Split validation, filtering, deduplication, and orchestration tests under
+- [x] Split validation, filtering, deduplication, and orchestration tests under
   `tests/search/`.
-- [ ] Split each provider adapter into its own test module under
+- [x] Split each provider adapter into its own test module under
   `tests/sources/`.
-- [ ] Keep route contract tests under `tests/api/`, command behavior under
+- [x] Keep route contract tests under `tests/api/`, command behavior under
   `tests/cli/`, and static-asset checks under `tests/web/`.
-- [ ] Add shared response builders under `tests/fixtures/`; avoid a vague
+- [x] Add shared response builders under `tests/fixtures/`; avoid a vague
   `utils.py`.
-- [ ] Keep live provider checks outside the default suite and mark them
+- [x] Keep live provider checks outside the default suite and mark them
   explicitly if they are added later.
 
 **Acceptance:** each test file maps to one production responsibility, and the

@@ -72,16 +72,32 @@ in `docs/plans/PROJECT_REFACTOR_PLAN.md`.
 │   └── acled_oauth_token.py
 ├── tests/
 │   ├── GUIDE_tests.md
-│   ├── test_acled_oauth.py
-│   ├── test_app.py
-│   ├── test_cache.py
-│   ├── test_cli.py
-│   ├── test_config.py
-│   ├── test_export.py
-│   ├── test_frontend_static.py
-│   ├── test_retry.py
-│   ├── test_search_service.py
-│   └── test_wheel_installation.py
+│   ├── api/
+│   │   ├── test_app.py
+│   │   └── test_config.py
+│   ├── cli/
+│   │   └── test_cli.py
+│   ├── exports/
+│   │   └── test_formats.py
+│   ├── fixtures/
+│   │   └── search_results.py
+│   ├── search/
+│   │   ├── test_cache.py
+│   │   ├── test_deduplication.py
+│   │   ├── test_filters.py
+│   │   ├── test_service.py
+│   │   └── test_validation.py
+│   ├── sources/
+│   │   ├── test_acled_oauth.py
+│   │   ├── test_retry.py
+│   │   └── providers/
+│   │       ├── test_guardian.py
+│   │       ├── test_mediacloud.py
+│   │       ├── test_newsapi.py
+│   │       └── test_nyt.py
+│   └── web/
+│       ├── test_static.py
+│       └── test_wheel_installation.py
 └── docs/
     ├── plans/
     │   └── PROJECT_REFACTOR_PLAN.md

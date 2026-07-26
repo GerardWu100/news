@@ -7,10 +7,11 @@ from collections.abc import Sequence
 from inspect import signature
 
 from news.search.cache import SearchResultCache
-from news.search.models import SearchRequest, SearchResult
+from news.search.models import SearchRequest
 from news.search.service import run_search
 from news.sources import SourceQueryReport
 from news.sources.base import Article, SourceSearchOptions
+from tests.fixtures.search_results import build_search_result
 
 
 class _ManualClock:
@@ -48,50 +49,6 @@ def _build_request(query: str) -> SearchRequest:
     )
 
 
-def _build_result(title: str) -> SearchResult:
-    """Create a minimal search result object for cache tests."""
-    return SearchResult(
-        articles=[
-            {
-                "title": title,
-                "url": "https://example.com/story",
-                "date": "2026-03-05",
-                "source": "guardian",
-                "matched_sources": ["guardian"],
-                "duplicate_count": 1,
-            }
-        ],
-        meta={
-            "query": title,
-            "start": "2026-03-01",
-            "end": "2026-03-05",
-            "language": "en",
-            "deduplicate": True,
-            "exact_phrase": "",
-            "exclude_terms": [],
-            "include_domains": [],
-            "exclude_domains": [],
-            "search_scope": "all",
-            "match_mode": "provider",
-            "provider_sort": "default",
-            "section_filters": [],
-            "news_desk_filters": [],
-            "guardian_tags": [],
-            "newsapi_search_in": "all",
-            "sort_order": "date_desc",
-            "page": 1,
-            "has_more": False,
-            "has_previous": False,
-            "returned": 1,
-            "requested_sources": ["guardian"],
-            "total": 1,
-            "total_before_deduplication": 1,
-            "duplicates_removed": 0,
-            "source_reports": [],
-        },
-    )
-
-
 class SearchResultCacheTests(unittest.TestCase):
     """Test TTL expiry and LRU eviction behavior."""
 
@@ -101,7 +58,7 @@ class SearchResultCacheTests(unittest.TestCase):
         cache = SearchResultCache(ttl_seconds=5, max_entries=2, clock=clock)
         request = _build_request("fed")
 
-        cache.set(request, _build_result("fed"))
+        cache.set(request, build_search_result("fed", include_source_report=False))
         self.assertIsNotNone(cache.get(request))
 
         clock.current = 6.0
@@ -115,11 +72,20 @@ class SearchResultCacheTests(unittest.TestCase):
         request_two = _build_request("inflation")
         request_three = _build_request("rates")
 
-        cache.set(request_one, _build_result("fed"))
+        cache.set(
+            request_one,
+            build_search_result("fed", include_source_report=False),
+        )
         clock.current = 1.0
-        cache.set(request_two, _build_result("inflation"))
+        cache.set(
+            request_two,
+            build_search_result("inflation", include_source_report=False),
+        )
         clock.current = 2.0
-        cache.set(request_three, _build_result("rates"))
+        cache.set(
+            request_three,
+            build_search_result("rates", include_source_report=False),
+        )
 
         self.assertIsNone(cache.get(request_one))
         self.assertIsNotNone(cache.get(request_two))

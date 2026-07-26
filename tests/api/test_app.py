@@ -10,64 +10,9 @@ from unittest.mock import AsyncMock, patch
 from fastapi.testclient import TestClient
 
 from news.api.app import app
-from news.search.models import SearchResult
+from tests.fixtures.search_results import build_search_result
 
-FAKE_RESULT = SearchResult(
-    articles=[
-        {
-            "title": "Fed holds rates steady",
-            "url": "https://example.com/fed",
-            "date": "2026-03-20",
-            "source": "guardian",
-            "domain": "example.com",
-            "language": "en",
-            "summary": "Officials left the policy rate unchanged.",
-            "content": "",
-            "section": "Business",
-            "author": "Jane Doe",
-            "matched_sources": ["guardian"],
-            "duplicate_count": 1,
-        }
-    ],
-    meta={
-        "query": "fed",
-        "start": "2026-03-01",
-        "end": "2026-03-20",
-        "language": "en",
-        "deduplicate": True,
-        "exact_phrase": "",
-        "exclude_terms": [],
-        "include_domains": [],
-        "exclude_domains": [],
-        "search_scope": "all",
-        "match_mode": "provider",
-        "provider_sort": "default",
-        "section_filters": [],
-        "news_desk_filters": [],
-        "guardian_tags": [],
-        "newsapi_search_in": "all",
-        "sort_order": "date_desc",
-        "page": 1,
-        "has_more": False,
-        "has_previous": False,
-        "returned": 1,
-        "requested_sources": ["guardian"],
-        "total": 1,
-        "total_before_deduplication": 1,
-        "duplicates_removed": 0,
-        "source_reports": [
-            {
-                "name": "guardian",
-                "display_name": "The Guardian",
-                "available": True,
-                "requested": True,
-                "returned": 1,
-                "has_more": False,
-                "error": "",
-            }
-        ],
-    },
-)
+FAKE_RESULT = build_search_result("Fed holds rates steady", query="fed")
 
 
 class AppRouteTests(unittest.TestCase):

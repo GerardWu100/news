@@ -161,7 +161,7 @@ class PackageEntryPointTests(unittest.TestCase):
         import tomllib
         from pathlib import Path
 
-        pyproject_path = Path(__file__).resolve().parent.parent / "pyproject.toml"
+        pyproject_path = Path(__file__).resolve().parents[2] / "pyproject.toml"
         with pyproject_path.open("rb") as pyproject_file:
             pyproject = tomllib.load(pyproject_file)
 
