@@ -43,3 +43,10 @@ cache limits stop startup with a configuration error.
 uv run ruff check .
 uv run python -m unittest discover -s tests -v
 ```
+
+When an intentional route or response-model change modifies the OpenAPI
+contract, review `docs/user/API_REFERENCE.md` and regenerate the schema:
+
+```bash
+uv run python scripts/generate_openapi.py
+```

@@ -11,7 +11,10 @@ from news.search.models import SearchRequest
 from news.search.service import run_search
 from news.sources import SourceQueryReport
 from news.sources.base import Article, SourceSearchOptions
-from tests.fixtures.search_results import build_search_result
+from tests.fixtures.search_results import (
+    build_provider_response,
+    build_search_result,
+)
 
 
 class _ManualClock:
@@ -121,27 +124,7 @@ class RunSearchCacheIntegrationTests(unittest.IsolatedAsyncioTestCase):
             """Return one article while counting real executor calls."""
             nonlocal call_count
             call_count += 1
-            return (
-                [
-                    Article(
-                        title="Fed holds rates steady",
-                        url="https://example.com/fed",
-                        date="2026-03-05",
-                        source="guardian",
-                        domain="example.com",
-                        language="en",
-                    )
-                ],
-                [
-                    SourceQueryReport(
-                        name="guardian",
-                        display_name="The Guardian",
-                        available=True,
-                        requested=True,
-                        returned=1,
-                    )
-                ],
-            )
+            return build_provider_response()
 
         first = await run_search(request, executor=fake_executor, cache=cache)
         second = await run_search(request, executor=fake_executor, cache=cache)

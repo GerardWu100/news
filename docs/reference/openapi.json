@@ -1,0 +1,1234 @@
+{
+  "components": {
+    "schemas": {
+      "FrontendConfigResponse": {
+        "description": "Frontend defaults returned by ``GET /api/config``.",
+        "properties": {
+          "default_english_only": {
+            "title": "Default English Only",
+            "type": "boolean"
+          },
+          "default_sources": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Default Sources",
+            "type": "array"
+          }
+        },
+        "required": [
+          "default_english_only",
+          "default_sources"
+        ],
+        "title": "FrontendConfigResponse",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "SearchArticleResponse": {
+        "description": "Normalized search result row.",
+        "properties": {
+          "author": {
+            "default": "",
+            "title": "Author",
+            "type": "string"
+          },
+          "content": {
+            "default": "",
+            "title": "Content",
+            "type": "string"
+          },
+          "date": {
+            "title": "Date",
+            "type": "string"
+          },
+          "domain": {
+            "default": "",
+            "title": "Domain",
+            "type": "string"
+          },
+          "duplicate_count": {
+            "default": 1,
+            "title": "Duplicate Count",
+            "type": "integer"
+          },
+          "language": {
+            "default": "",
+            "title": "Language",
+            "type": "string"
+          },
+          "matched_sources": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Matched Sources",
+            "type": "array"
+          },
+          "section": {
+            "default": "",
+            "title": "Section",
+            "type": "string"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "summary": {
+            "default": "",
+            "title": "Summary",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "url": {
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "url",
+          "date",
+          "source"
+        ],
+        "title": "SearchArticleResponse",
+        "type": "object"
+      },
+      "SearchMetaResponse": {
+        "description": "Top-level metadata attached to every search response.",
+        "properties": {
+          "deduplicate": {
+            "title": "Deduplicate",
+            "type": "boolean"
+          },
+          "duplicates_removed": {
+            "title": "Duplicates Removed",
+            "type": "integer"
+          },
+          "end": {
+            "title": "End",
+            "type": "string"
+          },
+          "exact_phrase": {
+            "title": "Exact Phrase",
+            "type": "string"
+          },
+          "exclude_domains": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Exclude Domains",
+            "type": "array"
+          },
+          "exclude_terms": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Exclude Terms",
+            "type": "array"
+          },
+          "guardian_tags": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Guardian Tags",
+            "type": "array"
+          },
+          "has_more": {
+            "title": "Has More",
+            "type": "boolean"
+          },
+          "has_previous": {
+            "title": "Has Previous",
+            "type": "boolean"
+          },
+          "include_domains": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Include Domains",
+            "type": "array"
+          },
+          "language": {
+            "title": "Language",
+            "type": "string"
+          },
+          "match_mode": {
+            "title": "Match Mode",
+            "type": "string"
+          },
+          "news_desk_filters": {
+            "items": {
+              "type": "string"
+            },
+            "title": "News Desk Filters",
+            "type": "array"
+          },
+          "newsapi_search_in": {
+            "title": "Newsapi Search In",
+            "type": "string"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "provider_sort": {
+            "title": "Provider Sort",
+            "type": "string"
+          },
+          "query": {
+            "title": "Query",
+            "type": "string"
+          },
+          "requested_sources": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Requested Sources",
+            "type": "array"
+          },
+          "returned": {
+            "title": "Returned",
+            "type": "integer"
+          },
+          "search_scope": {
+            "title": "Search Scope",
+            "type": "string"
+          },
+          "section_filters": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Section Filters",
+            "type": "array"
+          },
+          "sort_order": {
+            "title": "Sort Order",
+            "type": "string"
+          },
+          "source_reports": {
+            "items": {
+              "$ref": "#/components/schemas/SourceQueryReportResponse"
+            },
+            "title": "Source Reports",
+            "type": "array"
+          },
+          "start": {
+            "title": "Start",
+            "type": "string"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          },
+          "total_before_deduplication": {
+            "title": "Total Before Deduplication",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "query",
+          "start",
+          "end",
+          "language",
+          "deduplicate",
+          "exact_phrase",
+          "search_scope",
+          "match_mode",
+          "provider_sort",
+          "newsapi_search_in",
+          "sort_order",
+          "page",
+          "has_more",
+          "has_previous",
+          "returned",
+          "total",
+          "total_before_deduplication",
+          "duplicates_removed"
+        ],
+        "title": "SearchMetaResponse",
+        "type": "object"
+      },
+      "SearchResponse": {
+        "description": "Complete payload returned by ``GET /api/search``.",
+        "properties": {
+          "meta": {
+            "$ref": "#/components/schemas/SearchMetaResponse"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/SearchArticleResponse"
+            },
+            "title": "Results",
+            "type": "array"
+          }
+        },
+        "required": [
+          "meta"
+        ],
+        "title": "SearchResponse",
+        "type": "object"
+      },
+      "SourceQueryReportResponse": {
+        "description": "Execution report for one upstream provider.",
+        "properties": {
+          "available": {
+            "title": "Available",
+            "type": "boolean"
+          },
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "error": {
+            "default": "",
+            "title": "Error",
+            "type": "string"
+          },
+          "has_more": {
+            "default": false,
+            "title": "Has More",
+            "type": "boolean"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "requested": {
+            "title": "Requested",
+            "type": "boolean"
+          },
+          "returned": {
+            "title": "Returned",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "name",
+          "display_name",
+          "available",
+          "requested",
+          "returned"
+        ],
+        "title": "SourceQueryReportResponse",
+        "type": "object"
+      },
+      "SourceStatusResponse": {
+        "description": "Source availability metadata returned by ``GET /api/sources``.",
+        "properties": {
+          "available": {
+            "title": "Available",
+            "type": "boolean"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "display_name",
+          "description",
+          "available"
+        ],
+        "title": "SourceStatusResponse",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "description": "Search GDELT, MediaCloud, ACLED, The New York Times, The Guardian, and NewsAPI by keyword and date range.",
+    "title": "Historical News Search Engine",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/": {
+      "get": {
+        "description": "Serve the browser app.",
+        "operationId": "index__get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Index"
+      }
+    },
+    "/api/config": {
+      "get": {
+        "description": "Return validated frontend configuration values.",
+        "operationId": "config_api_config_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FrontendConfigResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Config"
+      }
+    },
+    "/api/export/csv": {
+      "get": {
+        "description": "Export the current provider page as comma-separated values (CSV).",
+        "operationId": "export_csv_api_export_csv_get",
+        "parameters": [
+          {
+            "description": "Keyword or boolean query",
+            "in": "query",
+            "name": "q",
+            "required": true,
+            "schema": {
+              "description": "Keyword or boolean query",
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Start date (YYYY-MM-DD)",
+            "in": "query",
+            "name": "start",
+            "required": true,
+            "schema": {
+              "description": "Start date (YYYY-MM-DD)",
+              "title": "Start",
+              "type": "string"
+            }
+          },
+          {
+            "description": "End date (YYYY-MM-DD)",
+            "in": "query",
+            "name": "end",
+            "required": true,
+            "schema": {
+              "description": "End date (YYYY-MM-DD)",
+              "title": "End",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Comma-separated source names (default: all available)",
+            "in": "query",
+            "name": "sources",
+            "required": false,
+            "schema": {
+              "default": "",
+              "description": "Comma-separated source names (default: all available)",
+              "title": "Sources",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Language filter such as 'en', 'english', or 'en-US'. Provider labels are normalized before comparison.",
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "default": "",
+              "description": "Language filter such as 'en', 'english', or 'en-US'. Provider labels are normalized before comparison.",
+              "title": "Language",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Collapse duplicate articles that appear across sources",
+            "in": "query",
+            "name": "dedupe",
+            "required": false,
+            "schema": {
+              "default": true,
+              "description": "Collapse duplicate articles that appear across sources",
+              "title": "Dedupe",
+              "type": "boolean"
+            }
+          },
+          {
+            "description": "Optional exact phrase to require in post-filtering",
+            "in": "query",
+            "name": "exact_phrase",
+            "required": false,
+            "schema": {
+              "default": "",
+              "description": "Optional exact phrase to require in post-filtering",
+              "title": "Exact Phrase",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Comma-separated terms to exclude from results",
+            "in": "query",
+            "name": "exclude_terms",
+            "required": false,
+            "schema": {
+              "default": "",
+              "description": "Comma-separated terms to exclude from results",
+              "title": "Exclude Terms",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Comma-separated domains to include in local filtering",
+            "in": "query",
+            "name": "domain",
+            "required": false,
+            "schema": {
+              "default": "",
+              "description": "Comma-separated domains to include in local filtering",
+              "title": "Domain",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Comma-separated domains to exclude from local filtering",
+            "in": "query",
+            "name": "exclude_domains",
+            "required": false,
+            "schema": {
+              "default": "",
+              "description": "Comma-separated domains to exclude from local filtering",
+              "title": "Exclude Domains",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Local filter scope: 'all' or 'title'",
+            "in": "query",
+            "name": "search_scope",
+            "required": false,
+            "schema": {
+              "default": "all",
+              "description": "Local filter scope: 'all' or 'title'",
+              "title": "Search Scope",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Keyword post-filter mode: 'provider', 'all_terms', or 'any_term'",
+            "in": "query",
+            "name": "match_mode",
+            "required": false,
+            "schema": {
+              "default": "provider",
+              "description": "Keyword post-filter mode: 'provider', 'all_terms', or 'any_term'",
+              "title": "Match Mode",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Upstream provider ranking mode where supported",
+            "in": "query",
+            "name": "provider_sort",
+            "required": false,
+            "schema": {
+              "default": "default",
+              "description": "Upstream provider ranking mode where supported",
+              "title": "Provider Sort",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Comma-separated section filters for providers that support them",
+            "in": "query",
+            "name": "section",
+            "required": false,
+            "schema": {
+              "default": "",
+              "description": "Comma-separated section filters for providers that support them",
+              "title": "Section",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Comma-separated New York Times news desk filters",
+            "in": "query",
+            "name": "news_desk",
+            "required": false,
+            "schema": {
+              "default": "",
+              "description": "Comma-separated New York Times news desk filters",
+              "title": "News Desk",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Comma-separated Guardian tags such as business/economics",
+            "in": "query",
+            "name": "guardian_tag",
+            "required": false,
+            "schema": {
+              "default": "",
+              "description": "Comma-separated Guardian tags such as business/economics",
+              "title": "Guardian Tag",
+              "type": "string"
+            }
+          },
+          {
+            "description": "NewsAPI field scope for q: all, title, description, content",
+            "in": "query",
+            "name": "newsapi_search_in",
+            "required": false,
+            "schema": {
+              "default": "all",
+              "description": "NewsAPI field scope for q: all, title, description, content",
+              "title": "Newsapi Search In",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Sort order: 'date_desc' or 'date_asc'",
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "default": "date_desc",
+              "description": "Sort order: 'date_desc' or 'date_asc'",
+              "title": "Sort",
+              "type": "string"
+            }
+          },
+          {
+            "description": "1-based provider page number",
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "description": "1-based provider page number",
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Export Csv"
+      }
+    },
+    "/api/export/json": {
+      "get": {
+        "description": "Export the current provider page as JavaScript Object Notation.",
+        "operationId": "export_json_api_export_json_get",
+        "parameters": [
+          {
+            "description": "Keyword or boolean query",
+            "in": "query",
+            "name": "q",
+            "required": true,
+            "schema": {
+              "description": "Keyword or boolean query",
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Start date (YYYY-MM-DD)",
+            "in": "query",
+            "name": "start",
+            "required": true,
+            "schema": {
+              "description": "Start date (YYYY-MM-DD)",
+              "title": "Start",
+              "type": "string"
+            }
+          },
+          {
+            "description": "End date (YYYY-MM-DD)",
+            "in": "query",
+            "name": "end",
+            "required": true,
+            "schema": {
+              "description": "End date (YYYY-MM-DD)",
+              "title": "End",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Comma-separated source names (default: all available)",
+            "in": "query",
+            "name": "sources",
+            "required": false,
+            "schema": {
+              "default": "",
+              "description": "Comma-separated source names (default: all available)",
+              "title": "Sources",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Language filter such as 'en', 'english', or 'en-US'. Provider labels are normalized before comparison.",
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "default": "",
+              "description": "Language filter such as 'en', 'english', or 'en-US'. Provider labels are normalized before comparison.",
+              "title": "Language",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Collapse duplicate articles that appear across sources",
+            "in": "query",
+            "name": "dedupe",
+            "required": false,
+            "schema": {
+              "default": true,
+              "description": "Collapse duplicate articles that appear across sources",
+              "title": "Dedupe",
+              "type": "boolean"
+            }
+          },
+          {
+            "description": "Optional exact phrase to require in post-filtering",
+            "in": "query",
+            "name": "exact_phrase",
+            "required": false,
+            "schema": {
+              "default": "",
+              "description": "Optional exact phrase to require in post-filtering",
+              "title": "Exact Phrase",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Comma-separated terms to exclude from results",
+            "in": "query",
+            "name": "exclude_terms",
+            "required": false,
+            "schema": {
+              "default": "",
+              "description": "Comma-separated terms to exclude from results",
+              "title": "Exclude Terms",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Comma-separated domains to include in local filtering",
+            "in": "query",
+            "name": "domain",
+            "required": false,
+            "schema": {
+              "default": "",
+              "description": "Comma-separated domains to include in local filtering",
+              "title": "Domain",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Comma-separated domains to exclude from local filtering",
+            "in": "query",
+            "name": "exclude_domains",
+            "required": false,
+            "schema": {
+              "default": "",
+              "description": "Comma-separated domains to exclude from local filtering",
+              "title": "Exclude Domains",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Local filter scope: 'all' or 'title'",
+            "in": "query",
+            "name": "search_scope",
+            "required": false,
+            "schema": {
+              "default": "all",
+              "description": "Local filter scope: 'all' or 'title'",
+              "title": "Search Scope",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Keyword post-filter mode: 'provider', 'all_terms', or 'any_term'",
+            "in": "query",
+            "name": "match_mode",
+            "required": false,
+            "schema": {
+              "default": "provider",
+              "description": "Keyword post-filter mode: 'provider', 'all_terms', or 'any_term'",
+              "title": "Match Mode",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Upstream provider ranking mode where supported",
+            "in": "query",
+            "name": "provider_sort",
+            "required": false,
+            "schema": {
+              "default": "default",
+              "description": "Upstream provider ranking mode where supported",
+              "title": "Provider Sort",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Comma-separated section filters for providers that support them",
+            "in": "query",
+            "name": "section",
+            "required": false,
+            "schema": {
+              "default": "",
+              "description": "Comma-separated section filters for providers that support them",
+              "title": "Section",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Comma-separated New York Times news desk filters",
+            "in": "query",
+            "name": "news_desk",
+            "required": false,
+            "schema": {
+              "default": "",
+              "description": "Comma-separated New York Times news desk filters",
+              "title": "News Desk",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Comma-separated Guardian tags such as business/economics",
+            "in": "query",
+            "name": "guardian_tag",
+            "required": false,
+            "schema": {
+              "default": "",
+              "description": "Comma-separated Guardian tags such as business/economics",
+              "title": "Guardian Tag",
+              "type": "string"
+            }
+          },
+          {
+            "description": "NewsAPI field scope for q: all, title, description, content",
+            "in": "query",
+            "name": "newsapi_search_in",
+            "required": false,
+            "schema": {
+              "default": "all",
+              "description": "NewsAPI field scope for q: all, title, description, content",
+              "title": "Newsapi Search In",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Sort order: 'date_desc' or 'date_asc'",
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "default": "date_desc",
+              "description": "Sort order: 'date_desc' or 'date_asc'",
+              "title": "Sort",
+              "type": "string"
+            }
+          },
+          {
+            "description": "1-based provider page number",
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "description": "1-based provider page number",
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Export Json"
+      }
+    },
+    "/api/search": {
+      "get": {
+        "description": "Search providers and return the merged article page.",
+        "operationId": "search_api_search_get",
+        "parameters": [
+          {
+            "description": "Keyword or boolean query",
+            "in": "query",
+            "name": "q",
+            "required": true,
+            "schema": {
+              "description": "Keyword or boolean query",
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Start date (YYYY-MM-DD)",
+            "in": "query",
+            "name": "start",
+            "required": true,
+            "schema": {
+              "description": "Start date (YYYY-MM-DD)",
+              "title": "Start",
+              "type": "string"
+            }
+          },
+          {
+            "description": "End date (YYYY-MM-DD)",
+            "in": "query",
+            "name": "end",
+            "required": true,
+            "schema": {
+              "description": "End date (YYYY-MM-DD)",
+              "title": "End",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Comma-separated source names (default: all available)",
+            "in": "query",
+            "name": "sources",
+            "required": false,
+            "schema": {
+              "default": "",
+              "description": "Comma-separated source names (default: all available)",
+              "title": "Sources",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Language filter such as 'en', 'english', or 'en-US'. Provider labels are normalized before comparison.",
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "default": "",
+              "description": "Language filter such as 'en', 'english', or 'en-US'. Provider labels are normalized before comparison.",
+              "title": "Language",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Collapse duplicate articles that appear across sources",
+            "in": "query",
+            "name": "dedupe",
+            "required": false,
+            "schema": {
+              "default": true,
+              "description": "Collapse duplicate articles that appear across sources",
+              "title": "Dedupe",
+              "type": "boolean"
+            }
+          },
+          {
+            "description": "Optional exact phrase to require in post-filtering",
+            "in": "query",
+            "name": "exact_phrase",
+            "required": false,
+            "schema": {
+              "default": "",
+              "description": "Optional exact phrase to require in post-filtering",
+              "title": "Exact Phrase",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Comma-separated terms to exclude from results",
+            "in": "query",
+            "name": "exclude_terms",
+            "required": false,
+            "schema": {
+              "default": "",
+              "description": "Comma-separated terms to exclude from results",
+              "title": "Exclude Terms",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Comma-separated domains to include in local filtering",
+            "in": "query",
+            "name": "domain",
+            "required": false,
+            "schema": {
+              "default": "",
+              "description": "Comma-separated domains to include in local filtering",
+              "title": "Domain",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Comma-separated domains to exclude from local filtering",
+            "in": "query",
+            "name": "exclude_domains",
+            "required": false,
+            "schema": {
+              "default": "",
+              "description": "Comma-separated domains to exclude from local filtering",
+              "title": "Exclude Domains",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Local filter scope: 'all' or 'title'",
+            "in": "query",
+            "name": "search_scope",
+            "required": false,
+            "schema": {
+              "default": "all",
+              "description": "Local filter scope: 'all' or 'title'",
+              "title": "Search Scope",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Keyword post-filter mode: 'provider', 'all_terms', or 'any_term'",
+            "in": "query",
+            "name": "match_mode",
+            "required": false,
+            "schema": {
+              "default": "provider",
+              "description": "Keyword post-filter mode: 'provider', 'all_terms', or 'any_term'",
+              "title": "Match Mode",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Upstream provider ranking mode where supported",
+            "in": "query",
+            "name": "provider_sort",
+            "required": false,
+            "schema": {
+              "default": "default",
+              "description": "Upstream provider ranking mode where supported",
+              "title": "Provider Sort",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Comma-separated section filters for providers that support them",
+            "in": "query",
+            "name": "section",
+            "required": false,
+            "schema": {
+              "default": "",
+              "description": "Comma-separated section filters for providers that support them",
+              "title": "Section",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Comma-separated New York Times news desk filters",
+            "in": "query",
+            "name": "news_desk",
+            "required": false,
+            "schema": {
+              "default": "",
+              "description": "Comma-separated New York Times news desk filters",
+              "title": "News Desk",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Comma-separated Guardian tags such as business/economics",
+            "in": "query",
+            "name": "guardian_tag",
+            "required": false,
+            "schema": {
+              "default": "",
+              "description": "Comma-separated Guardian tags such as business/economics",
+              "title": "Guardian Tag",
+              "type": "string"
+            }
+          },
+          {
+            "description": "NewsAPI field scope for q: all, title, description, content",
+            "in": "query",
+            "name": "newsapi_search_in",
+            "required": false,
+            "schema": {
+              "default": "all",
+              "description": "NewsAPI field scope for q: all, title, description, content",
+              "title": "Newsapi Search In",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Sort order: 'date_desc' or 'date_asc'",
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "default": "date_desc",
+              "description": "Sort order: 'date_desc' or 'date_asc'",
+              "title": "Sort",
+              "type": "string"
+            }
+          },
+          {
+            "description": "1-based provider page number",
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "description": "1-based provider page number",
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Search"
+      }
+    },
+    "/api/sources": {
+      "get": {
+        "description": "Return source metadata and availability.",
+        "operationId": "sources_api_sources_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SourceStatusResponse"
+                  },
+                  "title": "Response Sources Api Sources Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Sources"
+      }
+    }
+  }
+}

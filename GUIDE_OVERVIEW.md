@@ -41,7 +41,8 @@ clean, provider-aware search and export workflow for research.
 
 ## Architecture and Data Flow
 
-1. The `news-server` command loads credentials and starts the FastAPI app.
+1. The `news-server` command loads credentials and asks the application factory
+   to construct the FastAPI app.
 2. Startup merges the selected operator configuration over packaged defaults,
    validates it, and constructs the process-local cache.
 3. The browser or CLI submits a validated request.
@@ -83,6 +84,10 @@ clean, provider-aware search and export workflow for research.
   in source status and source reports.
 - Browser assets and baseline configuration ship in the wheel, so runtime
   resources do not depend on a repository checkout.
+- Application construction accepts injected cache, provider executor, and
+  source-status dependencies, which keeps route tests isolated and offline.
+- Public HTTP routes and response models are captured in a generated,
+  contract-tested OpenAPI schema.
 
 ## User Overrides
 

@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import os
+from collections.abc import Callable
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -23,11 +24,11 @@ from news.api.models import (
 )
 from news.api.params import SearchQueryParams
 from news.exports.formats import format_csv, format_json
-from news.search import run_search
+from news.search import SearchExecutor, run_search
 from news.search.cache import SearchResultCache, build_search_cache
 from news.search.errors import SearchValidationError
 from news.search.models import SearchResult
-from news.sources import get_source_status
+from news.sources import get_source_status, search_all_detailed
 from news.web.config import AppSettings, load_settings
 from news.web.paths import CONFIG_ENVIRONMENT_VARIABLE, env_path, static_dir
 
@@ -39,12 +40,15 @@ APP_DESCRIPTION = (
 APP_VERSION = "0.1.0"
 SERVER_HOST = "127.0.0.1"
 SERVER_PORT = 8000
+SourceStatusProvider = Callable[[], list[dict[str, object]]]
 
 
 def create_app(
     settings: AppSettings,
     *,
     search_cache: SearchResultCache | None = None,
+    search_executor: SearchExecutor = search_all_detailed,
+    source_status_provider: SourceStatusProvider = get_source_status,
 ) -> FastAPI:
     """Construct an application from validated runtime dependencies.
 
@@ -54,6 +58,10 @@ def create_app(
         Immutable frontend and cache settings.
     search_cache : SearchResultCache | None, optional
         Cache supplied by a caller or test. ``None`` builds one from settings.
+    search_executor : SearchExecutor, optional
+        Provider fan-out function. Tests may inject an offline fake.
+    source_status_provider : SourceStatusProvider, optional
+        Provider metadata function. Tests may inject deterministic status.
 
     Returns
     -------
@@ -92,18 +100,26 @@ def create_app(
     @application.get("/api/sources", response_model=list[SourceStatusResponse])
     async def sources() -> list[dict[str, object]]:
         """Return source metadata and availability."""
-        return get_source_status()
+        return source_status_provider()
 
     @application.get("/api/search", response_model=SearchResponse)
     async def search(params: SearchQueryParams = Depends()) -> dict[str, object]:
         """Search providers and return the merged article page."""
-        result = await _run_search_request(params, cache=active_cache)
+        result = await _run_search_request(
+            params,
+            cache=active_cache,
+            executor=search_executor,
+        )
         return result.to_payload()
 
     @application.get("/api/export/csv")
     async def export_csv(params: SearchQueryParams = Depends()) -> Response:
         """Export the current provider page as comma-separated values (CSV)."""
-        result = await _run_search_request(params, cache=active_cache)
+        result = await _run_search_request(
+            params,
+            cache=active_cache,
+            executor=search_executor,
+        )
         return Response(
             content=format_csv(result.articles),
             media_type="text/csv",
@@ -113,7 +129,11 @@ def create_app(
     @application.get("/api/export/json")
     async def export_json(params: SearchQueryParams = Depends()) -> Response:
         """Export the current provider page as JavaScript Object Notation."""
-        result = await _run_search_request(params, cache=active_cache)
+        result = await _run_search_request(
+            params,
+            cache=active_cache,
+            executor=search_executor,
+        )
         return Response(
             content=format_json(result.articles),
             media_type="application/json",
@@ -146,13 +166,14 @@ async def _run_search_request(
     params: SearchQueryParams,
     *,
     cache: SearchResultCache,
+    executor: SearchExecutor,
 ) -> SearchResult:
     """Validate request parameters and run the shared search pipeline."""
     try:
         request = params.to_search_request()
     except SearchValidationError as exc:
         raise HTTPException(status_code=422, detail=exc.message) from exc
-    return await run_search(request, cache=cache)
+    return await run_search(request, executor=executor, cache=cache)
 
 
 app = create_configured_app()

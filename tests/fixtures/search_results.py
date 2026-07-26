@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from news.search.models import SearchResult
+from news.sources import SourceQueryReport
+from news.sources.base import Article
 
 
 def build_search_result(
@@ -88,3 +90,43 @@ def build_search_result(
             "source_reports": source_reports,
         },
     )
+
+
+def build_provider_response(
+    title: str = "Fed holds rates steady",
+) -> tuple[list[Article], list[SourceQueryReport]]:
+    """Build one normalized provider page and its execution report.
+
+    Parameters
+    ----------
+    title : str, optional
+        Title used by the normalized article.
+
+    Returns
+    -------
+    tuple[list[Article], list[SourceQueryReport]]
+        One article and its successful Guardian source report.
+    """
+    articles = [
+        Article(
+            title=title,
+            url="https://example.com/story",
+            date="2026-03-20",
+            source="guardian",
+            domain="example.com",
+            language="en",
+            summary="Officials left the policy rate unchanged.",
+            section="Business",
+            author="Jane Doe",
+        )
+    ]
+    reports = [
+        SourceQueryReport(
+            name="guardian",
+            display_name="The Guardian",
+            available=True,
+            requested=True,
+            returned=1,
+        )
+    ]
+    return articles, reports

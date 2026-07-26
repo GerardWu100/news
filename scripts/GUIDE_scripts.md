@@ -12,6 +12,8 @@ validation, and dotenv persistence behavior lives in the source package.
 
 - `acled_oauth_token.py`: requests an ACLED OAuth token and persists the bearer
   fields required by the ACLED provider to the root `.env`.
+- `generate_openapi.py`: regenerates the checked-in HTTP API contract from the
+  application routes and response models.
 
 ## Part 2 -- Code Reference
 
@@ -27,6 +29,17 @@ validation, and dotenv persistence behavior lives in the source package.
 Reusable behavior is in `src/news/sources/acled_oauth.py`. That module accepts
 injected network and clock functions so its tests never use a live provider or
 real credential.
+
+- `generate_openapi.py`
+  - Constructs the configured application without starting a server.
+  - Writes stable, sorted JSON to `docs/reference/openapi.json`.
+  - Accepts `--output PATH` for review or tooling workflows.
+
+Regenerate the public contract from the repository root:
+
+```bash
+uv run python scripts/generate_openapi.py
+```
 
 Run from the repository root:
 

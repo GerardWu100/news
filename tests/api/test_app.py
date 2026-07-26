@@ -3,24 +3,49 @@
 from __future__ import annotations
 
 import unittest
+from collections.abc import Sequence
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from unittest.mock import AsyncMock, patch
+from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
-from news.api.app import app
-from tests.fixtures.search_results import build_search_result
-
-FAKE_RESULT = build_search_result("Fed holds rates steady", query="fed")
+from news.api.app import create_app
+from news.sources.base import Article, SourceSearchOptions
+from news.sources import SourceQueryReport
+from news.web.config import load_settings
+from tests.fixtures.search_results import build_provider_response
 
 
 class AppRouteTests(unittest.TestCase):
     """Verify that the public HTTP routes stay wired correctly."""
 
     def setUp(self) -> None:
-        """Create a fresh test client per test."""
-        self.client = TestClient(app)
+        """Create an isolated app with deterministic provider dependencies."""
+        async def fake_search_executor(
+            _options: SourceSearchOptions,
+            _source_names: Sequence[str] | None,
+        ) -> tuple[list[Article], list[SourceQueryReport]]:
+            """Return one offline provider page."""
+            return build_provider_response()
+
+        def fake_source_status() -> list[dict[str, object]]:
+            """Return deterministic source metadata."""
+            return [
+                {
+                    "name": "guardian",
+                    "display_name": "The Guardian",
+                    "description": "Offline fake provider",
+                    "available": True,
+                }
+            ]
+
+        application = create_app(
+            load_settings(),
+            search_executor=fake_search_executor,
+            source_status_provider=fake_source_status,
+        )
+        self.client = TestClient(application)
 
     def test_index_serves_frontend_shell(self) -> None:
         """The root page should serve the browser client."""
@@ -42,17 +67,16 @@ class AppRouteTests(unittest.TestCase):
 
     def test_search_route_returns_structured_response(self) -> None:
         """Search responses should include results and metadata."""
-        with patch("news.api.app.run_search", new=AsyncMock(return_value=FAKE_RESULT)):
-            response = self.client.get(
-                "/api/search",
-                params={
-                    "q": "fed",
-                    "start": "2026-03-01",
-                    "end": "2026-03-20",
-                    "sources": "guardian",
-                    "language": "en",
-                },
-            )
+        response = self.client.get(
+            "/api/search",
+            params={
+                "q": "fed",
+                "start": "2026-03-01",
+                "end": "2026-03-20",
+                "sources": "guardian",
+                "language": "en",
+            },
+        )
 
         self.assertEqual(response.status_code, 200)
         payload = response.json()
@@ -76,11 +100,10 @@ class AppRouteTests(unittest.TestCase):
 
     def test_export_csv_returns_csv_content_type(self) -> None:
         """CSV export should return a download-friendly text/csv response."""
-        with patch("news.api.app.run_search", new=AsyncMock(return_value=FAKE_RESULT)):
-            response = self.client.get(
-                "/api/export/csv",
-                params={"q": "fed", "start": "2026-03-01", "end": "2026-03-20"},
-            )
+        response = self.client.get(
+            "/api/export/csv",
+            params={"q": "fed", "start": "2026-03-01", "end": "2026-03-20"},
+        )
 
         self.assertEqual(response.status_code, 200)
         self.assertIn("text/csv", response.headers["content-type"])
@@ -89,11 +112,10 @@ class AppRouteTests(unittest.TestCase):
 
     def test_export_json_returns_json_array(self) -> None:
         """JSON export should return the raw article array."""
-        with patch("news.api.app.run_search", new=AsyncMock(return_value=FAKE_RESULT)):
-            response = self.client.get(
-                "/api/export/json",
-                params={"q": "fed", "start": "2026-03-01", "end": "2026-03-20"},
-            )
+        response = self.client.get(
+            "/api/export/json",
+            params={"q": "fed", "start": "2026-03-01", "end": "2026-03-20"},
+        )
 
         self.assertEqual(response.status_code, 200)
         self.assertIn("Content-Disposition", response.headers)

@@ -23,3 +23,17 @@ queries selected providers, applies local filters and optional deduplication,
 sorts the final page, and returns normalized article rows plus metadata.
 The API application owns the process-local cache and passes it into the search
 service; low-level search modules do not read configuration files.
+
+The application factory also accepts a provider executor and source-status
+function. Production uses the registered adapters; tests supply offline fakes
+without patching module globals.
+
+## Public Imports
+
+- `news.search` exports validated request/result types, the executor type, the
+  request builder, search runner, and deduplication entry points.
+- `news.sources` exports shared provider models and fan-out entry points, not
+  individual adapters.
+- `news.exports` exports CSV, JSON, and SQLite format functions.
+- Root, API, CLI, and web package initializers intentionally export nothing;
+  callers use explicit module paths for those boundaries.

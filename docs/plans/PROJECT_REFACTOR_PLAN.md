@@ -165,15 +165,15 @@ full suite remains offline and deterministic.
 
 **Objective:** reduce drift between code and user documentation.
 
-- [ ] Decide which Python objects are public and export only those from package
+- [x] Decide which Python objects are public and export only those from package
   `__init__.py` files.
-- [ ] Add an application factory so tests can supply settings, cache, and fake
+- [x] Add an application factory so tests can supply settings, cache, and fake
   providers without patching module globals.
-- [ ] Save the generated OpenAPI schema as a tested contract or generate the
+- [x] Save the generated OpenAPI schema as a tested contract or generate the
   user API reference from it.
-- [ ] Remove file-by-file duplication from `GUIDE_ROOT.md`; keep exact paths in
+- [x] Remove file-by-file duplication from `GUIDE_ROOT.md`; keep exact paths in
   `docs/reference/PROJECT_STRUCTURE.md`.
-- [ ] Update all guide files in the same commit as each structural phase.
+- [x] Update all guide files in the same commit as each structural phase.
 
 **Acceptance:** API changes cause an intentional contract diff, and each
 architectural fact has one authoritative documentation location.

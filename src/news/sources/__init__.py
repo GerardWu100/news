@@ -19,6 +19,16 @@ from .registry import ALL_SOURCES
 
 logger = logging.getLogger(__name__)
 
+__all__ = [
+    "Article",
+    "BaseSource",
+    "SourcePageResult",
+    "SourceQueryReport",
+    "SourceSearchOptions",
+    "get_source_status",
+    "search_all_detailed",
+]
+
 
 @dataclass(frozen=True, slots=True)
 class SourceQueryReport:

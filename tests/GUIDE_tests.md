@@ -29,7 +29,9 @@ tests/
 ├── GUIDE_tests.md
 ├── api/
 │   ├── test_app.py
-│   └── test_config.py
+│   ├── test_config.py
+│   ├── test_openapi_contract.py
+│   └── test_public_exports.py
 ├── cli/
 │   └── test_cli.py
 ├── exports/
@@ -62,9 +64,14 @@ Package marker files are omitted from the tree.
 ### API and configuration
 
 - `api/test_app.py` checks the browser shell, JSON routes, search/export
-  responses, validation errors, and runtime resource resolution.
+  responses, validation errors, runtime resource resolution, and factory
+  injection through offline provider dependencies.
 - `api/test_config.py` checks packaged defaults, partial overrides, immutable
   settings, malformed TOML, misspelled keys, source names, and cache limits.
+- `api/test_openapi_contract.py` compares generated OpenAPI output with the
+  checked-in schema.
+- `api/test_public_exports.py` protects the intentional package-level import
+  surfaces.
 
 ### CLI and exports
 
@@ -97,8 +104,8 @@ Package marker files are omitted from the tree.
 - `web/test_static.py` checks security-sensitive article-link rendering.
 - `web/test_wheel_installation.py` builds and installs a clean wheel, then
   requests `/` outside the source checkout.
-- `fixtures/search_results.py` builds schema-complete results shared by API and
-  cache tests.
+- `fixtures/search_results.py` builds schema-complete results and provider
+  responses shared across boundary and cache tests.
 
 ### How to run
 

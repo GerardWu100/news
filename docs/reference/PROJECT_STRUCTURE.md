@@ -69,12 +69,15 @@ in `docs/plans/PROJECT_REFACTOR_PLAN.md`.
 │                   └── state.js
 ├── scripts/
 │   ├── GUIDE_scripts.md
-│   └── acled_oauth_token.py
+│   ├── acled_oauth_token.py
+│   └── generate_openapi.py
 ├── tests/
 │   ├── GUIDE_tests.md
 │   ├── api/
 │   │   ├── test_app.py
-│   │   └── test_config.py
+│   │   ├── test_config.py
+│   │   ├── test_openapi_contract.py
+│   │   └── test_public_exports.py
 │   ├── cli/
 │   │   └── test_cli.py
 │   ├── exports/
@@ -102,7 +105,8 @@ in `docs/plans/PROJECT_REFACTOR_PLAN.md`.
     ├── plans/
     │   └── PROJECT_REFACTOR_PLAN.md
     ├── reference/
-    │   └── PROJECT_STRUCTURE.md
+    │   ├── PROJECT_STRUCTURE.md
+    │   └── openapi.json
     └── user/
         └── API_REFERENCE.md
 ```
@@ -120,7 +124,7 @@ readability.
 | `src/news/search/` | Validated search behavior, cache, filters, deduplication, and metadata |
 | `src/news/sources/` | Provider access, ACLED OAuth bootstrap, retry/cooldown behavior, registry, and concurrent fan-out |
 | `src/news/web/` | Typed configuration validation, package defaults, path lookup, and installed browser assets |
-| `scripts/` | Local ACLED credential bootstrap |
+| `scripts/` | Thin ACLED credential and OpenAPI generation commands |
 | `tests/` | Deterministic offline regression coverage |
 | `docs/plans/` | Forward-looking work that has not necessarily been implemented |
 | `docs/reference/` | Developer ground truth for the implemented system |

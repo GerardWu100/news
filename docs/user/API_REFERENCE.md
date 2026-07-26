@@ -37,7 +37,8 @@ Validation notes:
 
 ## `GET /api/config`
 
-Returns frontend defaults from `config.toml`.
+Returns the validated frontend settings resolved from an explicit path,
+`NEWS_CONFIG`, current-directory `config.toml`, or packaged defaults.
 
 ### Example
 
@@ -198,3 +199,15 @@ Other common validation failures:
 - reversed date range
 - date range longer than 366 days
 - invalid enum value for `match_mode`, `search_scope`, `provider_sort`, `sort`, or `newsapi_search_in`
+
+## OpenAPI Contract
+
+The generated OpenAPI schema is checked in at
+`docs/reference/openapi.json`. Tests compare it with the current FastAPI routes
+and response models so a public contract change must be reviewed explicitly.
+
+Regenerate it after an intentional API change:
+
+```bash
+uv run python scripts/generate_openapi.py
+```
