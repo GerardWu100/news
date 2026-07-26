@@ -27,7 +27,9 @@ uv run python scripts/acled_oauth_token.py
 
 The server resolves configuration in this order: `news-server --config PATH`,
 the `NEWS_CONFIG` environment variable, `config.toml` in the current working
-directory, then package defaults.
+directory, then package defaults. External files may override only the settings
+they need; unknown keys, unknown source names, malformed TOML, and non-positive
+cache limits stop startup with a configuration error.
 
 ## Documentation
 

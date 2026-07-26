@@ -1,14 +1,14 @@
-"""FastAPI application for search, export, and frontend delivery.
+"""FastAPI application construction for search and frontend delivery.
 
-The module wires HTTP routes to the validated package search pipeline and keeps
-request parsing, config reads, and response serialization in one place.
+The application boundary loads credentials and validated settings once, builds
+the process-local cache, and injects those objects into route behavior.
 """
 
 from __future__ import annotations
 
 import argparse
 import os
-from typing import Any
+from pathlib import Path
 
 from dotenv import load_dotenv
 
@@ -24,81 +24,138 @@ from news.api.models import (
 from news.api.params import SearchQueryParams
 from news.exports.formats import format_csv, format_json
 from news.search import run_search
+from news.search.cache import SearchResultCache, build_search_cache
 from news.search.errors import SearchValidationError
+from news.search.models import SearchResult
 from news.sources import get_source_status
-from news.web.config import read_frontend_config
+from news.web.config import AppSettings, load_settings
 from news.web.paths import CONFIG_ENVIRONMENT_VARIABLE, env_path, static_dir
 
-load_dotenv(env_path())
-STATIC_DIR = static_dir()
-
-app = FastAPI(
-    title="Historical News Search Engine",
-    description=(
-        "Search GDELT, MediaCloud, ACLED, The New York Times, and "
-        "The Guardian, and NewsAPI by keyword and date range."
-    ),
-    version="0.1.0",
+APP_TITLE = "Historical News Search Engine"
+APP_DESCRIPTION = (
+    "Search GDELT, MediaCloud, ACLED, The New York Times, The Guardian, "
+    "and NewsAPI by keyword and date range."
 )
-
-app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
-
-
-@app.get("/")
-async def index() -> FileResponse:
-    """Serve the browser app."""
-    return FileResponse(str(STATIC_DIR / "index.html"))
+APP_VERSION = "0.1.0"
+SERVER_HOST = "127.0.0.1"
+SERVER_PORT = 8000
 
 
-@app.get("/api/config", response_model=FrontendConfigResponse)
-async def config() -> dict[str, Any]:
-    """Return frontend configuration values."""
-    return read_frontend_config()
+def create_app(
+    settings: AppSettings,
+    *,
+    search_cache: SearchResultCache | None = None,
+) -> FastAPI:
+    """Construct an application from validated runtime dependencies.
 
+    Parameters
+    ----------
+    settings : AppSettings
+        Immutable frontend and cache settings.
+    search_cache : SearchResultCache | None, optional
+        Cache supplied by a caller or test. ``None`` builds one from settings.
 
-@app.get("/api/sources", response_model=list[SourceStatusResponse])
-async def sources() -> list[dict[str, Any]]:
-    """Return source metadata and availability."""
-    return get_source_status()
-
-
-@app.get("/api/search", response_model=SearchResponse)
-async def search(params: SearchQueryParams = Depends()) -> dict[str, Any]:
-    """Search providers and return the merged article page."""
-    result = await _run_search_request(params)
-    return result.to_payload()
-
-
-@app.get("/api/export/csv")
-async def export_csv(params: SearchQueryParams = Depends()) -> Response:
-    """Export the current provider page as CSV."""
-    result = await _run_search_request(params)
-    return Response(
-        content=format_csv(result.articles),
-        media_type="text/csv",
-        headers={"Content-Disposition": 'attachment; filename="news_export.csv"'},
+    Returns
+    -------
+    FastAPI
+        Fully configured application with routes and packaged static assets.
+    """
+    active_cache = (
+        build_search_cache(settings.cache)
+        if search_cache is None
+        else search_cache
+    )
+    static_assets = static_dir()
+    application = FastAPI(
+        title=APP_TITLE,
+        description=APP_DESCRIPTION,
+        version=APP_VERSION,
+    )
+    application.state.settings = settings
+    application.state.search_cache = active_cache
+    application.mount(
+        "/static",
+        StaticFiles(directory=str(static_assets)),
+        name="static",
     )
 
+    @application.get("/")
+    async def index() -> FileResponse:
+        """Serve the browser app."""
+        return FileResponse(str(static_assets / "index.html"))
 
-@app.get("/api/export/json")
-async def export_json(params: SearchQueryParams = Depends()) -> Response:
-    """Export the current provider page as JSON."""
-    result = await _run_search_request(params)
-    return Response(
-        content=format_json(result.articles),
-        media_type="application/json",
-        headers={"Content-Disposition": 'attachment; filename="news_export.json"'},
-    )
+    @application.get("/api/config", response_model=FrontendConfigResponse)
+    async def config() -> dict[str, object]:
+        """Return validated frontend configuration values."""
+        return settings.frontend.to_dict()
+
+    @application.get("/api/sources", response_model=list[SourceStatusResponse])
+    async def sources() -> list[dict[str, object]]:
+        """Return source metadata and availability."""
+        return get_source_status()
+
+    @application.get("/api/search", response_model=SearchResponse)
+    async def search(params: SearchQueryParams = Depends()) -> dict[str, object]:
+        """Search providers and return the merged article page."""
+        result = await _run_search_request(params, cache=active_cache)
+        return result.to_payload()
+
+    @application.get("/api/export/csv")
+    async def export_csv(params: SearchQueryParams = Depends()) -> Response:
+        """Export the current provider page as comma-separated values (CSV)."""
+        result = await _run_search_request(params, cache=active_cache)
+        return Response(
+            content=format_csv(result.articles),
+            media_type="text/csv",
+            headers={"Content-Disposition": 'attachment; filename="news_export.csv"'},
+        )
+
+    @application.get("/api/export/json")
+    async def export_json(params: SearchQueryParams = Depends()) -> Response:
+        """Export the current provider page as JavaScript Object Notation."""
+        result = await _run_search_request(params, cache=active_cache)
+        return Response(
+            content=format_json(result.articles),
+            media_type="application/json",
+            headers={"Content-Disposition": 'attachment; filename="news_export.json"'},
+        )
+
+    return application
 
 
-async def _run_search_request(params: SearchQueryParams):
+def create_configured_app(
+    config_file: Path | str | None = None,
+) -> FastAPI:
+    """Load local credentials and settings, then construct the application.
+
+    Parameters
+    ----------
+    config_file : Path | str | None, optional
+        Explicit TOML configuration path. ``None`` applies normal resolution.
+
+    Returns
+    -------
+    FastAPI
+        Application configured for the current process.
+    """
+    load_dotenv(env_path())
+    return create_app(load_settings(config_file))
+
+
+async def _run_search_request(
+    params: SearchQueryParams,
+    *,
+    cache: SearchResultCache,
+) -> SearchResult:
     """Validate request parameters and run the shared search pipeline."""
     try:
         request = params.to_search_request()
     except SearchValidationError as exc:
         raise HTTPException(status_code=422, detail=exc.message) from exc
+    return await run_search(request, cache=cache)
 
-    return await run_search(request)
+
+app = create_configured_app()
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -124,9 +181,10 @@ def main(argv: list[str] | None = None) -> None:
         os.environ[CONFIG_ENVIRONMENT_VARIABLE] = args.config
 
     uvicorn.run(
-        "news.api.app:app",
-        host="127.0.0.1",
-        port=8000,
+        "news.api.app:create_configured_app",
+        factory=True,
+        host=SERVER_HOST,
+        port=SERVER_PORT,
         reload=True,
     )
 

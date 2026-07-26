@@ -111,15 +111,15 @@ repository and a clean wheel installation.
 
 **Objective:** fail early when configuration is invalid.
 
-- [ ] Introduce immutable settings types for frontend defaults and cache
+- [x] Introduce immutable settings types for frontend defaults and cache
   settings.
-- [ ] Validate source names, positive cache capacity, and positive
+- [x] Validate source names, positive cache capacity, and positive
   time-to-live values at startup.
-- [ ] Define every setting once; do not repeat defaults in Python, TOML, and
+- [x] Define every setting once; do not repeat defaults in Python, TOML, and
   JavaScript.
-- [ ] Pass settings into cache and application construction rather than reading
+- [x] Pass settings into cache and application construction rather than reading
   global files from low-level modules.
-- [ ] Add tests for missing config, malformed TOML, unknown sources, and invalid
+- [x] Add tests for missing config, malformed TOML, unknown sources, and invalid
   numeric values.
 
 **Acceptance:** invalid settings produce one clear startup error, while an

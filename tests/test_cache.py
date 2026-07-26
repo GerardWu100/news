@@ -125,6 +125,13 @@ class SearchResultCacheTests(unittest.TestCase):
         self.assertIsNotNone(cache.get(request_two))
         self.assertIsNotNone(cache.get(request_three))
 
+    def test_cache_rejects_non_positive_limits(self) -> None:
+        """Direct cache construction should preserve validated invariants."""
+        with self.assertRaisesRegex(ValueError, "ttl_seconds"):
+            SearchResultCache(ttl_seconds=0, max_entries=1)
+        with self.assertRaisesRegex(ValueError, "max_entries"):
+            SearchResultCache(ttl_seconds=1, max_entries=0)
+
 
 class RunSearchCacheIntegrationTests(unittest.IsolatedAsyncioTestCase):
     """Test that ``run_search`` reuses cached results for identical requests."""

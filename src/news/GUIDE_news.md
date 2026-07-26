@@ -12,11 +12,13 @@ news retrieval.
 - `sources/`: source registry, fan-out, retry behavior, and provider adapters.
 - `exports/`: CSV, JSON, and SQLite serialization.
 - `cli/`: command-line parser, fetch paths, output rendering, and workflow orchestration.
-- `web/`: installed static browser assets, packaged defaults, and external
-  configuration-path helpers.
+- `web/`: installed static browser assets, packaged defaults, external
+  configuration-path helpers, and immutable validated settings.
 
 ## Runtime Flow
 
 Browser and CLI inputs become validated search requests. The search service
 queries selected providers, applies local filters and optional deduplication,
 sorts the final page, and returns normalized article rows plus metadata.
+The API application owns the process-local cache and passes it into the search
+service; low-level search modules do not read configuration files.

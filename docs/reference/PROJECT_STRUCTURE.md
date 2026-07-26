@@ -74,6 +74,7 @@ in `docs/plans/PROJECT_REFACTOR_PLAN.md`.
 │   ├── test_app.py
 │   ├── test_cache.py
 │   ├── test_cli.py
+│   ├── test_config.py
 │   ├── test_export.py
 │   ├── test_frontend_static.py
 │   ├── test_retry.py
@@ -100,7 +101,7 @@ readability.
 | `src/news/exports/` | CSV, JSON, and SQLite serialization |
 | `src/news/search/` | Validated search behavior, cache, filters, deduplication, and metadata |
 | `src/news/sources/` | Provider access, retry/cooldown behavior, registry, and concurrent fan-out |
-| `src/news/web/` | Configuration lookup, package defaults, and installed browser assets |
+| `src/news/web/` | Typed configuration validation, package defaults, path lookup, and installed browser assets |
 | `scripts/` | Local ACLED credential bootstrap |
 | `tests/` | Deterministic offline regression coverage |
 | `docs/plans/` | Forward-looking work that has not necessarily been implemented |

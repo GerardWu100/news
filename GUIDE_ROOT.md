@@ -31,7 +31,8 @@ article bodies or provide a general data-science workspace.
   never tracked.
 - `config.toml` contains documented frontend and cache settings. An explicit
   server option or `NEWS_CONFIG` can select a different file; packaged defaults
-  keep wheel installations runnable without one.
+  keep wheel installations runnable without one. Startup merges external
+  overrides into those defaults and validates the immutable result.
 - Exports are created only when a caller requests them; no empty output tree is
   tracked.
 - `.venv`, caches, logs, and generated artifacts are ignored.
@@ -91,8 +92,8 @@ are in `docs/plans/PROJECT_REFACTOR_PLAN.md`.
 - `src/news/cli/`
   - Owns terminal parsing, API/direct fetch paths, rendering, and export flow.
 - `src/news/web/`
-  - Resolves external configuration and current-directory credentials, and
-    owns installed static resources.
+  - Resolves external configuration and current-directory credentials, creates
+    immutable validated settings, and owns installed static resources.
 - `src/news/web/static/`
   - See `src/news/web/static/GUIDE_static.md`.
 - `scripts/`
@@ -104,3 +105,4 @@ are in `docs/plans/PROJECT_REFACTOR_PLAN.md`.
 
 - 2026-07-26: Removed the notebook research workspace, Jupyter dependencies, empty placeholder folders, and completed historical plans; future cleanup follows `docs/plans/PROJECT_REFACTOR_PLAN.md`.
 - 2026-07-26: Packaged the browser assets and defaults so wheel installations no longer depend on repository-parent path traversal.
+- 2026-07-26: Replaced permissive configuration dictionaries with immutable validated settings and explicit cache injection.

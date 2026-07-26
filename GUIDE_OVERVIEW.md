@@ -42,17 +42,19 @@ clean, provider-aware search and export workflow for research.
 ## Architecture and Data Flow
 
 1. The `news-server` command loads credentials and starts the FastAPI app.
-2. The browser or CLI submits a validated request.
-3. The search package checks whether the same request is already available in a short
+2. Startup merges the selected operator configuration over packaged defaults,
+   validates it, and constructs the process-local cache.
+3. The browser or CLI submits a validated request.
+4. The search package checks whether the same request is already available in a short
    in-memory cache.
-4. If not cached, requested providers are queried concurrently.
-5. Each provider response is normalized into the common article schema.
-6. Local filtering applies shared rules such as language, exact-phrase,
+5. If not cached, requested providers are queried concurrently.
+6. Each provider response is normalized into the common article schema.
+7. Local filtering applies shared rules such as language, exact-phrase,
    exclude-term, and domain filtering.
-7. Optional deduplication collapses canonical-URL matches first, then obvious
+8. Optional deduplication collapses canonical-URL matches first, then obvious
    same-day syndicated headline matches.
-8. The final provider page is sorted and returned through the API.
-9. The browser renders the page directly. The CLI can print it or export it.
+9. The final provider page is sorted and returned through the API.
+10. The browser renders the page directly. The CLI can print it or export it.
 
 ## Reliability and Operational Behavior
 
@@ -65,6 +67,8 @@ clean, provider-aware search and export workflow for research.
   return usable results.
 - Invalid dates, unknown source names, and oversized date ranges are rejected
   before any outbound network work starts.
+- Malformed or misspelled configuration and invalid cache limits are rejected
+  before the server accepts requests.
 
 ## Product Boundaries and Assumptions
 

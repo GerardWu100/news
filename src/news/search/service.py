@@ -10,7 +10,7 @@ from typing import Awaitable, Callable, Sequence
 
 from ..sources import SourceQueryReport, search_all_detailed
 from ..sources.base import Article, SourceSearchOptions
-from .cache import SearchResultCache, build_default_search_cache
+from .cache import SearchResultCache
 from .deduplication import deduplicate_articles
 from .filters import apply_post_filters, sort_articles
 from .models import SearchRequest, SearchResult
@@ -19,9 +19,6 @@ SearchExecutor = Callable[
     [SourceSearchOptions, Sequence[str] | None],
     Awaitable[tuple[list[Article], list[SourceQueryReport]]],
 ]
-DEFAULT_SEARCH_CACHE = build_default_search_cache()
-
-
 async def run_search(
     request: SearchRequest,
     executor: SearchExecutor = search_all_detailed,
@@ -41,18 +38,16 @@ async def run_search(
     use_cache : bool, optional
         When ``True``, read from and write to the provided cache.
     cache : SearchResultCache | None, optional
-        In-memory cache instance. ``None`` uses the process-default cache.
+        In-memory cache instance. ``None`` performs no cache reads or writes.
 
     Returns
     -------
     SearchResult
         Normalized article rows and response metadata ready for API/CLI output.
     """
-    active_cache = DEFAULT_SEARCH_CACHE if cache is None else cache
-
     # Return the cached payload early so repeated requests avoid provider calls.
-    if use_cache:
-        cached_result = active_cache.get(request)
+    if use_cache and cache is not None:
+        cached_result = cache.get(request)
         if cached_result is not None:
             return cached_result
 
@@ -109,10 +104,10 @@ async def run_search(
         ),
     )
 
-    if use_cache:
+    if use_cache and cache is not None:
         # Store the fully assembled result so future identical requests can skip
         # source fan-out and downstream filtering work.
-        active_cache.set(request, result)
+        cache.set(request, result)
 
     return result
 

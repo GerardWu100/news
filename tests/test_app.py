@@ -179,17 +179,17 @@ class RuntimePathTests(unittest.TestCase):
 
     def test_missing_external_config_uses_packaged_defaults(self) -> None:
         """An installed app should start without a local config file."""
-        from news.web.config import read_config
+        from news.web.config import load_settings
 
         with TemporaryDirectory() as temporary_directory:
             with (
                 patch("pathlib.Path.cwd", return_value=Path(temporary_directory)),
                 patch.dict("os.environ", {}, clear=True),
             ):
-                config = read_config()
+                settings = load_settings()
 
-        self.assertEqual(config["cache"]["ttl_seconds"], 300)
-        self.assertEqual(config["frontend"]["default_sources"], [])
+        self.assertEqual(settings.cache.ttl_seconds, 300)
+        self.assertEqual(settings.frontend.default_sources, ())
 
 
 if __name__ == "__main__":

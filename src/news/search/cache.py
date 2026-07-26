@@ -13,13 +13,9 @@ from collections import OrderedDict
 from time import monotonic
 from typing import Callable
 
-from news.web.config import read_config
+from news.web.config import CacheSettings
 
 from .models import SearchRequest, SearchResult
-
-DEFAULT_CACHE_TTL_SECONDS = 300
-DEFAULT_CACHE_MAX_ENTRIES = 100
-
 
 class SearchResultCache:
     """TTL cache keyed by the fully validated ``SearchRequest`` object."""
@@ -32,8 +28,12 @@ class SearchResultCache:
         clock: Callable[[], float] = monotonic,
     ) -> None:
         """Create a cache with explicit lifetime and capacity limits."""
-        self.ttl_seconds = max(1, int(ttl_seconds))
-        self.max_entries = max(1, int(max_entries))
+        if ttl_seconds <= 0:
+            raise ValueError("ttl_seconds must be positive")
+        if max_entries <= 0:
+            raise ValueError("max_entries must be positive")
+        self.ttl_seconds = ttl_seconds
+        self.max_entries = max_entries
         self._clock = clock
         self._entries: OrderedDict[SearchRequest, tuple[float, SearchResult]] = (
             OrderedDict()
@@ -85,31 +85,9 @@ class SearchResultCache:
             self._entries.pop(request, None)
 
 
-def build_default_search_cache() -> SearchResultCache:
-    """Construct the process-wide cache from ``config.toml`` defaults."""
-    ttl_seconds, max_entries = _read_cache_config()
+def build_search_cache(settings: CacheSettings) -> SearchResultCache:
+    """Construct a search cache from validated application settings."""
     return SearchResultCache(
-        ttl_seconds=ttl_seconds,
-        max_entries=max_entries,
+        ttl_seconds=settings.ttl_seconds,
+        max_entries=settings.max_entries,
     )
-
-
-def _read_cache_config() -> tuple[int, int]:
-    """Read cache settings from ``config.toml`` with safe fallbacks."""
-    cache_config = read_config().get("cache", {})
-    ttl_seconds = _coerce_positive_int(
-        cache_config.get("ttl_seconds"),
-        DEFAULT_CACHE_TTL_SECONDS,
-    )
-    max_entries = _coerce_positive_int(
-        cache_config.get("max_entries"),
-        DEFAULT_CACHE_MAX_ENTRIES,
-    )
-    return ttl_seconds, max_entries
-
-
-def _coerce_positive_int(value: object, default: int) -> int:
-    """Convert config values to positive integers with a fallback."""
-    if isinstance(value, int) and value > 0:
-        return value
-    return default

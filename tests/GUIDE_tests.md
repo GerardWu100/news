@@ -44,6 +44,7 @@ tests/
 ├── test_app.py            -- FastAPI route smoke tests.
 ├── test_cache.py          -- Cache TTL, eviction, and search-cache integration tests.
 ├── test_cli.py            -- CLI parser and table-rendering tests.
+├── test_config.py         -- Typed configuration defaults and validation tests.
 ├── test_export.py         -- CSV, JSON, and SQLite export tests.
 ├── test_frontend_static.py -- Static checks for security-sensitive frontend rendering.
 ├── test_retry.py          -- Retry helper tests.
@@ -119,6 +120,14 @@ tests/
 - Verifies `run_search(...)` does not bind the default cache object in its signature.
 - The cache integration fake executor is typed to match the production search
   executor shape.
+
+### `test_config.py`
+
+- Verifies an absent optional file uses packaged defaults.
+- Verifies partial operator files override only selected values.
+- Verifies malformed TOML, misspelled keys, unknown source names, and invalid
+  cache limits fail clearly.
+- Verifies the resulting settings objects are immutable.
 
 ### `test_retry.py`
 

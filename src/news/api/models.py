@@ -12,8 +12,8 @@ from pydantic import BaseModel, Field
 class FrontendConfigResponse(BaseModel):
     """Frontend defaults returned by ``GET /api/config``."""
 
-    default_english_only: bool = False
-    default_sources: list[str] = Field(default_factory=list)
+    default_english_only: bool
+    default_sources: list[str]
 
 
 class SourceStatusResponse(BaseModel):
