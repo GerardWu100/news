@@ -1,0 +1,51 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+.worktrees/
+
+# Local secrets
+.env
+.env*
+
+# macOS Finder metadata
+.DS_Store
+
+# Local secrets, credentials, and machine-specific state.
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.csr
+id_rsa
+id_dsa
+id_ecdsa
+id_ed25519
+credentials.json
+client_secret*.json
+secrets.json
+secrets.toml
+*.token
+*.secret
+.netrc
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.ipynb_checkpoints/
+.vscode/
+.idea/
+*.log
+
+# OAuth and API response artifacts may contain bearer or refresh tokens.
+notebooks/api_explorer/*/outputs/*
+!notebooks/api_explorer/*/outputs/.gitkeep
+outputs/

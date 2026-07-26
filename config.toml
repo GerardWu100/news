@@ -1,0 +1,7 @@
+[frontend]
+default_english_only = true
+default_sources = ["guardian", "nyt"]
+
+[cache]
+ttl_seconds = 300
+max_entries = 100

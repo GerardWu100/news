@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>News Search Engine</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <header class="hero">
+        <p class="eyebrow">Historical Retrieval</p>
+        <h1>News Explorer</h1>
+        <p class="hero-copy">
+            Search across publisher archives, event databases, and public news indexes with
+            local deduplication and provider-aware filters.
+        </p>
+        <div class="hero-rule" aria-hidden="true"></div>
+    </header>
+
+    <main class="layout">
+        <section class="glass-panel">
+            <form class="search-form" id="search-form">
+                <div class="search-row">
+                    <input type="text" id="query" placeholder="Keywords or boolean query" required>
+                    <input type="date" id="start-date" required>
+                    <input type="date" id="end-date" required>
+                    <button type="submit" id="search-btn">Search</button>
+                </div>
+
+                <div class="form-grid">
+                    <div class="control-group">
+                        <span class="control-label">Sources</span>
+                        <div class="source-checks" id="source-checks"></div>
+                    </div>
+
+                    <div class="control-group">
+                        <span class="control-label">Quick Filters</span>
+                        <div class="inline-controls">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="english-only">
+                                English Only
+                            </label>
+
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="dedupe" checked>
+                                Deduplicate
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <details class="advanced-panel">
+                    <summary>Advanced Search</summary>
+                    <p class="advanced-copy">
+                        Provider-aware filters apply where supported: Guardian and NYT handle
+                        section-style filters, NewsAPI supports field-scoped search and domain
+                        exclusions, and GDELT/MediaCloud stay broad with stronger local filtering.
+                    </p>
+                    <div class="advanced-grid">
+                        <label>
+                            <span>Exact Phrase</span>
+                            <input type="text" id="exact-phrase" placeholder="e.g. federal reserve">
+                        </label>
+
+                        <label>
+                            <span>Exclude Terms</span>
+                            <input type="text" id="exclude-terms" placeholder="e.g. sports, gossip">
+                        </label>
+
+                        <label>
+                            <span>Include Domains</span>
+                            <input type="text" id="domain-filter" placeholder="e.g. reuters.com, wsj.com">
+                        </label>
+
+                        <label>
+                            <span>Exclude Domains</span>
+                            <input type="text" id="exclude-domains" placeholder="e.g. youtube.com, reddit.com">
+                        </label>
+
+                        <label>
+                            <span>Search Scope</span>
+                            <select id="search-scope">
+                                <option value="all" selected>All Available Fields</option>
+                                <option value="title">Title Only</option>
+                            </select>
+                        </label>
+
+                        <label>
+                            <span>Keyword Match</span>
+                            <select id="match-mode">
+                                <option value="provider" selected>Provider Default</option>
+                                <option value="all_terms">Require All Terms</option>
+                                <option value="any_term">Require Any Term</option>
+                            </select>
+                        </label>
+
+                        <label>
+                            <span>Provider Ranking</span>
+                            <select id="provider-sort">
+                                <option value="default" selected>Provider Default</option>
+                                <option value="newest">Newest</option>
+                                <option value="oldest">Oldest</option>
+                                <option value="relevance">Relevance</option>
+                                <option value="popularity">Popularity</option>
+                            </select>
+                        </label>
+
+                        <label>
+                            <span>Section</span>
+                            <input type="text" id="section-filter" placeholder="e.g. business, world">
+                        </label>
+
+                        <label>
+                            <span>NYT News Desk</span>
+                            <input type="text" id="news-desk-filter" placeholder="e.g. Business Day, Washington">
+                        </label>
+
+                        <label>
+                            <span>Guardian Tag</span>
+                            <input type="text" id="guardian-tag-filter" placeholder="e.g. business/economics">
+                        </label>
+
+                        <label>
+                            <span>NewsAPI Search In</span>
+                            <select id="newsapi-search-in">
+                                <option value="all" selected>All Indexed Fields</option>
+                                <option value="title">Title</option>
+                                <option value="description">Description</option>
+                                <option value="content">Content</option>
+                                <option value="title,description">Title + Description</option>
+                                <option value="title,content">Title + Content</option>
+                                <option value="description,content">Description + Content</option>
+                                <option value="title,description,content">Title + Description + Content</option>
+                            </select>
+                        </label>
+
+                        <label>
+                            <span>Sort Order</span>
+                            <select id="sort-order">
+                                <option value="date_desc" selected>Newest First</option>
+                                <option value="date_asc">Oldest First</option>
+                            </select>
+                        </label>
+                    </div>
+                </details>
+            </form>
+        </section>
+
+        <section class="results-shell">
+            <div class="meta-bar">
+                <div id="meta-bar"></div>
+                <button class="secondary-btn" id="copy-link-btn" type="button" hidden>Copy query link</button>
+            </div>
+            <div class="status-strip" id="status-strip"></div>
+            <div class="results" id="results"></div>
+            <div class="pagination-shell" id="pagination-shell" hidden>
+                <button class="pager-btn" id="previous-page-btn" type="button">Previous</button>
+                <span class="pagination-label" id="pagination-label">Page 1</span>
+                <button class="pager-btn" id="next-page-btn" type="button">Next Page</button>
+            </div>
+        </section>
+    </main>
+
+    <dialog class="article-dialog" id="article-dialog">
+        <div class="article-dialog-card">
+            <button class="article-dialog-close" id="article-dialog-close" type="button" aria-label="Close article detail">Close</button>
+            <div class="article-dialog-body" id="article-dialog-body"></div>
+        </div>
+    </dialog>
+
+    <script type="module" src="/static/scripts/app.js"></script>
+</body>
+</html>
