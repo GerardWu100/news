@@ -56,7 +56,3 @@ class FrontendResearchWorkflowTests(unittest.TestCase):
         self.assertIn('buildExportUrl("json"', app_source)
         self.assertIn('buildExportUrl("csv"', app_source)
         self.assertIn("renderResearchWindow(payload.meta)", app_source)
-
-
-if __name__ == "__main__":
-    unittest.main()

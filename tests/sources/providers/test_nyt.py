@@ -7,7 +7,6 @@ import unittest
 import httpx
 
 from news.sources.base import SourceSearchOptions
-from news.sources.common import record_rate_limit_cooldown
 from news.sources.providers.nyt import DEFAULT_RATE_LIMIT_COOLDOWN_SECONDS
 from news.sources.providers.nyt import NewYorkTimesSource
 
@@ -52,8 +51,7 @@ class NewYorkTimesCooldownTests(unittest.IsolatedAsyncioTestCase):
             headers={"Retry-After": "5"},
             request=httpx.Request("GET", source._BASE_URL),
         )
-        record_rate_limit_cooldown(
-            source._cooldown,
+        source._cooldown.activate_from_response(
             throttled_response,
             default_seconds=DEFAULT_RATE_LIMIT_COOLDOWN_SECONDS,
         )
@@ -68,7 +66,3 @@ class NewYorkTimesCooldownTests(unittest.IsolatedAsyncioTestCase):
             )
 
         self.assertIn("Try again in", str(context.exception))
-
-
-if __name__ == "__main__":
-    unittest.main()

@@ -315,11 +315,13 @@ def _update_env_file(path: Path, updates: Mapping[str, str]) -> None:
     for line in existing_lines:
         stripped_line = line.strip()
         key = stripped_line.split("=", 1)[0] if "=" in stripped_line else ""
-        if key in updates:
-            if key in pending_updates:
-                output_lines.append(f"{key}={pending_updates.pop(key)}")
-        else:
+        if key not in updates:
             output_lines.append(line)
+            continue
+
+        # Replace the first occurrence and drop stale duplicate definitions.
+        if key in pending_updates:
+            output_lines.append(f"{key}={pending_updates.pop(key)}")
 
     if pending_updates:
         if output_lines and output_lines[-1].strip():

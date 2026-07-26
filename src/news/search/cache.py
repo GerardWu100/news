@@ -42,16 +42,14 @@ class SearchResultCache:
 
     def get(self, request: SearchRequest) -> SearchResult | None:
         """Return a deep-copied cached result if the entry is still fresh."""
+        # Expire the cache once before lookup so the requested entry needs no
+        # second age check.
         self._evict_expired()
         entry = self._entries.get(request)
         if entry is None:
             return None
 
-        stored_at, result = entry
-        if self._clock() - stored_at >= self.ttl_seconds:
-            self._entries.pop(request, None)
-            return None
-
+        _, result = entry
         self._entries.move_to_end(request)
         return copy.deepcopy(result)
 
@@ -83,7 +81,7 @@ class SearchResultCache:
             if now - stored_at >= self.ttl_seconds
         ]
         for request in expired_keys:
-            self._entries.pop(request, None)
+            del self._entries[request]
 
 
 def build_search_cache(settings: CacheSettings) -> SearchResultCache:

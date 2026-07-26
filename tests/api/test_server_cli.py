@@ -51,7 +51,3 @@ class ServerCommandTests(unittest.TestCase):
                 capture_output=True,
                 text=True,
             )
-
-
-if __name__ == "__main__":
-    unittest.main()

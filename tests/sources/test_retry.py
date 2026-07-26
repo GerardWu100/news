@@ -17,7 +17,7 @@ class _StubAsyncClient:
         self.responses = list(responses)
         self.calls = 0
 
-    async def get(self, url: str, **kwargs: object) -> httpx.Response:
+    async def get(self, _url: str, **_kwargs: object) -> httpx.Response:
         """Return the next queued object or raise it if it is an exception."""
         self.calls += 1
         next_item = self.responses.pop(0)
@@ -68,13 +68,27 @@ class RetryTests(unittest.IsolatedAsyncioTestCase):
         request = httpx.Request("GET", "https://example.com")
         client = _StubAsyncClient([httpx.Response(400, request=request)])
 
-        with patch("news.sources.retry.asyncio.sleep", new=AsyncMock()) as sleep:
-            with self.assertRaises(httpx.HTTPStatusError):
-                await get_with_retry(client, "https://example.com")
+        with (
+            patch("news.sources.retry.asyncio.sleep", new=AsyncMock()) as sleep,
+            self.assertRaises(httpx.HTTPStatusError),
+        ):
+            await get_with_retry(client, "https://example.com")
 
         self.assertEqual(client.calls, 1)
         sleep.assert_not_awaited()
 
+    async def test_raises_after_final_retryable_failure(self) -> None:
+        """The final retryable error should reach the caller unchanged."""
+        request = httpx.Request("GET", "https://example.com")
+        responses = [httpx.Response(503, request=request) for _ in range(3)]
+        client = _StubAsyncClient(responses)
 
-if __name__ == "__main__":
-    unittest.main()
+        with (
+            patch("news.sources.retry.asyncio.sleep", new=AsyncMock()) as sleep,
+            self.assertRaises(httpx.HTTPStatusError) as context,
+        ):
+            await get_with_retry(client, "https://example.com")
+
+        self.assertEqual(client.calls, 3)
+        self.assertEqual(sleep.await_count, 2)
+        self.assertIs(context.exception.response, responses[-1])

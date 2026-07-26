@@ -55,7 +55,3 @@ class AcledSourceTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(article.date, "2026-07-09")
         self.assertEqual(article.source, "acled")
         self.assertEqual(article.domain, "Example News")
-
-
-if __name__ == "__main__":
-    unittest.main()

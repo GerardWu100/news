@@ -12,7 +12,6 @@ from news.sources.common import (
     hostname_from_url,
     iso_date_prefix,
     raise_if_cooling,
-    record_rate_limit_cooldown,
 )
 from news.sources.retry import build_timeout, get_with_retry
 
@@ -74,8 +73,7 @@ class NewYorkTimesSource(BaseSource):
             except httpx.HTTPStatusError as exc:
                 if exc.response.status_code != 429:
                     raise
-                retry_after_seconds = record_rate_limit_cooldown(
-                    self._cooldown,
+                retry_after_seconds = self._cooldown.activate_from_response(
                     exc.response,
                     default_seconds=DEFAULT_RATE_LIMIT_COOLDOWN_SECONDS,
                 )

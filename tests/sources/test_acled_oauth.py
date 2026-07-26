@@ -113,7 +113,6 @@ class OAuthRequestTests(unittest.TestCase):
             timeout: int,
         ) -> io.BytesIO:
             """Raise a deterministic provider error without live networking."""
-            del timeout
             raise expected_error
 
         with self.assertRaises(HTTPError) as context:
@@ -128,14 +127,14 @@ class OAuthPersistenceTests(unittest.TestCase):
     def test_extract_access_token_supports_provider_key_variants(self) -> None:
         """Known snake-case, generic, and camel-case keys should work."""
         variants = (
-            {"access_token": "first"},
-            {"token": "second"},
-            {"accessToken": "third"},
+            ({"access_token": "first"}, "first"),
+            ({"token": "second"}, "second"),
+            ({"accessToken": "third"}, "third"),
         )
 
-        for payload in variants:
+        for payload, expected_token in variants:
             with self.subTest(payload=payload):
-                self.assertIn(extract_access_token(payload), payload.values())
+                self.assertEqual(extract_access_token(payload), expected_token)
 
     def test_missing_access_token_is_rejected(self) -> None:
         """A successful-looking payload without a bearer value is invalid."""
@@ -208,7 +207,3 @@ class OAuthPersistenceTests(unittest.TestCase):
                 "ACLED_BEARER_TOKEN=combined-token",
                 env_file.read_text(encoding="utf-8"),
             )
-
-
-if __name__ == "__main__":
-    unittest.main()

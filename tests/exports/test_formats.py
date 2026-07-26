@@ -149,7 +149,3 @@ class SqliteExportTests(unittest.TestCase):
             if issubclass(warning.category, ResourceWarning)
         ]
         self.assertEqual(resource_warnings, [])
-
-
-if __name__ == "__main__":
-    unittest.main()

@@ -45,7 +45,7 @@ async def get_with_retry(
     url : str
         Full endpoint URL to request.
     retries : int, optional
-        Number of retry attempts after the first call.
+        Non-negative number of retry attempts after the first call.
     base_delay_seconds : float, optional
         Base delay for exponential backoff between retries.
     cooldown_check : Callable[[], None] | None, optional
@@ -60,8 +60,6 @@ async def get_with_retry(
     httpx.Response
         Successful response with ``raise_for_status`` already enforced.
     """
-    last_error: Exception | None = None
-
     for attempt in range(retries + 1):
         # Let adapters enforce local cooldown windows before each outbound call.
         if cooldown_check is not None:
@@ -76,21 +74,15 @@ async def get_with_retry(
             # surface immediately because they are usually request bugs.
             if not _is_retryable_http_status(exc.response.status_code):
                 raise
-            last_error = exc
-        except (httpx.TimeoutException, httpx.ConnectError) as exc:
-            # Transient network failures are retryable.
-            last_error = exc
-
-        is_last_attempt = attempt >= retries
-        if is_last_attempt:
-            break
+            if attempt == retries:
+                raise
+        except (httpx.TimeoutException, httpx.ConnectError):
+            # Transient network failures are retryable until the final attempt.
+            if attempt == retries:
+                raise
 
         # Exponential backoff: base, 2x base, 4x base, ...
         await asyncio.sleep(base_delay_seconds * (2**attempt))
-
-    if last_error is None:
-        raise RuntimeError("Retry helper exhausted without capturing an error.")
-    raise last_error
 
 
 def _is_retryable_http_status(status_code: int) -> bool:

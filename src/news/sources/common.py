@@ -87,16 +87,3 @@ def raise_if_cooling(cooldown: CooldownWindow, source_label: str) -> None:
         f"{source_label} is temporarily cooling down after a recent 429. "
         f"Try again in {remaining_seconds} seconds."
     )
-
-
-def record_rate_limit_cooldown(
-    cooldown: CooldownWindow,
-    response: httpx.Response,
-    *,
-    default_seconds: int,
-) -> int:
-    """Start a cooldown window from ``Retry-After`` and return its length."""
-    return cooldown.activate_from_response(
-        response,
-        default_seconds=default_seconds,
-    )

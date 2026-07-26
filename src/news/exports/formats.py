@@ -141,25 +141,24 @@ def write_sqlite(
         Number of new rows inserted. Existing ``(url, query)`` pairs are
         ignored by the table's uniqueness constraint.
     """
-    with closing(sqlite3.connect(db_path)) as connection:
-        with connection:
-            connection.execute(_SQLITE_SCHEMA)
-            for index_sql in _SQLITE_INDEXES:
-                connection.execute(index_sql)
+    with closing(sqlite3.connect(db_path)) as connection, connection:
+        connection.execute(_SQLITE_SCHEMA)
+        for index_sql in _SQLITE_INDEXES:
+            connection.execute(index_sql)
 
-            fetched_at = datetime.now(timezone.utc).isoformat()
-            inserted = 0
+        fetched_at = datetime.now(timezone.utc).isoformat()
+        inserted = 0
 
-            for article in articles:
-                # Keep SQL text and row shaping separate so the export schema is
-                # easy to compare with the values written for each article.
-                cursor = connection.execute(
-                    _SQLITE_INSERT_ARTICLE,
-                    _sqlite_article_values(article, query=query, fetched_at=fetched_at),
-                )
-                inserted += cursor.rowcount
+        for article in articles:
+            # Keep SQL text and row shaping separate so the export schema is
+            # easy to compare with the values written for each article.
+            cursor = connection.execute(
+                _SQLITE_INSERT_ARTICLE,
+                _sqlite_article_values(article, query=query, fetched_at=fetched_at),
+            )
+            inserted += cursor.rowcount
 
-            return inserted
+        return inserted
 
 
 def _sqlite_article_values(

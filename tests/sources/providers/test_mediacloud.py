@@ -8,7 +8,6 @@ from unittest.mock import AsyncMock, patch
 import httpx
 
 from news.sources.base import SourceSearchOptions
-from news.sources.common import record_rate_limit_cooldown
 from news.sources.providers.mediacloud import (
     DEFAULT_RATE_LIMIT_COOLDOWN_SECONDS,
     MediaCloudSource,
@@ -27,21 +26,22 @@ class MediaCloudCooldownTests(unittest.IsolatedAsyncioTestCase):
             headers={"Retry-After": "7"},
             request=httpx.Request("GET", source._BASE_URL),
         )
-        record_rate_limit_cooldown(
-            source._cooldown,
+        source._cooldown.activate_from_response(
             throttled_response,
             default_seconds=DEFAULT_RATE_LIMIT_COOLDOWN_SECONDS,
         )
 
-        with patch.object(source, "_fetch_story_list", new=AsyncMock()) as mock_fetch:
-            with self.assertRaises(RuntimeError) as context:
-                await source.search(
-                    SourceSearchOptions(
-                        query="Trump",
-                        start_date="2026-02-03",
-                        end_date="2026-03-06",
-                    )
+        with (
+            patch.object(source, "_fetch_story_list", new=AsyncMock()) as mock_fetch,
+            self.assertRaises(RuntimeError) as context,
+        ):
+            await source.search(
+                SourceSearchOptions(
+                    query="Trump",
+                    start_date="2026-02-03",
+                    end_date="2026-03-06",
                 )
+            )
 
         mock_fetch.assert_not_called()
         self.assertIn("Try again in", str(context.exception))
@@ -83,5 +83,48 @@ class MediaCloudPaginationTokenStoreTests(unittest.TestCase):
         self.assertEqual(store.get(third_key, 2), "third-token")
 
 
-if __name__ == "__main__":
-    unittest.main()
+class MediaCloudPaginationTests(unittest.IsolatedAsyncioTestCase):
+    """Check sequential continuation-token handoff between provider pages."""
+
+    async def test_search_stores_and_reuses_continuation_token(self) -> None:
+        """Page two should send the token returned with page one."""
+        source = MediaCloudSource()
+        token_store = PaginationTokenStore()
+        fetch_story_list = AsyncMock(
+            side_effect=[
+                {"stories": [], "pagination_token": "page-two-token"},
+                {"stories": [], "pagination_token": ""},
+            ]
+        )
+        page_one_options = SourceSearchOptions(
+            query="inflation",
+            start_date="2026-01-01",
+            end_date="2026-01-31",
+        )
+        page_two_options = SourceSearchOptions(
+            query="inflation",
+            start_date="2026-01-01",
+            end_date="2026-01-31",
+            page=2,
+        )
+
+        # Page one records the provider's continuation token under page two.
+        with (
+            patch(
+                "news.sources.providers.mediacloud._PAGINATION_TOKENS",
+                token_store,
+            ),
+            patch.object(source, "_fetch_story_list", fetch_story_list),
+        ):
+            first_page = await source.search(page_one_options)
+            second_page = await source.search(page_two_options)
+
+        # The second request consumes that exact token and clears has-more when
+        # the provider returns no next token.
+        second_request_params = fetch_story_list.call_args_list[1].args[1]
+        self.assertTrue(first_page.has_more)
+        self.assertFalse(second_page.has_more)
+        self.assertEqual(
+            second_request_params["pagination_token"],
+            "page-two-token",
+        )

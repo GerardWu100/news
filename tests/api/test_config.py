@@ -16,12 +16,12 @@ class SettingsLoadingTests(unittest.TestCase):
 
     def test_missing_optional_config_uses_packaged_defaults(self) -> None:
         """No external file should produce validated package defaults."""
-        with TemporaryDirectory() as temporary_directory:
-            with (
-                patch("pathlib.Path.cwd", return_value=Path(temporary_directory)),
-                patch.dict("os.environ", {}, clear=True),
-            ):
-                settings = load_settings()
+        with (
+            TemporaryDirectory() as temporary_directory,
+            patch("pathlib.Path.cwd", return_value=Path(temporary_directory)),
+            patch.dict("os.environ", {}, clear=True),
+        ):
+            settings = load_settings()
 
         self.assertFalse(settings.frontend.default_english_only)
         self.assertEqual(settings.frontend.default_sources, ())
@@ -68,8 +68,8 @@ class SettingsLoadingTests(unittest.TestCase):
 
         self.assertIn("guardain", str(context.exception))
 
-    def test_non_positive_cache_values_are_rejected(self) -> None:
-        """Time-to-live and capacity values must both be positive."""
+    def test_non_positive_cache_ttl_is_rejected(self) -> None:
+        """Cache time-to-live values must be positive."""
         invalid_values = (0, -1)
         for invalid_value in invalid_values:
             with self.subTest(invalid_value=invalid_value):
@@ -105,7 +105,3 @@ class SettingsLoadingTests(unittest.TestCase):
 
         with self.assertRaises(dataclasses.FrozenInstanceError):
             settings.cache.ttl_seconds = 1  # type: ignore[misc]
-
-
-if __name__ == "__main__":
-    unittest.main()

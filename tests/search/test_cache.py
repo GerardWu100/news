@@ -131,7 +131,3 @@ class RunSearchCacheIntegrationTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(call_count, 1)
         self.assertEqual(first.articles, second.articles)
-
-
-if __name__ == "__main__":
-    unittest.main()

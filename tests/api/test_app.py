@@ -14,6 +14,7 @@ from news.api.app import create_app
 from news.sources.base import Article, SourceSearchOptions
 from news.sources import SourceQueryReport
 from news.web.config import load_settings
+from news.web.paths import config_path, static_dir
 from tests.fixtures.search_results import build_provider_response
 
 
@@ -130,35 +131,13 @@ class RuntimePathTests(unittest.TestCase):
 
     def test_static_path_finds_packaged_frontend(self) -> None:
         """Static assets should live under the importable package."""
-        from news.web.paths import static_dir
-
         self.assertTrue((static_dir() / "index.html").exists())
 
     def test_config_path_prefers_explicit_path(self) -> None:
         """An explicit config path should override environment and CWD lookup."""
-        from news.web.paths import config_path
-
         with TemporaryDirectory() as temporary_directory:
             explicit_path = Path(temporary_directory) / "custom.toml"
             explicit_path.write_text("", encoding="utf-8")
 
             with patch.dict("os.environ", {"NEWS_CONFIG": "/ignored.toml"}):
                 self.assertEqual(config_path(explicit_path), explicit_path.resolve())
-
-    def test_missing_external_config_uses_packaged_defaults(self) -> None:
-        """An installed app should start without a local config file."""
-        from news.web.config import load_settings
-
-        with TemporaryDirectory() as temporary_directory:
-            with (
-                patch("pathlib.Path.cwd", return_value=Path(temporary_directory)),
-                patch.dict("os.environ", {}, clear=True),
-            ):
-                settings = load_settings()
-
-        self.assertEqual(settings.cache.ttl_seconds, 300)
-        self.assertEqual(settings.frontend.default_sources, ())
-
-
-if __name__ == "__main__":
-    unittest.main()

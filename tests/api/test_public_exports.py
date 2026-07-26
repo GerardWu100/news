@@ -53,7 +53,3 @@ class PublicExportTests(unittest.TestCase):
             set(news.exports.__all__),
             {"format_csv", "format_json", "write_sqlite"},
         )
-
-
-if __name__ == "__main__":
-    unittest.main()

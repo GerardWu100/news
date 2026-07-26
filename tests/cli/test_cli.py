@@ -5,11 +5,13 @@ from __future__ import annotations
 import unittest
 from contextlib import redirect_stdout
 from io import StringIO
+from pathlib import Path
 from unittest.mock import patch
+import tomllib
 
 from news.cli.output import format_table
 from news.cli.parser import build_api_params, build_arg_parser
-from news.cli.workflow import run_cli
+from news.cli.workflow import collect_all_pages, run_cli
 
 
 class ArgParserTests(unittest.TestCase):
@@ -208,9 +210,11 @@ class StructuredOutputTests(unittest.TestCase):
         }
         output = StringIO()
 
-        with patch("news.cli.workflow.collect_results", return_value=payload):
-            with redirect_stdout(output):
-                run_cli(args)
+        with (
+            patch("news.cli.workflow.collect_results", return_value=payload),
+            redirect_stdout(output),
+        ):
+            run_cli(args)
 
         self.assertEqual(
             output.getvalue().splitlines(),
@@ -221,14 +225,50 @@ class StructuredOutputTests(unittest.TestCase):
         )
 
 
+class PaginatedCollectionTests(unittest.TestCase):
+    """Check command-line aggregation across provider pages."""
+
+    def test_collect_all_pages_combines_results_and_metadata(self) -> None:
+        """Aggregation should retain rows and sum duplicate-removal counts."""
+        args = build_arg_parser().parse_args(
+            [
+                "fed",
+                "-s",
+                "2025-01-01",
+                "-e",
+                "2025-03-01",
+                "--all-pages",
+                "--quiet",
+            ]
+        )
+        page_payloads = [
+            {
+                "results": [{"title": "First"}],
+                "meta": {"duplicates_removed": 1, "has_more": True},
+            },
+            {
+                "results": [{"title": "Second"}],
+                "meta": {"duplicates_removed": 2, "has_more": False},
+            },
+        ]
+
+        # The backend metadata controls termination; the CLI only aggregates
+        # page rows and the duplicate count.
+        with patch("news.cli.workflow.fetch_page", side_effect=page_payloads) as fetch:
+            payload = collect_all_pages(args)
+
+        self.assertEqual(fetch.call_count, 2)
+        self.assertEqual(payload["results"], [{"title": "First"}, {"title": "Second"}])
+        self.assertEqual(payload["meta"]["returned"], 2)
+        self.assertEqual(payload["meta"]["duplicates_removed"], 3)
+        self.assertFalse(payload["meta"]["has_more"])
+
+
 class PackageEntryPointTests(unittest.TestCase):
     """Check that package entry points are available through project metadata."""
 
     def test_pyproject_defines_news_scripts(self) -> None:
         """The project should expose canonical server and CLI commands."""
-        import tomllib
-        from pathlib import Path
-
         pyproject_path = Path(__file__).resolve().parents[2] / "pyproject.toml"
         with pyproject_path.open("rb") as pyproject_file:
             pyproject = tomllib.load(pyproject_file)
@@ -237,7 +277,3 @@ class PackageEntryPointTests(unittest.TestCase):
 
         self.assertEqual(scripts["news-server"], "news.api.app:main")
         self.assertEqual(scripts["news-search"], "news.cli.workflow:main")
-
-
-if __name__ == "__main__":
-    unittest.main()

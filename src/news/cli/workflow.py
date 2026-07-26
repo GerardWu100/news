@@ -72,7 +72,6 @@ def collect_all_pages(args: argparse.Namespace) -> dict[str, Any]:
         raise ValueError("--max-pages must be at least 1.")
 
     combined_results: list[dict[str, Any]] = []
-    last_meta: dict[str, Any] | None = None
     total_duplicates_removed = 0
 
     for offset in range(args.max_pages):
@@ -80,9 +79,9 @@ def collect_all_pages(args: argparse.Namespace) -> dict[str, Any]:
         payload = fetch_page(args, page=page)
 
         articles = payload["results"]
+        page_meta = payload["meta"]
         combined_results.extend(articles)
-        last_meta = payload["meta"]
-        total_duplicates_removed += int(payload["meta"].get("duplicates_removed", 0))
+        total_duplicates_removed += int(page_meta["duplicates_removed"])
 
         if not args.quiet:
             print(
@@ -90,15 +89,13 @@ def collect_all_pages(args: argparse.Namespace) -> dict[str, Any]:
                 file=sys.stderr,
             )
 
-        if not payload["meta"].get("has_more") or not articles:
+        if not page_meta["has_more"] or not articles:
             break
     else:
         raise RuntimeError(f"Reached the --max-pages safety limit ({args.max_pages}).")
 
-    if last_meta is None:
-        raise RuntimeError("No metadata returned while collecting paginated results.")
-
-    combined_meta = dict(last_meta)
+    # A positive max-pages limit guarantees at least one fetched page.
+    combined_meta = dict(page_meta)
     combined_meta["page"] = args.page
     combined_meta["returned"] = len(combined_results)
     combined_meta["total"] = len(combined_results)

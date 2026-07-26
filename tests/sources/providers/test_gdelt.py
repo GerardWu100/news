@@ -52,7 +52,3 @@ class GdeltSourceTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(article.source, "gdelt")
         self.assertEqual(article.domain, "example.com")
         self.assertEqual(article.language, "English")
-
-
-if __name__ == "__main__":
-    unittest.main()

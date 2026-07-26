@@ -18,7 +18,6 @@ from news.sources.base import Article, BaseSource, SourcePageResult, SourceSearc
 from news.sources.common import (
     CooldownWindow,
     raise_if_cooling,
-    record_rate_limit_cooldown,
 )
 from news.sources.retry import build_timeout, get_with_retry
 
@@ -72,11 +71,6 @@ class PaginationTokenStore:
         page_tokens = self._tokens.get(key, {})
         entry = page_tokens.get(page)
         if entry is None:
-            return ""
-        if self._clock() - entry.stored_at >= self.ttl_seconds:
-            page_tokens.pop(page, None)
-            if not page_tokens:
-                self._tokens.pop(key, None)
             return ""
 
         self._tokens.move_to_end(key)
@@ -152,7 +146,15 @@ class MediaCloudSource(BaseSource):
             "platform": "onlinenews-mediacloud",
             "page_size": str(MEDIACLOUD_PAGE_SIZE),
         }
-        pagination_token = _lookup_pagination_token(options)
+
+        # Continuation tokens are query-specific and only exist after the
+        # preceding page has been requested.
+        pagination_key = _build_pagination_key(options)
+        pagination_token = (
+            _PAGINATION_TOKENS.get(pagination_key, options.page)
+            if options.page > 1
+            else ""
+        )
         if options.page > 1 and not pagination_token:
             raise RuntimeError(
                 "MediaCloud pagination token for this page is not cached yet. "
@@ -164,9 +166,14 @@ class MediaCloudSource(BaseSource):
         data = await self._fetch_story_list(headers, params)
 
         raw_stories = data.get("stories") or []
-        _store_next_page_token(options, data.get("pagination_token", ""))
+        next_page_token = data.get("pagination_token", "")
+        _PAGINATION_TOKENS.set(
+            pagination_key,
+            options.page + 1,
+            next_page_token,
+        )
         articles = [self._to_article(s) for s in raw_stories]
-        has_more = bool(data.get("pagination_token"))
+        has_more = bool(next_page_token)
         return SourcePageResult(articles=articles, has_more=has_more)
 
     async def _fetch_story_list(
@@ -181,7 +188,7 @@ class MediaCloudSource(BaseSource):
                     read_timeout_seconds=MEDIACLOUD_READ_TIMEOUT_SECONDS
                 )
             ) as client:
-                resp = await get_with_retry(
+                response = await get_with_retry(
                     client,
                     self._BASE_URL,
                     headers=headers,
@@ -191,11 +198,10 @@ class MediaCloudSource(BaseSource):
                         "MediaCloud",
                     ),
                 )
-                return resp.json()
+                return response.json()
         except httpx.HTTPStatusError as exc:
             if exc.response.status_code == 429:
-                retry_after_seconds = record_rate_limit_cooldown(
-                    self._cooldown,
+                retry_after_seconds = self._cooldown.activate_from_response(
                     exc.response,
                     default_seconds=DEFAULT_RATE_LIMIT_COOLDOWN_SECONDS,
                 )
@@ -229,21 +235,3 @@ def _build_pagination_key(options: SourceSearchOptions) -> tuple[object, ...]:
         options.include_domains,
         options.exclude_domains,
     )
-
-
-def _lookup_pagination_token(options: SourceSearchOptions) -> str:
-    """Return the cached token required to fetch the requested page."""
-    if options.page <= 1:
-        return ""
-
-    token_key = _build_pagination_key(options)
-    return _PAGINATION_TOKENS.get(token_key, options.page)
-
-
-def _store_next_page_token(options: SourceSearchOptions, token: str) -> None:
-    """Store the continuation token needed for the next sequential page."""
-    if not token:
-        return
-
-    key = _build_pagination_key(options)
-    _PAGINATION_TOKENS.set(key, options.page + 1, token)

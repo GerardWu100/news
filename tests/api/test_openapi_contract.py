@@ -26,7 +26,3 @@ class OpenApiContractTests(unittest.TestCase):
             "OpenAPI changed. Review the API reference and run "
             "`uv run python scripts/generate_openapi.py` if intentional.",
         )
-
-
-if __name__ == "__main__":
-    unittest.main()

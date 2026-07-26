@@ -80,7 +80,7 @@ async def run_search(
     if request.deduplicate:
         processed_articles = deduplicate_articles(filtered_articles)
     else:
-        processed_articles = list(filtered_articles)
+        processed_articles = filtered_articles
 
     sorted_articles = sort_articles(processed_articles, request.sort_order)
     duplicates_removed = total_before_deduplication - len(sorted_articles)

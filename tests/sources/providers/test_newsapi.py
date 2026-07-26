@@ -53,7 +53,3 @@ class NewsApiNormalizationTests(unittest.TestCase):
         self.assertEqual(article.content, "Longer text here.")
         self.assertEqual(article.section, "Reuters")
         self.assertEqual(article.author, "John Smith")
-
-
-if __name__ == "__main__":
-    unittest.main()

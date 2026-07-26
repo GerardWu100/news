@@ -82,7 +82,8 @@ Package marker files are omitted from the tree.
 ### CLI and exports
 
 - `cli/test_cli.py` checks parser flags, structured-output and temporal-boundary
-  help, API parameter mapping, table output, and package entry points.
+  help, API parameter mapping, multi-page aggregation, table output, and
+  package entry points.
 - `exports/test_formats.py` checks CSV, JSON, and SQLite contracts, including
   connection cleanup and duplicate handling.
 

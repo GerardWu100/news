@@ -190,10 +190,13 @@ def _parse_settings(config: Mapping[str, Any]) -> AppSettings:
     ):
         raise SettingsError("frontend.default_sources must be an array of source names")
 
+    # Normalize once, then compare against the registry used by provider
+    # selection so configuration and runtime recognize the same source names.
     normalized_sources = tuple(source.strip().lower() for source in raw_sources)
-    invalid_sources = sorted(set(normalized_sources) - source_names())
+    known_sources = source_names()
+    invalid_sources = sorted(set(normalized_sources) - known_sources)
     if invalid_sources:
-        allowed = ", ".join(sorted(source_names()))
+        allowed = ", ".join(sorted(known_sources))
         invalid = ", ".join(invalid_sources)
         raise SettingsError(
             f"Unknown frontend.default_sources value(s): {invalid}. "
