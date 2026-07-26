@@ -15,6 +15,19 @@ The product is retrieval-first. It does not rank by proprietary relevance
 models, crawl article bodies, or compute page-level analytics. The value is a
 clean, provider-aware search and export workflow for research.
 
+## Project Structure
+
+```text
+.
+├── src/news/       -- Installable API, CLI, search, source, export, and web package.
+├── scripts/        -- Thin credential and OpenAPI generation commands.
+├── tests/          -- Offline tests organized by production responsibility.
+└── docs/           -- Completed plans, exact reference material, and user docs.
+```
+
+The exact implemented tree is maintained in
+`docs/reference/PROJECT_STRUCTURE.md`.
+
 ## Inputs and Outputs
 
 ### Inputs

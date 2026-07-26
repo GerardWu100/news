@@ -174,9 +174,6 @@ async def _run_search_request(
     return await run_search(request, executor=executor, cache=cache)
 
 
-app = create_configured_app()
-
-
 def main(argv: list[str] | None = None) -> None:
     """Start the local FastAPI server.
 

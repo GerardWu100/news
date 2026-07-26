@@ -77,7 +77,8 @@ in `docs/plans/PROJECT_REFACTOR_PLAN.md`.
 │   │   ├── test_app.py
 │   │   ├── test_config.py
 │   │   ├── test_openapi_contract.py
-│   │   └── test_public_exports.py
+│   │   ├── test_public_exports.py
+│   │   └── test_server_cli.py
 │   ├── cli/
 │   │   └── test_cli.py
 │   ├── exports/
@@ -94,6 +95,8 @@ in `docs/plans/PROJECT_REFACTOR_PLAN.md`.
 │   │   ├── test_acled_oauth.py
 │   │   ├── test_retry.py
 │   │   └── providers/
+│   │       ├── test_acled.py
+│   │       ├── test_gdelt.py
 │   │       ├── test_guardian.py
 │   │       ├── test_mediacloud.py
 │   │       ├── test_newsapi.py

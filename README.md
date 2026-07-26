@@ -34,7 +34,7 @@ cache limits stop startup with a configuration error.
 ## Documentation
 
 - API reference: `docs/user/API_REFERENCE.md`
-- Current refactoring plan: `docs/plans/PROJECT_REFACTOR_PLAN.md`
+- Completed refactoring plan: `docs/plans/PROJECT_REFACTOR_PLAN.md`
 - Developer structure reference: `docs/reference/PROJECT_STRUCTURE.md`
 
 ## Verification

@@ -65,7 +65,8 @@ class WheelInstallationTests(unittest.TestCase):
 
             smoke_script = (
                 "from fastapi.testclient import TestClient\n"
-                "from news.api.app import app\n"
+                "from news.api.app import create_configured_app\n"
+                "app = create_configured_app()\n"
                 "response = TestClient(app).get('/')\n"
                 "assert response.status_code == 200, response.text\n"
                 "assert 'News Explorer' in response.text\n"

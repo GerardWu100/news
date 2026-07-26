@@ -31,7 +31,8 @@ tests/
 │   ├── test_app.py
 │   ├── test_config.py
 │   ├── test_openapi_contract.py
-│   └── test_public_exports.py
+│   ├── test_public_exports.py
+│   └── test_server_cli.py
 ├── cli/
 │   └── test_cli.py
 ├── exports/
@@ -48,6 +49,8 @@ tests/
 │   ├── test_acled_oauth.py
 │   ├── test_retry.py
 │   └── providers/
+│       ├── test_acled.py
+│       ├── test_gdelt.py
 │       ├── test_guardian.py
 │       ├── test_mediacloud.py
 │       ├── test_newsapi.py
@@ -72,6 +75,9 @@ Package marker files are omitted from the tree.
   checked-in schema.
 - `api/test_public_exports.py` protects the intentional package-level import
   surfaces.
+- `api/test_server_cli.py` starts the server boundary in a subprocess and
+  verifies explicit configuration wins over a malformed current-directory
+  file before application construction.
 
 ### CLI and exports
 
@@ -97,7 +103,8 @@ Package marker files are omitted from the tree.
   updates.
 - `sources/test_retry.py` checks timeout, HTTP 5xx, and HTTP 4xx retry rules.
 - Each file under `sources/providers/` owns the adapter-specific normalization,
-  pagination, or cooldown checks for the provider in its filename.
+  availability, pagination, or cooldown checks for the provider in its
+  filename.
 
 ### Web and fixtures
 

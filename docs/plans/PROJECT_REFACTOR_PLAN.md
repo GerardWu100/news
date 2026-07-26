@@ -1,5 +1,7 @@
 # Project Refactoring Plan
 
+**Status:** Completed on 2026-07-26.
+
 ## Goal
 
 Turn the working news-search repository into a smaller, installable, and easier
@@ -67,11 +69,13 @@ Git history remains the recovery path for all removed tracked material.
 │       └── web/
 │           └── static/
 ├── scripts/
-│   └── acled_oauth_token.py
+│   ├── acled_oauth_token.py
+│   └── generate_openapi.py
 ├── tests/
 │   ├── api/
 │   ├── cli/
 │   ├── exports/
+│   ├── fixtures/
 │   ├── search/
 │   ├── sources/
 │   └── web/

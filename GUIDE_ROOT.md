@@ -59,3 +59,4 @@ The exact implemented tree and responsibility table live only in
 - 2026-07-26: Packaged browser assets and defaults so installed wheels do not depend on repository-parent traversal.
 - 2026-07-26: Replaced permissive configuration dictionaries with immutable validated settings and explicit cache injection.
 - 2026-07-26: Made package exports, application dependencies, and the generated OpenAPI schema explicit contracts.
+- 2026-07-26: Kept API module imports free of configuration reads so `news-server --config` is resolved before application construction.

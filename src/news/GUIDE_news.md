@@ -28,6 +28,11 @@ The application factory also accepts a provider executor and source-status
 function. Production uses the registered adapters; tests supply offline fakes
 without patching module globals.
 
+Importing the API module does not construct a configured application.
+`news-server` parses command arguments first, then the server invokes the
+factory. This preserves the documented rule that `--config` takes precedence
+even when a current-directory `config.toml` is invalid.
+
 ## Public Imports
 
 - `news.search` exports validated request/result types, the executor type, the
