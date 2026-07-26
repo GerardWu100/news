@@ -1,116 +1,116 @@
-# PROJECT_STRUCTURE
+# Project Structure
+
+This file records the implemented repository structure. Proposed changes belong
+in `docs/plans/PROJECT_REFACTOR_PLAN.md`.
 
 ## Directory Tree
 
 ```text
 .
-├── .env
+├── .env.example
 ├── .gitignore
 ├── .python-version
+├── GUIDE_OVERVIEW.md
+├── GUIDE_ROOT.md
+├── LICENSE
 ├── README.md
 ├── config.toml
 ├── pyproject.toml
 ├── uv.lock
-├── GUIDE_ROOT.md
-├── GUIDE_OVERVIEW.md
 ├── src/
 │   ├── GUIDE_src.md
 │   └── news/
 │       ├── GUIDE_news.md
-│       ├── __init__.py
 │       ├── api/
+│       │   ├── app.py
+│       │   ├── models.py
+│       │   └── params.py
 │       ├── cli/
+│       │   ├── fetch.py
+│       │   ├── output.py
+│       │   ├── parser.py
+│       │   └── workflow.py
 │       ├── exports/
+│       │   └── formats.py
 │       ├── search/
+│       │   ├── cache.py
+│       │   ├── deduplication.py
+│       │   ├── errors.py
+│       │   ├── filters.py
+│       │   ├── models.py
+│       │   ├── service.py
+│       │   └── validation.py
 │       ├── sources/
+│       │   ├── base.py
+│       │   ├── common.py
+│       │   ├── registry.py
+│       │   ├── retry.py
+│       │   └── providers/
+│       │       ├── acled.py
+│       │       ├── gdelt.py
+│       │       ├── guardian.py
+│       │       ├── mediacloud.py
+│       │       ├── newsapi.py
+│       │       └── nyt.py
 │       └── web/
+│           ├── config.py
+│           └── paths.py
 ├── frontend/
 │   ├── GUIDE_frontend.md
 │   ├── index.html
 │   ├── styles.css
 │   └── scripts/
+│       ├── api.js
+│       ├── app.js
+│       ├── form.js
+│       ├── render.js
+│       └── state.js
 ├── scripts/
-│   ├── acled_oauth_token.py
-│   └── acled_bearer_read.py
+│   ├── GUIDE_scripts.md
+│   └── acled_oauth_token.py
 ├── tests/
-├── data/
-│   ├── raw/
-│   ├── interim/
-│   └── processed/
-├── outputs/
-│   ├── reports/
-│   ├── figures/
-│   └── runs/
-├── notebooks/
-│   └── api_explorer/
-│       ├── GUIDE_api_explorer.md
-│       ├── acled/
-│       ├── gdelt/
-│       ├── mediacloud/
-│       └── commoncrawl/
-├── docs/
-│   ├── user/
-│   │   └── API_REFERENCE.md
-│   └── reference/
-│       └── PROJECT_STRUCTURE.md
-└── logs/
+│   ├── GUIDE_tests.md
+│   ├── test_app.py
+│   ├── test_cache.py
+│   ├── test_cli.py
+│   ├── test_export.py
+│   ├── test_frontend_static.py
+│   ├── test_retry.py
+│   └── test_search_service.py
+└── docs/
+    ├── plans/
+    │   └── PROJECT_REFACTOR_PLAN.md
+    ├── reference/
+    │   └── PROJECT_STRUCTURE.md
+    └── user/
+        └── API_REFERENCE.md
 ```
 
-## File Descriptions
+Package marker files named `__init__.py` are omitted from the tree for
+readability.
 
-- `config.toml`: frontend defaults plus cache TTL and capacity settings.
-- `pyproject.toml`: dependencies, package metadata, `src` package discovery, and command scripts.
-- `README.md`: concise entry point with quick start and links to detailed docs.
+## Responsibility Map
 
-- `src/news/api/app.py`: FastAPI routes for config, source status, search, and export.
-- `src/news/api/models.py`: Pydantic response models for the public API.
-- `src/news/api/params.py`: HTTP query parameter parsing and search-request conversion.
-- `src/news/exports/formats.py`: CSV, JSON, and SQLite export helpers.
-- `src/news/cli/parser.py`: CLI parser and API parameter mapping.
-- `src/news/cli/fetch.py`: CLI HTTP API and direct package fetch paths.
-- `src/news/cli/output.py`: CLI table rendering and export writing.
-- `src/news/cli/workflow.py`: CLI orchestration and boundary error handling.
-- `src/news/search/cache.py`: in-memory TTL cache for validated search requests.
-- `src/news/search/errors.py`: project-owned validation exception.
-- `src/news/search/service.py`: orchestration layer for filtering, deduplication, cache use, and response metadata.
-- `src/news/search/validation.py`: strict request normalization and validation.
-- `src/news/sources/common.py`: shared hostname, date, and cooldown helpers for adapters.
-- `src/news/sources/registry.py`: source adapter construction and source-name lookup.
-- `src/news/sources/retry.py`: shared timeout and retry helpers for provider requests.
-- `src/news/sources/__init__.py`: concurrent fan-out and user-facing source error mapping.
-- `src/news/sources/providers/`: provider-specific adapters for ACLED, GDELT, Guardian, MediaCloud, NewsAPI, and NYT.
-- `src/news/web/config.py`: TOML configuration loading.
-- `src/news/web/paths.py`: project-root resource path resolution.
+| Path | Responsibility |
+|---|---|
+| `src/news/api/` | Hypertext Transfer Protocol (HTTP) routes, request parsing, and response models |
+| `src/news/cli/` | Command parsing, fetch modes, terminal output, and exports |
+| `src/news/exports/` | CSV, JSON, and SQLite serialization |
+| `src/news/search/` | Validated search behavior, cache, filters, deduplication, and metadata |
+| `src/news/sources/` | Provider access, retry/cooldown behavior, registry, and concurrent fan-out |
+| `src/news/web/` | Configuration and repository resource paths |
+| `frontend/` | Browser interface served by the API |
+| `scripts/` | Local ACLED credential bootstrap |
+| `tests/` | Deterministic offline regression coverage |
+| `docs/plans/` | Forward-looking work that has not necessarily been implemented |
+| `docs/reference/` | Developer ground truth for the implemented system |
+| `docs/user/` | User-facing documentation |
 
-- `frontend/index.html`: HTML shell for the search UI and results area.
-- `frontend/styles.css`: warm editorial theme, layout, cards, and responsive rules.
-- `frontend/scripts/app.js`: page orchestration, submission, pagination, and share-link behavior.
-- `frontend/scripts/form.js`: form reading, URL hydration, URL sync, and clipboard helpers.
-- `frontend/scripts/render.js`: DOM rendering for meta text, status chips, results, and the article dialog.
-- `frontend/scripts/state.js`: in-memory state container for the active search.
+## Important Root Files
 
-- `scripts/acled_oauth_token.py`: ACLED OAuth token bootstrap helper.
-- `scripts/acled_bearer_read.py`: ACLED bearer-authenticated sample data read helper.
-
-- `tests/test_app.py`: FastAPI route smoke tests.
-- `tests/test_search_service.py`: validation, deduplication, pipeline, and adapter tests.
-- `tests/test_export.py`: export formatter tests.
-- `tests/test_frontend_static.py`: static checks for frontend link-sanitization helpers.
-- `tests/test_cli.py`: CLI parser, package script, and table-rendering tests.
-- `tests/test_cache.py`: cache TTL, eviction, and integration tests.
-- `tests/test_retry.py`: retry helper tests.
-
-- `docs/user/API_REFERENCE.md`: endpoint and query-parameter reference.
-
-## Subfolder Purposes
-
-- `src/news/`: importable product package for API, CLI, search, exports, source adapters, and runtime config/path helpers.
-- `frontend/`: browser-based search interface with shareable URL state.
-- `scripts/`: thin one-off helpers that call package or upstream APIs.
-- `tests/`: local regression and smoke verification.
-- `data/`: raw, interim, and processed datasets for research workflows.
-- `outputs/`: CLI exports, reports, figures, and run artifacts.
-- `notebooks/api_explorer/`: notebook-first upstream API exploration workspace.
-- `docs/user/`: user-facing documentation.
-- `docs/reference/`: developer reference material including this file.
-- `logs/`: runtime log files.
+- `config.toml`: documented browser and cache settings.
+- `pyproject.toml`: dependencies, package discovery, and executable commands.
+- `README.md`: setup, canonical commands, and documentation links.
+- `.env.example`: secret-free provider credential template.
+- `GUIDE_OVERVIEW.md`: conceptual system flow and constraints.
+- `GUIDE_ROOT.md`: developer navigation from the repository root.

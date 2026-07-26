@@ -45,7 +45,5 @@ secrets.toml
 .idea/
 *.log
 
-# OAuth and API response artifacts may contain bearer or refresh tokens.
-notebooks/api_explorer/*/outputs/*
-!notebooks/api_explorer/*/outputs/.gitkeep
+# Generated exports and local research artifacts.
 outputs/

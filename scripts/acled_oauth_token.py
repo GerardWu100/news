@@ -1,8 +1,8 @@
 """ACLED OAuth bootstrap helper for bearer-token workflows.
 
 The script loads ACLED OAuth credentials from the project ``.env``, requests a
-token payload, persists useful token fields back to ``.env``, and can
-optionally run a small authenticated sample data request.
+token payload, and persists the useful token fields back to ``.env``. It does
+not save the raw OAuth response because that response contains secrets.
 """
 
 from __future__ import annotations
@@ -20,8 +20,6 @@ from urllib.request import Request, urlopen
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 ENV_PATH = PROJECT_ROOT / ".env"
-OUTPUTS_DIR = PROJECT_ROOT / "notebooks" / "api_explorer" / "acled" / "outputs"
-TOKEN_OUTPUT_PATH = OUTPUTS_DIR / "acled_oauth_token_response.json"
 DEFAULT_TIMEOUT_SECONDS = 30
 COMMON_USER_AGENT = (
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
@@ -205,13 +203,6 @@ def update_or_append_env_key(path: Path, key: str, value: str) -> None:
     path.write_text("\n".join(new_lines) + "\n", encoding="utf-8")
 
 
-def save_json(path: Path, payload: dict[str, Any]) -> None:
-    """Save JSON payload to disk."""
-
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
-
-
 def mask_secret(secret: str) -> str:
     """Mask a token for terminal display."""
 
@@ -286,16 +277,13 @@ def main() -> None:
         print(f"Token request failed: {error}")
         return
 
-    save_json(TOKEN_OUTPUT_PATH, token_payload)
-    print(f"Saved token response: {TOKEN_OUTPUT_PATH}")
-
     try:
         persist_token_fields(token_payload)
     except ValueError as error:
         print(error)
         return
 
-    print("Bearer token saved. Run acled_bearer_read.py for a sample data request.")
+    print("Bearer token saved. The news search provider can now use it.")
 
 
 if __name__ == "__main__":

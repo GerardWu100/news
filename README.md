@@ -27,6 +27,8 @@ uv run python scripts/acled_oauth_token.py
 ## Documentation
 
 - API reference: `docs/user/API_REFERENCE.md`
+- Current refactoring plan: `docs/plans/PROJECT_REFACTOR_PLAN.md`
+- Developer structure reference: `docs/reference/PROJECT_STRUCTURE.md`
 
 ## Verification
 

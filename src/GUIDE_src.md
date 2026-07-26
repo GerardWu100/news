@@ -2,9 +2,9 @@
 
 ## Purpose
 
-The `src/` folder contains importable Python product code. Non-product assets
-such as tests, notebooks, static frontend files, and generated outputs stay at
-the project root outside `src/`.
+The `src/` folder contains importable Python product code. Tests, project
+documentation, the current static frontend, and generated outputs stay outside
+`src/`.
 
 ## Folder Map
 

@@ -4,140 +4,100 @@
 
 ### Purpose
 
-The project root coordinates a retrieval-focused news search tool. It ties
-together:
+The project root coordinates a historical multi-source news search product. It
+connects the importable `src/news/` package, a static browser client, project
+configuration, credential bootstrap, tests, and documentation.
 
-- the `src/news/` product package,
-- the static browser frontend,
-- project-wide configuration,
-- local verification,
-- API exploration notebooks,
-- and the user/documentation surface.
+The system retrieves provider records, normalizes them into one article model,
+applies local filters and optional deduplication, and exposes the results
+through a web application and a command-line interface (CLI). It does not crawl
+article bodies or provide a general data-science workspace.
 
-The system is intentionally narrow. It searches upstream providers, normalizes
-their results, applies local filtering and deduplication, and returns articles
-for browsing or export. It does not compute page-level analytics.
+### Runtime flow
 
-### Main workflows from root
+1. `news-server` starts the FastAPI application and serves the browser client.
+2. The browser or CLI turns raw search inputs into a validated request.
+3. The search service checks its short-lived in-memory cache.
+4. Requested providers run concurrently and return normalized articles plus
+   source-specific status.
+5. Shared filtering, conservative deduplication, and stable sorting produce the
+   response page.
+6. The application returns JavaScript Object Notation (JSON), while the CLI can
+   also write comma-separated values (CSV), JSON, or SQLite.
 
-1. Start the web app with `uv run news-server`.
-2. Open `http://127.0.0.1:8000/` to use the browser UI.
-3. Or run the CLI with `uv run news-search "inflation" -s 2025-01-01 -e 2025-03-01`.
-4. The API or CLI validates the request before any provider fan-out happens.
-5. Requested sources are queried concurrently, with retries for transient
-   network or server failures.
-6. The merged provider page is post-filtered, optionally deduplicated, sorted,
-   and cached for a short in-memory window.
-7. The browser renders the current provider page and source-status reports.
-8. The CLI can print a table, emit JSON, or export CSV, JSON, or SQLite.
+### Local state
 
-### Root-level inputs and outputs
-
-- Inputs:
-  - `.env` credentials for MediaCloud, ACLED, NYT, Guardian, and NewsAPI,
-    created locally from the secret-free `.env.example` template.
-  - `config.toml` frontend defaults plus cache settings.
-  - Browser query parameters or CLI flags.
-- Outputs:
-  - JSON API responses from `/api/search`, `/api/export/csv`, and `/api/export/json`.
-  - Browser-rendered result cards, source-status chips, pagination, and article dialogs.
-  - CLI table output and export files under `outputs/` when requested.
-  - Local lint and unittest output.
+- `.env` contains provider credentials and is never tracked.
+- `config.toml` contains documented frontend and cache settings.
+- Exports are created only when a caller requests them; no empty output tree is
+  tracked.
+- `.venv`, caches, logs, and generated artifacts are ignored.
 
 ## Part 2 -- Root Tree and File Map
 
 ```text
 .
-├── .env                 -- Local provider credentials.
-├── .env.example         -- Secret-free provider credential template.
-├── .gitignore           -- Ignore rules for secrets, caches, worktrees, and virtualenv files.
-├── .python-version      -- Python version pin for the workspace.
-├── README.md            -- Concise entry point with quick start and doc links.
-├── config.toml          -- Frontend defaults plus in-memory cache settings.
-├── pyproject.toml       -- Project metadata, dependencies, package config, and scripts.
-├── uv.lock              -- Locked dependency resolution for `uv`.
-├── GUIDE_ROOT.md        -- Root navigation guide.
-├── GUIDE_OVERVIEW.md    -- High-level conceptual overview.
+├── README.md
+├── config.toml
+├── pyproject.toml
+├── uv.lock
+├── GUIDE_ROOT.md
+├── GUIDE_OVERVIEW.md
 ├── src/                 -- Importable Python product package.
-├── frontend/            -- HTML shell, CSS theme, and JavaScript modules.
-├── scripts/             -- Thin one-off helper scripts.
-├── tests/               -- Unit tests and route smoke tests.
-├── data/                -- Raw, interim, and processed datasets.
-├── outputs/             -- CLI exports, reports, figures, and run artifacts.
-├── notebooks/           -- Exploration notebooks.
-├── docs/                -- User and developer documentation.
-└── logs/                -- Runtime log files.
+├── frontend/            -- Current static browser client.
+├── scripts/             -- Credential bootstrap command.
+├── tests/               -- Offline regression and contract tests.
+└── docs/
+    ├── plans/           -- Current, forward-looking implementation plans.
+    ├── reference/       -- Developer ground truth.
+    └── user/            -- User-facing API documentation.
 ```
 
-See `docs/reference/PROJECT_STRUCTURE.md` for the full file tree.
+The exact current tree is documented in
+`docs/reference/PROJECT_STRUCTURE.md`. The intended end state and phased work
+are in `docs/plans/PROJECT_REFACTOR_PLAN.md`.
 
-## Subfolder Overview
+### Folder ownership
 
-- `src/news/`
-  - What it does: implements the API, CLI, search pipeline, source adapters, export helpers, and runtime path/config helpers.
-  - Key folders: `api/`, `cli/`, `exports/`, `search/`, `sources/`, `web/`.
-  - Where outputs go: JSON responses returned to the browser or CLI; export files are written only when requested by the CLI.
-  - Guides: `src/GUIDE_src.md`, `src/news/GUIDE_news.md`.
-
-- `frontend/`
-  - What it does: renders the browser search experience.
-  - Key files: `index.html`, `styles.css`, `scripts/app.js`, `scripts/form.js`, `scripts/render.js`.
-  - Where outputs go: no persisted artifacts; output is in-browser.
-  - Guide: `frontend/GUIDE_frontend.md`.
-
-- `scripts/`
-  - What it does: hosts thin helpers that are not part of the importable product package.
-  - Key files: `acled_oauth_token.py`, `acled_bearer_read.py`.
-  - Where outputs go: notebook exploration artifacts under `notebooks/api_explorer/*/outputs/`.
-
-- `tests/`
-  - What it does: regression coverage for validation, deduplication, export, cache, retry logic, CLI behavior, and route wiring.
-  - Key files: `test_search_service.py`, `test_app.py`, `test_cli.py`, `test_export.py`, `test_cache.py`, `test_retry.py`.
-  - Where outputs go: none.
-  - Guide: `tests/GUIDE_tests.md`.
-
-- `docs/user/`
-  - What it does: stores user-facing documentation such as the API reference.
-  - Key files: `API_REFERENCE.md`.
-
-- `notebooks/api_explorer/`
-  - What it does: notebook-first provider reconnaissance workspace.
-  - Key files: source-specific notebooks plus `API_USAGE.md` references.
-  - Where outputs go: source-specific `outputs/` folders inside each provider subfolder.
-  - Guide: `notebooks/api_explorer/GUIDE_api_explorer.md`.
+- `src/news/` owns the API, CLI, search pipeline, provider adapters, export
+  formats, and runtime web/configuration helpers.
+- `frontend/` owns the current HTML, CSS, and JavaScript browser interface.
+- `scripts/` contains the ACLED OAuth bootstrap wrapper.
+- `tests/` protects validation, filtering, deduplication, provider
+  normalization, cache behavior, retries, exports, routes, CLI behavior, and
+  frontend link safety.
+- `docs/user/` explains the HTTP API.
+- `docs/reference/` records the exact implemented structure.
+- `docs/plans/` describes approved future structural work and is not a
+  statement of current behavior.
 
 ## Part 3 -- Code Reference
 
 - `pyproject.toml`
-  - Defines dependencies, the `src` package layout, and the `news-server` and `news-search` commands.
-
+  - Defines Python dependencies, the `src` package layout, and the
+    `news-server` and `news-search` commands.
 - `config.toml`
-  - Stores frontend defaults and cache settings.
-  - Current defaults enable English-only by default and preselect Guardian + NYT.
-
+  - Defines browser defaults and in-memory cache limits.
 - `src/news/api/`
-  - Owns the FastAPI app, route models, and HTTP query parameter parsing.
-
+  - Owns FastAPI routes, query parsing, and response models.
 - `src/news/search/`
-  - Owns validation, shared boundary parsing, cache use, filtering, deduplication, sorting, and response metadata.
-
+  - Owns validation, filtering, deduplication, caching, and orchestration.
 - `src/news/sources/`
-  - Owns provider registry, concurrent fan-out, retry behavior, shared adapter plumbing, and provider-specific adapters.
-
+  - Owns provider registration, concurrent fan-out, retry behavior, shared
+    adapter infrastructure, and provider-specific adapters.
 - `src/news/exports/`
-  - Owns CSV, JSON, and SQLite serialization helpers.
-
+  - Owns CSV, JSON, and SQLite serialization.
 - `src/news/cli/`
-  - Owns parser, fetch paths, terminal rendering, export writing, and command workflow.
-
+  - Owns terminal parsing, API/direct fetch paths, rendering, and export flow.
 - `src/news/web/`
-  - Owns project-root path resolution and config loading.
-
+  - Currently resolves repository-root configuration and frontend paths.
 - `frontend/`
-  - See `frontend/GUIDE_frontend.md` for the browser UI, URL-state handling, pagination, and dialog behavior.
-
+  - See `frontend/GUIDE_frontend.md`.
+- `scripts/`
+  - See `scripts/GUIDE_scripts.md`.
 - `tests/`
-  - See `tests/GUIDE_tests.md` for the local verification strategy.
+  - See `tests/GUIDE_tests.md`.
 
-- `docs/user/`
-  - Holds the current API reference markdown snapshot.
+## Part 4 -- Short Journal
+
+- 2026-07-26: Removed the notebook research workspace, Jupyter dependencies, empty placeholder folders, and completed historical plans; future cleanup follows `docs/plans/PROJECT_REFACTOR_PLAN.md`.
