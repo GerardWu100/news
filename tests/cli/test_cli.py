@@ -46,9 +46,7 @@ class ArgParserTests(unittest.TestCase):
         ):
             parser = build_arg_parser()
 
-        args = parser.parse_args(
-            ["inflation", "-s", "2025-01-01", "-e", "2025-03-01"]
-        )
+        args = parser.parse_args(["inflation", "-s", "2025-01-01", "-e", "2025-03-01"])
 
         self.assertEqual(args.server, remote_server)
 

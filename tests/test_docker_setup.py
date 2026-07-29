@@ -36,9 +36,7 @@ class DockerDeploymentTests(unittest.TestCase):
 
     def test_entrypoint_seeds_config_without_overwriting_operator_changes(self) -> None:
         """First boot should copy defaults only when no mounted config exists."""
-        entrypoint = (PROJECT_ROOT / "docker-entrypoint.sh").read_text(
-            encoding="utf-8"
-        )
+        entrypoint = (PROJECT_ROOT / "docker-entrypoint.sh").read_text(encoding="utf-8")
 
         self.assertIn('if [ ! -f "$CONFIG_PATH" ]; then', entrypoint)
         self.assertIn('cp "$DEFAULT_CONFIG_PATH" "$CONFIG_PATH"', entrypoint)
