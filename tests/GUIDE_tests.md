@@ -18,6 +18,7 @@ The suite protects:
 - request validation, filtering, deduplication, caching, and orchestration;
 - OAuth, retry infrastructure, and individual provider adapters;
 - browser link safety and wheel-installed runtime assets.
+- Docker build, bind, persistence, and entrypoint contracts.
 
 Shared builders live in `fixtures/` and are named for the contract they create.
 There is no catch-all helper module.
@@ -27,6 +28,7 @@ There is no catch-all helper module.
 ```text
 tests/
 ├── GUIDE_tests.md
+├── test_docker_setup.py
 ├── api/
 │   ├── test_app.py
 │   ├── test_config.py
@@ -111,11 +113,15 @@ Package marker files are omitted from the tree.
 
 - `web/test_static.py` checks security-sensitive article-link rendering plus
   point-in-time labels, guided first-use structure, reduced-motion support, and
-  active-page export wiring.
+  active-page export wiring. It also protects the semantic list used by the
+  hero's research-feature badges.
 - `web/test_wheel_installation.py` builds and installs a clean wheel, then
   requests `/` outside the source checkout.
 - `fixtures/search_results.py` builds schema-complete results and provider
   responses shared across boundary and cache tests.
+- `test_docker_setup.py` protects the loopback host port, Toronto time,
+  persistent data mount, external network, image command, and first-boot
+  configuration behavior without requiring a Docker daemon.
 
 ### How to run
 
@@ -127,3 +133,4 @@ uv run python -m unittest discover -s tests -v
 ## Part 4 -- Short Journal
 
 - 2026-07-26: Organized tests by production responsibility and kept live provider checks outside the deterministic default suite.
+- 2026-07-29: Added daemon-independent deployment contract tests because Docker socket access is not guaranteed in every development environment.

@@ -7,6 +7,12 @@ in `docs/plans/PROJECT_REFACTOR_PLAN.md`.
 
 ```text
 .
+├── .agents/
+│   └── skills/
+│       └── summarize-news-cli/
+│           ├── SKILL.md
+│           └── agents/openai.yaml
+├── .dockerignore
 ├── .env.example
 ├── .gitignore
 ├── .python-version
@@ -14,6 +20,11 @@ in `docs/plans/PROJECT_REFACTOR_PLAN.md`.
 ├── GUIDE_ROOT.md
 ├── LICENSE
 ├── README.md
+├── Dockerfile
+├── docker-compose.yml
+├── docker-entrypoint.sh
+├── blog/
+│   └── index.md
 ├── config.toml
 ├── pyproject.toml
 ├── uv.lock
@@ -73,6 +84,7 @@ in `docs/plans/PROJECT_REFACTOR_PLAN.md`.
 │   └── generate_openapi.py
 ├── tests/
 │   ├── GUIDE_tests.md
+│   ├── test_docker_setup.py
 │   ├── api/
 │   │   ├── test_app.py
 │   │   ├── test_config.py
@@ -111,7 +123,8 @@ in `docs/plans/PROJECT_REFACTOR_PLAN.md`.
     │   ├── PROJECT_STRUCTURE.md
     │   └── openapi.json
     └── user/
-        └── API_REFERENCE.md
+        ├── API_REFERENCE.md
+        └── DOCKER.md
 ```
 
 Package marker files named `__init__.py` are omitted from the tree for
@@ -127,11 +140,14 @@ readability.
 | `src/news/search/` | Validated search behavior, cache, filters, deduplication, and metadata |
 | `src/news/sources/` | Provider access, ACLED OAuth bootstrap, retry/cooldown behavior, registry, and concurrent fan-out |
 | `src/news/web/` | Typed configuration validation, package defaults, path lookup, and installed browser assets |
+| `.agents/skills/summarize-news-cli/` | Workspace-local AI-agent retrieval, coverage audit, and summary procedure |
+| `blog/` | Local-only article source about the deployment and agent workflow |
 | `scripts/` | Thin ACLED credential and OpenAPI generation commands |
 | `tests/` | Deterministic offline regression coverage |
 | `docs/plans/` | Forward-looking work that has not necessarily been implemented |
 | `docs/reference/` | Developer ground truth for the implemented system |
 | `docs/user/` | User-facing documentation |
+| Root Docker files | Image build, Compose runtime, persistent configuration seeding, and build-context exclusions |
 
 ## Important Root Files
 
@@ -139,5 +155,7 @@ readability.
 - `pyproject.toml`: dependencies, package discovery, and executable commands.
 - `README.md`: setup, canonical commands, and documentation links.
 - `.env.example`: secret-free provider credential template.
+- `Dockerfile`, `docker-compose.yml`, `docker-entrypoint.sh`, and
+  `.dockerignore`: self-hosted deployment boundary.
 - `GUIDE_OVERVIEW.md`: conceptual system flow and constraints.
 - `GUIDE_ROOT.md`: developer navigation from the repository root.

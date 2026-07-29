@@ -9,8 +9,10 @@ import sys
 from typing import Any
 
 import httpx
+from dotenv import load_dotenv
 
 from news.search.errors import SearchValidationError
+from news.web.paths import env_path
 
 from .fetch import fetch_page
 from .output import format_table, resolve_output_path, write_export
@@ -19,6 +21,9 @@ from .parser import build_arg_parser
 
 def main(argv: list[str] | None = None) -> int:
     """Run the CLI."""
+    # Load the operator's default remote endpoint before parser construction;
+    # explicit shell environment variables still take precedence.
+    load_dotenv(env_path())
     parser = build_arg_parser()
     args = parser.parse_args(argv)
 

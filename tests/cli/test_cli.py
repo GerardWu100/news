@@ -10,7 +10,12 @@ from unittest.mock import patch
 import tomllib
 
 from news.cli.output import format_table
-from news.cli.parser import build_api_params, build_arg_parser
+from news.cli.parser import (
+    DEFAULT_SERVER_URL,
+    SERVER_URL_ENVIRONMENT_VARIABLE,
+    build_api_params,
+    build_arg_parser,
+)
 from news.cli.workflow import collect_all_pages, run_cli
 
 
@@ -19,7 +24,8 @@ class ArgParserTests(unittest.TestCase):
 
     def test_minimal_args(self) -> None:
         """The parser should accept the smallest valid invocation."""
-        parser = build_arg_parser()
+        with patch.dict("os.environ", {}, clear=True):
+            parser = build_arg_parser()
         args = parser.parse_args(["inflation", "-s", "2025-01-01", "-e", "2025-03-01"])
 
         self.assertEqual(args.query, "inflation")
@@ -28,6 +34,23 @@ class ArgParserTests(unittest.TestCase):
         self.assertEqual(args.output_format, "table")
         self.assertFalse(args.direct)
         self.assertEqual(args.page, 1)
+        self.assertEqual(args.server, DEFAULT_SERVER_URL)
+
+    def test_server_defaults_to_environment_for_remote_agents(self) -> None:
+        """The environment should configure a reusable remote API endpoint."""
+        remote_server = "https://news.example.test"
+        with patch.dict(
+            "os.environ",
+            {SERVER_URL_ENVIRONMENT_VARIABLE: remote_server},
+            clear=True,
+        ):
+            parser = build_arg_parser()
+
+        args = parser.parse_args(
+            ["inflation", "-s", "2025-01-01", "-e", "2025-03-01"]
+        )
+
+        self.assertEqual(args.server, remote_server)
 
     def test_all_flags(self) -> None:
         """The parser should expose every supported CLI option."""

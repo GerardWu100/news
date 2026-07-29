@@ -25,6 +25,10 @@ downstream workflows.
 
 ```text
 .
+├── .agents/skills/ -- Workspace-only agent retrieval and summary workflow.
+├── blog/           -- Local-only article source.
+├── Dockerfile      -- Reproducible Python 3.13 application image.
+├── docker-compose.yml -- Persistent self-hosted server and optional CLI client.
 ├── src/news/       -- Installable API, CLI, search, source, export, and web package.
 ├── scripts/        -- Thin credential and OpenAPI generation commands.
 ├── tests/          -- Offline tests organized by production responsibility.
@@ -48,6 +52,8 @@ The exact implemented tree is maintained in
   directory, created from `.env.example`.
 - Frontend and cache settings from an explicit server option, `NEWS_CONFIG`,
   current-directory `config.toml`, or packaged defaults, in that order.
+- An optional local or remote server base URL from `--server` or
+  `NEWS_SERVER_URL`.
 
 ### Outputs
 
@@ -62,8 +68,8 @@ The exact implemented tree is maintained in
 
 ## Architecture and Data Flow
 
-1. The `news-server` command loads credentials and asks the application factory
-   to construct the FastAPI app.
+1. The `news-server` command loads credentials, parses bind options, and asks
+   the application factory to construct the FastAPI app.
 2. Startup merges the selected operator configuration over packaged defaults,
    validates it, and constructs the process-local cache.
 3. The browser or CLI submits a validated request.
@@ -78,6 +84,11 @@ The exact implemented tree is maintained in
 9. The final provider page is sorted and returned through the API.
 10. The browser renders the page with its active date boundary and exact-page
     download links. The CLI can print table, JSON, or JSONL and export files.
+
+In Docker, the server binds to all container interfaces on port 8000 while
+Compose publishes it only to host loopback on port 50023. Both the optional
+Docker CLI service and authenticated reverse proxies on the external `single`
+network can reach the container without widening the host bind.
 
 ## Reliability and Operational Behavior
 
@@ -113,6 +124,8 @@ The exact implemented tree is maintained in
   source-status dependencies, which keeps route tests isolated and offline.
 - Public HTTP routes and response models are captured in a generated,
   contract-tested OpenAPI schema.
+- The Docker health check probes the configuration route. Persistent
+  configuration is copied from repository defaults only on first boot.
 
 ## User Overrides
 
@@ -121,3 +134,6 @@ The exact implemented tree is maintained in
 - Store provider credentials in the root `.env`.
 - Keep project docs in sync after code changes.
 - Treat the project as a retrieval tool rather than an analytics surface.
+- Keep unauthenticated Docker ports private; remote agents use a VPN or
+  authenticated TLS reverse proxy and configure the CLI with
+  `NEWS_SERVER_URL`.

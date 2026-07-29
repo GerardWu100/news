@@ -47,6 +47,8 @@ class FrontendResearchWorkflowTests(unittest.TestCase):
         self.assertIn('class="research-steps"', html)
         self.assertIn('class="results-heading"', html)
         self.assertIn('href="/static/favicon.svg"', html)
+        self.assertIn('role="list" aria-label="Research features"', html)
+        self.assertEqual(html.count('role="listitem"'), 3)
         self.assertIn("@media (prefers-reduced-motion: reduce)", styles)
 
     def test_completed_search_enables_exact_page_exports(self) -> None:

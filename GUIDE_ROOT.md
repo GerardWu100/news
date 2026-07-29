@@ -12,7 +12,8 @@ operator overrides.
 
 ### Runtime flow
 
-1. `news-server` resolves optional credentials and validated configuration.
+1. `news-server` resolves optional credentials, validated configuration, and
+   configurable bind settings.
 2. The application factory builds an isolated process cache and binds provider
    execution and status dependencies.
 3. Browser or CLI inputs become one validated search request.
@@ -25,9 +26,12 @@ operator overrides.
 ### Runtime and generated state
 
 - `.env` in the process working directory holds optional provider credentials
-  and is never tracked.
+  plus the optional `NEWS_SERVER_URL` CLI default and is never tracked.
 - External TOML overrides packaged defaults through `--config`, `NEWS_CONFIG`,
   or current-directory `config.toml`, in that order.
+- Docker seeds the repository defaults into the mounted
+  `${HOME}/.containers/news` data directory once, then preserves operator
+  changes across image rebuilds.
 - Exports, environments, caches, logs, and build artifacts are generated only
   when needed and remain ignored.
 - The checked-in OpenAPI schema is generated from the application and tested as
@@ -43,6 +47,14 @@ The exact implemented tree and responsibility table live only in
 - `pyproject.toml`: dependencies, package discovery, package data, and commands.
 - `config.toml`: documented local frontend and cache overrides.
 - `.env.example`: secret-free provider credential template.
+- `Dockerfile`, `docker-compose.yml`, and `docker-entrypoint.sh`: self-hosted
+  image, deployment defaults, persistent configuration seeding, and a
+  Dockerized CLI client.
+- `.dockerignore`: excludes development, secret, test, documentation, and local
+  artifact files from the image build context.
+- `.agents/skills/summarize-news-cli/`: workspace-only agent procedure for
+  CLI retrieval and evidence-bounded news summaries.
+- `blog/`: local article source; it is not a website publish target.
 - `src/`: importable implementation and installed resources; start with
   `src/GUIDE_src.md`.
 - `scripts/`: thin local workflow commands; see `scripts/GUIDE_scripts.md`.
@@ -60,3 +72,5 @@ The exact implemented tree and responsibility table live only in
 - 2026-07-26: Replaced permissive configuration dictionaries with immutable validated settings and explicit cache injection.
 - 2026-07-26: Made package exports, application dependencies, and the generated OpenAPI schema explicit contracts.
 - 2026-07-26: Kept API module imports free of configuration reads so `news-server --config` is resolved before application construction.
+- 2026-07-29: Mirrored the podcast-downloader Docker operations pattern while keeping the unauthenticated API loopback-only and reserving host port 50023.
+- 2026-07-29: Made remote agent endpoints configurable through `NEWS_SERVER_URL` and kept the summary skill local to this workspace.

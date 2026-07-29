@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import argparse
+import os
 
 DEFAULT_EXPORT_MAX_PAGES = 50
 DEFAULT_SERVER_URL = "http://localhost:8000"
+SERVER_URL_ENVIRONMENT_VARIABLE = "NEWS_SERVER_URL"
 DEFAULT_PROVIDER_SORT = "default"
 OUTPUT_FORMATS = ("table", "json", "jsonl")
 
@@ -29,6 +31,9 @@ pagination limits.
 
 def build_arg_parser() -> argparse.ArgumentParser:
     """Build the CLI argument parser for search and export workflows."""
+    default_server_url = (
+        os.getenv(SERVER_URL_ENVIRONMENT_VARIABLE, "").strip() or DEFAULT_SERVER_URL
+    )
     parser = argparse.ArgumentParser(
         description=(
             "Retrieve news published within an inclusive historical date window."
@@ -138,8 +143,11 @@ def build_arg_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--server",
-        default=DEFAULT_SERVER_URL,
-        help="Base URL for the running API server",
+        default=default_server_url,
+        help=(
+            "Base URL for the running API server "
+            f"(default: ${SERVER_URL_ENVIRONMENT_VARIABLE} or {DEFAULT_SERVER_URL})"
+        ),
     )
     parser.add_argument(
         "--direct",

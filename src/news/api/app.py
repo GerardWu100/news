@@ -192,6 +192,22 @@ def main(argv: list[str] | None = None) -> None:
             "current-directory config.toml."
         ),
     )
+    parser.add_argument(
+        "--host",
+        default=SERVER_HOST,
+        help=f"Interface on which to listen (default: {SERVER_HOST})",
+    )
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=SERVER_PORT,
+        help=f"TCP port on which to listen (default: {SERVER_PORT})",
+    )
+    parser.add_argument(
+        "--reload",
+        action="store_true",
+        help="Restart the development server when source files change",
+    )
     args = parser.parse_args(argv)
     if args.config:
         os.environ[CONFIG_ENVIRONMENT_VARIABLE] = args.config
@@ -199,9 +215,9 @@ def main(argv: list[str] | None = None) -> None:
     uvicorn.run(
         "news.api.app:create_configured_app",
         factory=True,
-        host=SERVER_HOST,
-        port=SERVER_PORT,
-        reload=True,
+        host=args.host,
+        port=args.port,
+        reload=args.reload,
     )
 
 

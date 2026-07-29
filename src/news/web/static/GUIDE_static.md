@@ -29,6 +29,9 @@ instead of appearing empty. On wider screens, the first returned article is
 featured and later articles use a two-column grid; the layout collapses to one
 column on smaller screens.
 
+The hero feature badges use explicit list and list-item semantics so assistive
+technology receives the same grouping visible in the layout.
+
 ### Logic spine
 
 1. On load, the page fetches `/api/config` and `/api/sources`.

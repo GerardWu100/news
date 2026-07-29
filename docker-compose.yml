@@ -1,0 +1,57 @@
+services:
+  news:
+    build: .
+    image: local/news:latest
+    container_name: news
+    ports:
+      - "127.0.0.1:50023:8000"
+    restart: unless-stopped
+    environment:
+      TZ: America/Toronto
+      NEWS_DATA_DIR: /data
+      NEWS_CONFIG: /data/config.toml
+      NYT_API_KEY: ${NYT_API_KEY:-}
+      NYT_API_SECRET: ${NYT_API_SECRET:-}
+      MEDIACLOUD_API_KEY: ${MEDIACLOUD_API_KEY:-}
+      NEWSAPI_API_KEY: ${NEWSAPI_API_KEY:-}
+      GUARDIAN_API_KEY: ${GUARDIAN_API_KEY:-}
+      ACLED_OAUTH_TOKEN_URL: ${ACLED_OAUTH_TOKEN_URL:-https://acleddata.com/oauth/token}
+      ACLED_OAUTH_GRANT_TYPE: ${ACLED_OAUTH_GRANT_TYPE:-password}
+      ACLED_OAUTH_CLIENT_ID: ${ACLED_OAUTH_CLIENT_ID:-acled}
+      ACLED_USERNAME: ${ACLED_USERNAME:-}
+      ACLED_PASSWORD: ${ACLED_PASSWORD:-}
+      ACLED_BEARER_TOKEN: ${ACLED_BEARER_TOKEN:-}
+      ACLED_BEARER_TOKEN_TYPE: ${ACLED_BEARER_TOKEN_TYPE:-Bearer}
+      ACLED_BEARER_EXPIRES_IN: ${ACLED_BEARER_EXPIRES_IN:-}
+      ACLED_REFRESH_TOKEN: ${ACLED_REFRESH_TOKEN:-}
+      ACLED_BEARER_OBTAINED_AT_UTC: ${ACLED_BEARER_OBTAINED_AT_UTC:-}
+    volumes:
+      - ${HOME}/.containers/news:/data
+    networks:
+      - single
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/config', timeout=5)"
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  news-cli:
+    profiles:
+      - cli
+    build: .
+    image: local/news:latest
+    entrypoint:
+      - news-search
+    environment:
+      NEWS_SERVER_URL: http://news:8000
+    networks:
+      - single
+
+networks:
+  single:
+    external: true

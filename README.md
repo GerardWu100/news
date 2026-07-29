@@ -87,6 +87,12 @@ uv run news-server
 
 Open `http://127.0.0.1:8000`, choose the historical window, and search.
 
+For live-reload development:
+
+```bash
+uv run news-server --reload
+```
+
 For a human-readable CLI result:
 
 ```bash
@@ -114,6 +120,45 @@ uv run news-search "central bank" \
 
 Run `uv run news-search --help` for source filters, exact phrases, domain
 filters, pagination, direct mode, and file exports.
+
+## Docker
+
+The deployment mirrors the sibling podcast-downloader defaults: Python 3.13
+slim, `uv`, Toronto time, `restart: unless-stopped`, persistent configuration
+under `${HOME}/.containers/news`, loopback-only publishing, and the external
+`single` reverse-proxy network.
+
+```bash
+docker network create single  # one time, if it does not already exist
+docker compose up --build -d news
+```
+
+Open `http://127.0.0.1:50023`. Host port `50023` avoids the podcast service's
+`50022` default. The first boot copies the repository `config.toml` into the
+persistent data directory; later container rebuilds preserve operator changes.
+
+An AI agent can use the same CLI against a private remote deployment:
+
+```bash
+NEWS_SERVER_URL="https://news.example.com" \
+uv run news-search "central bank" \
+  -s 2026-01-01 \
+  -e 2026-01-31 \
+  --all-pages \
+  --format json \
+  --quiet
+```
+
+The explicit `--server URL` option overrides `NEWS_SERVER_URL`. The application
+does not implement user authentication, so remote access should use an
+authenticated Transport Layer Security (TLS) reverse proxy or a private
+virtual private network (VPN), not a publicly exposed container port.
+
+See `docs/user/DOCKER.md` for configuration, operations, Dockerized CLI use,
+and the security boundary. The workspace-only
+`.agents/skills/summarize-news-cli/` skill teaches an AI agent how to retrieve,
+audit, and summarize CLI results. The accompanying local article is
+`blog/index.md`; it is not copied into the website repository.
 
 ## Configuration
 
@@ -162,6 +207,7 @@ costs and realistic execution timing in the downstream backtest.
 ## Documentation
 
 - API reference: `docs/user/API_REFERENCE.md`
+- Docker deployment: `docs/user/DOCKER.md`
 - Completed refactoring plan: `docs/plans/PROJECT_REFACTOR_PLAN.md`
 - Developer structure reference: `docs/reference/PROJECT_STRUCTURE.md`
 

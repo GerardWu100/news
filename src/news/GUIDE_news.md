@@ -35,7 +35,15 @@ without patching module globals.
 Importing the API module does not construct a configured application.
 `news-server` parses command arguments first, then the server invokes the
 factory. This preserves the documented rule that `--config` takes precedence
-even when a current-directory `config.toml` is invalid.
+even when a current-directory `config.toml` is invalid. The command also owns
+the host, port, and development-only reload settings required by local and
+container runtimes.
+
+Before parsing CLI arguments, `news-search` loads the root `.env`. Its
+`--server` value therefore defaults to `NEWS_SERVER_URL` when configured and
+otherwise uses `http://localhost:8000`. An explicit `--server` remains the
+one-call override. This keeps the same structured retrieval workflow usable
+against a local process, Docker Compose service, or protected remote server.
 
 ## Public Imports
 
