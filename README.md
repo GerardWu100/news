@@ -6,14 +6,15 @@ interface (CLI).
 
 ## Purpose
 
-The project helps researchers reconstruct the information that was available
-inside a chosen date window. This is useful for two related workflows:
+The project has two purposes:
 
-- **Human market-intuition practice:** use the browser to study a past period
-  without intentionally reading articles published after the selected end date.
-- **Machine-assisted research:** use structured CLI output as input to a large
-  language model (LLM), generate experimental signals, and export the underlying
-  articles for a separate backtesting pipeline.
+1. **Train human market intuition from news:** use the browser to study the news
+   available during a past period, form a view of the market at that point, and
+   compare that view with what happened afterward.
+2. **Give an artificial intelligence (AI) agent point-in-time news:** let an
+   agent retrieve news from one specific historical period without exposing it
+   to later news. The structured command-line interface (CLI) output supports
+   reproducible agent research and downstream experiments.
 
 Restricting news by publication date helps reduce **look-ahead bias**, which
 means using information that would not have been available when a historical
@@ -26,6 +27,18 @@ could realistically have been acted on.
 
 This repository retrieves and exports news. It does not currently calculate
 returns, simulate trades, or report backtest performance.
+
+## Roadmap
+
+Planned next steps focus on making the browser a richer point-in-time research
+workspace:
+
+- Add historical Google Trends data for the selected period.
+- Add macroeconomic data that was available during the selected period.
+- Add an AI-agent news summary, produced through a large language model (LLM)
+  API call, to the browser and optionally to the CLI.
+- Show the next configurable number of days of major financial and economic
+  data releases in the browser.
 
 ## Interfaces
 
