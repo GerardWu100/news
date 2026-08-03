@@ -16,6 +16,7 @@ import {
     syncQueryToUrl,
 } from "./form.js";
 import {
+    announce,
     closeArticleDialog,
     clearStatus,
     renderEmptyState,
@@ -29,6 +30,7 @@ import {
     renderSourceReports,
     renderSources,
     renderSpinner,
+    setResultsBusy,
 } from "./render.js";
 import { setCurrentResults, setMeta, setPage, startSearch, state } from "./state.js";
 
@@ -40,12 +42,16 @@ const EMPTY_PAGE_STATE = {
 };
 
 const searchFormElement = document.getElementById("search-form");
+const searchButtonElement = document.getElementById("search-btn");
+const queryInputElement = document.getElementById("query");
 const nextPageButtonElement = document.getElementById("next-page-btn");
 const previousPageButtonElement = document.getElementById("previous-page-btn");
 const resultsElement = document.getElementById("results");
 const articleDialogElement = document.getElementById("article-dialog");
 const articleDialogCloseButtonElement = document.getElementById("article-dialog-close");
 const copyLinkButtonElement = document.getElementById("copy-link-btn");
+
+const SEARCH_BUTTON_IDLE_LABEL = searchButtonElement.textContent;
 
 searchFormElement.addEventListener("submit", onSearchSubmit);
 nextPageButtonElement.addEventListener("click", onNextPageClick);
@@ -54,8 +60,51 @@ resultsElement.addEventListener("click", onResultClick);
 articleDialogCloseButtonElement.addEventListener("click", onDialogCloseClick);
 articleDialogElement.addEventListener("click", onDialogBackdropClick);
 copyLinkButtonElement.addEventListener("click", onCopyLinkClick);
+document.addEventListener("keydown", onGlobalKeydown);
 
 void initializePage();
+
+
+/**
+ * Focus the query field when the user presses "/" outside a text field.
+ *
+ * Research tools commonly bind "/" to search. The handler ignores the key
+ * while the user is already typing in a field or the article dialog is open so
+ * it never swallows a literal slash.
+ */
+function onGlobalKeydown(event) {
+    if (event.key !== "/" || event.ctrlKey || event.metaKey || event.altKey) {
+        return;
+    }
+    if (articleDialogElement.open) {
+        return;
+    }
+    const active = document.activeElement;
+    const isTypingTarget = active
+        && (active.tagName === "INPUT"
+            || active.tagName === "TEXTAREA"
+            || active.tagName === "SELECT"
+            || active.isContentEditable);
+    if (isTypingTarget) {
+        return;
+    }
+    event.preventDefault();
+    queryInputElement.focus();
+    queryInputElement.select();
+}
+
+
+/**
+ * Reflect the in-flight state on the primary search button.
+ *
+ * Disabling it during a request prevents overlapping submissions and gives a
+ * clear "working" cue that the spinner alone does not, since the button sits
+ * far above the results region.
+ */
+function setSearchButtonLoading(isLoading) {
+    searchButtonElement.disabled = isLoading;
+    searchButtonElement.textContent = isLoading ? "Searching..." : SEARCH_BUTTON_IDLE_LABEL;
+}
 
 
 function onNextPageClick() {
@@ -133,7 +182,20 @@ async function onSearchSubmit(event) {
     renderPagination(EMPTY_PAGE_STATE);
     renderSpinner();
     syncQueryToUrl(query, 1);
+    scrollResultsIntoViewOnNarrowScreens();
     await executeSearch(1);
+}
+
+
+/**
+ * On narrow screens the search form is tall enough to hide the results, so
+ * bring the results region into view once a fresh search starts. Wide layouts
+ * already show both columns and are left untouched.
+ */
+function scrollResultsIntoViewOnNarrowScreens() {
+    if (window.matchMedia("(max-width: 820px)").matches) {
+        resultsElement.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
 }
 
 
@@ -162,6 +224,9 @@ async function executeSearch(requestedPage = state.currentPage) {
     state.currentAbortController = abortController;
 
     state.isLoading = true;
+    setSearchButtonLoading(true);
+    setResultsBusy(true);
+    announce(`Searching page ${requestedPage}...`);
     renderPagination({
         currentPage: requestedPage,
         hasPrevious: requestedPage > 1,
@@ -186,8 +251,11 @@ async function executeSearch(requestedPage = state.currentPage) {
 
         if (payload.results.length === 0) {
             renderEmptyState("No results matched this provider page. Try broadening the date range, adding sources, or relaxing local filters.");
+            announce("No results found for this provider page.");
         } else {
             renderResults(payload.results);
+            const resultNoun = payload.results.length === 1 ? "result" : "results";
+            announce(`${payload.results.length} ${resultNoun} on page ${requestedPage}.`);
         }
 
         renderMeta(payload.meta, durationSeconds);
@@ -213,11 +281,16 @@ async function executeSearch(requestedPage = state.currentPage) {
         setMeta(null);
         clearStatus();
         renderError(error.message);
+        announce(`Search failed: ${error.message}`);
         renderPagination({ ...EMPTY_PAGE_STATE, currentPage: state.currentPage });
     } finally {
+        // Only the request that still owns the abort controller may release the
+        // shared loading UI; a superseded request must leave it to its successor.
         if (state.currentAbortController === abortController) {
             state.isLoading = false;
             state.currentAbortController = null;
+            setSearchButtonLoading(false);
+            setResultsBusy(false);
         }
     }
 }

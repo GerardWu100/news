@@ -196,6 +196,42 @@ button:disabled {
 
 .query-field {
     flex: 1 1 340px;
+    position: relative;
+}
+
+/* Keyboard-shortcut affordance pinned to the query label row. Hidden on
+   narrow screens and while typing so it never competes with the input value. */
+.field-hint {
+    position: absolute;
+    top: 0;
+    right: 0;
+    font-size: 0.68rem;
+    letter-spacing: 0.04em;
+    color: var(--page-muted);
+    background: rgba(23, 32, 46, 0.06);
+    border-radius: 999px;
+    padding: 0.12rem 0.5rem;
+    pointer-events: none;
+    transition: opacity 0.18s ease;
+}
+
+.query-field:focus-within .field-hint {
+    opacity: 0;
+}
+
+/* Screen-reader-only content: removed visually but kept in the accessibility
+   tree so status updates are announced without altering the layout. */
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    border: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
 }
 
 .date-field {
@@ -1127,6 +1163,10 @@ select {
     .date-field {
         width: 100%;
         flex-basis: auto;
+    }
+
+    .field-hint {
+        display: none;
     }
 
     .research-note {

@@ -10,6 +10,41 @@ const META_BAR_ID = "meta-bar";
 const STATUS_STRIP_ID = "status-strip";
 const RESULT_ACTIONS_ID = "result-actions";
 const WINDOW_BANNER_ID = "window-banner";
+const A11Y_STATUS_ID = "a11y-status";
+
+/**
+ * Announce a concise status message to assistive technology.
+ *
+ * The visible results region swaps large chunks of markup, which screen
+ * readers do not reliably narrate. This writes a short sentence to a dedicated
+ * polite live region so search progress and outcomes are spoken.
+ *
+ * Parameters
+ * ----------
+ * message : string
+ *     Human-readable status such as "12 results found" or "Search failed".
+ */
+export function announce(message) {
+    const region = document.getElementById(A11Y_STATUS_ID);
+    if (region) {
+        region.textContent = message;
+    }
+}
+
+/**
+ * Toggle the busy state on the results region for assistive technology.
+ *
+ * Parameters
+ * ----------
+ * isBusy : boolean
+ *     Whether a search request is currently in flight.
+ */
+export function setResultsBusy(isBusy) {
+    const container = document.getElementById(RESULTS_CONTAINER_ID);
+    if (container) {
+        container.setAttribute("aria-busy", isBusy ? "true" : "false");
+    }
+}
 
 function escapeHtml(value) {
     const div = document.createElement("div");

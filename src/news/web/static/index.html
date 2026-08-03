@@ -74,6 +74,7 @@
                     <label class="primary-field query-field">
                         <span>Topic or company</span>
                         <input type="text" id="query" placeholder="e.g. semiconductor demand" required>
+                        <span class="field-hint" aria-hidden="true">Press / to focus</span>
                     </label>
                     <label class="primary-field date-field">
                         <span>From</span>
@@ -223,7 +224,8 @@
                 </div>
             </div>
             <div class="status-strip" id="status-strip"></div>
-            <div class="results" id="results">
+            <p class="visually-hidden" id="a11y-status" role="status" aria-live="polite" aria-atomic="true"></p>
+            <div class="results" id="results" aria-busy="false">
                 <div class="research-start">
                     <p class="research-start-kicker">A disciplined first pass</p>
                     <h3>Search, inspect, then form a view.</h3>
