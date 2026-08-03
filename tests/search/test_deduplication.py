@@ -79,6 +79,53 @@ class DeduplicationTests(unittest.TestCase):
         self.assertEqual(deduplicated[0].duplicate_count, 2)
         self.assertEqual(deduplicated[0].source, "gdelt")
 
+    def test_deduplicate_articles_preserves_metadata_across_both_passes(self) -> None:
+        """URL-pass provenance must survive a later syndicated-title merge."""
+        syndicated_title = (
+            "Federal Reserve signals a pause in interest rate hikes this year"
+        )
+        articles = [
+            # gdelt and nyt share a canonical URL, so they collapse in the URL
+            # pass before the title pass folds in the guardian record below.
+            Article(
+                title=syndicated_title,
+                url="https://a.com/story?id=1",
+                date="2026-02-10",
+                source="gdelt",
+                domain="a.com",
+                language="en",
+            ),
+            Article(
+                title=syndicated_title,
+                url="https://a.com/story?id=1&utm_source=x",
+                date="2026-02-10",
+                source="nyt",
+                domain="a.com",
+                language="en",
+            ),
+            Article(
+                title=syndicated_title,
+                url="https://b.com/other",
+                date="2026-02-10",
+                source="guardian",
+                domain="b.com",
+                language="en",
+            ),
+        ]
+
+        deduplicated = deduplicate_articles(articles)
+
+        self.assertEqual(len(deduplicated), 1)
+        # The title pass must union the URL-pass ``matched_sources`` instead of
+        # only reading each member's ``source``, so nyt is not dropped.
+        self.assertEqual(
+            deduplicated[0].matched_sources,
+            ("gdelt", "guardian", "nyt"),
+        )
+        # And ``duplicate_count`` must sum every original record (3), not just
+        # the two members of the final title group.
+        self.assertEqual(deduplicated[0].duplicate_count, 3)
+
     def test_deduplicate_articles_keeps_richest_context_fields(self) -> None:
         """Duplicate collapsing should keep the richest available text fields."""
         articles = [

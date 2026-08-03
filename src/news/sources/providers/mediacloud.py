@@ -17,6 +17,7 @@ import httpx
 from news.sources.base import Article, BaseSource, SourcePageResult, SourceSearchOptions
 from news.sources.common import (
     CooldownWindow,
+    iso_date_prefix,
     raise_if_cooling,
 )
 from news.sources.retry import build_timeout, get_with_retry
@@ -217,7 +218,11 @@ class MediaCloudSource(BaseSource):
         return Article(
             title=raw.get("title", ""),
             url=raw.get("url", ""),
-            date=raw.get("publish_date", ""),
+            # MediaCloud reports ``publish_date`` with a time component (for
+            # example "2024-01-15 00:00:00"); trim it to a bare ``YYYY-MM-DD``
+            # date so sorting and the same-day syndicated-title dedup key match
+            # the format every other adapter produces.
+            date=iso_date_prefix(raw.get("publish_date", "")),
             source="mediacloud",
             domain=raw.get("media_name", ""),
             language=raw.get("language", ""),

@@ -47,6 +47,26 @@ class MediaCloudCooldownTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("Try again in", str(context.exception))
 
 
+class MediaCloudArticleMappingTests(unittest.TestCase):
+    """Check normalization of MediaCloud story fields into ``Article`` rows."""
+
+    def test_publish_date_is_trimmed_to_iso_date(self) -> None:
+        """A datetime ``publish_date`` should become a bare ``YYYY-MM-DD``."""
+        article = MediaCloudSource._to_article(
+            {
+                "title": "Story",
+                "url": "https://example.com/story",
+                "publish_date": "2024-01-15 00:00:00",
+                "media_name": "example.com",
+                "language": "en",
+            }
+        )
+
+        # The trimmed date keeps cross-provider sorting and the same-day
+        # syndicated-title dedup key consistent with the other adapters.
+        self.assertEqual(article.date, "2024-01-15")
+
+
 class MediaCloudPaginationTokenStoreTests(unittest.TestCase):
     """Check bounded continuation-token behavior."""
 

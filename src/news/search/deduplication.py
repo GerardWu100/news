@@ -133,7 +133,18 @@ def _merge_duplicate_group(group: Sequence[Article]) -> Article:
     # Use a quality score so we preserve the record with the most useful
     # context fields before overlaying the longest text snippets.
     best_article = max(group, key=_article_quality_key)
-    matched_sources = tuple(sorted({article.source for article in group}))
+    # Deduplication runs in two passes (URL, then syndicated title), so a group
+    # can contain articles that were already merged in an earlier pass. Union
+    # each member's existing ``matched_sources`` (falling back to its own
+    # ``source``) instead of only its ``source`` so prior-pass provenance is not
+    # lost, and sum ``duplicate_count`` so the merged total counts every
+    # original record rather than only the members of this single group.
+    merged_sources: set[str] = set()
+    total_duplicate_count = 0
+    for article in group:
+        merged_sources.update(article.matched_sources or (article.source,))
+        total_duplicate_count += article.duplicate_count
+    matched_sources = tuple(sorted(merged_sources))
     merged_text_fields = {
         field_name: _pick_richest_text(
             group,
@@ -145,7 +156,7 @@ def _merge_duplicate_group(group: Sequence[Article]) -> Article:
         best_article,
         **merged_text_fields,
         matched_sources=matched_sources,
-        duplicate_count=len(group),
+        duplicate_count=total_duplicate_count,
     )
 
 
