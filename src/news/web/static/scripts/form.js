@@ -30,6 +30,18 @@ const ADVANCED_FIELD_ID_BY_PARAM = {
 };
 
 
+/**
+ * Move keyboard focus to the topic field and select whatever it holds.
+ *
+ * Kept here so form-field ids stay declared in one module.
+ */
+export function focusQueryField() {
+    const queryInput = getElement(QUERY_INPUT_ID);
+    queryInput.focus();
+    queryInput.select();
+}
+
+
 export function setDefaultDates() {
     const startDateInput = getElement(START_DATE_INPUT_ID);
     const endDateInput = getElement(END_DATE_INPUT_ID);

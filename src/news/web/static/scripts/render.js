@@ -11,6 +11,7 @@ const STATUS_STRIP_ID = "status-strip";
 const RESULT_ACTIONS_ID = "result-actions";
 const WINDOW_BANNER_ID = "window-banner";
 const A11Y_STATUS_ID = "a11y-status";
+const SEARCH_BUTTON_ID = "search-btn";
 
 /**
  * Announce a concise status message to assistive technology.
@@ -19,31 +20,36 @@ const A11Y_STATUS_ID = "a11y-status";
  * readers do not reliably narrate. This writes a short sentence to a dedicated
  * polite live region so search progress and outcomes are spoken.
  *
+ * Every function below that replaces the results region announces its own
+ * outcome, so a caller cannot render a state that goes unspoken.
+ *
  * Parameters
  * ----------
  * message : string
  *     Human-readable status such as "12 results found" or "Search failed".
  */
-export function announce(message) {
-    const region = document.getElementById(A11Y_STATUS_ID);
-    if (region) {
-        region.textContent = message;
-    }
+function announce(message) {
+    document.getElementById(A11Y_STATUS_ID).textContent = message;
 }
 
 /**
- * Toggle the busy state on the results region for assistive technology.
+ * Reflect an in-flight request on the search button and the results region.
+ *
+ * Disabling the button prevents overlapping submissions and gives a "working"
+ * cue that the spinner alone does not, because the button sits far above the
+ * results. ``aria-busy`` tells assistive technology the region is mid-update.
  *
  * Parameters
  * ----------
- * isBusy : boolean
+ * isLoading : boolean
  *     Whether a search request is currently in flight.
  */
-export function setResultsBusy(isBusy) {
-    const container = document.getElementById(RESULTS_CONTAINER_ID);
-    if (container) {
-        container.setAttribute("aria-busy", isBusy ? "true" : "false");
-    }
+export function setSearchLoading(isLoading) {
+    const searchButton = document.getElementById(SEARCH_BUTTON_ID);
+    searchButton.disabled = isLoading;
+    searchButton.textContent = isLoading ? "Searching..." : "Search";
+    document.getElementById(RESULTS_CONTAINER_ID)
+        .setAttribute("aria-busy", String(isLoading));
 }
 
 function escapeHtml(value) {
@@ -140,18 +146,21 @@ export function renderSourceReports(reports) {
 }
 
 
-export function renderResults(results) {
+export function renderResults(results, page) {
     const container = document.getElementById(RESULTS_CONTAINER_ID);
     const html = results.map(function renderResultCard(result, index) {
         return createResultCard(result, index);
     }).join("");
     container.innerHTML = html;
+    const resultNoun = results.length === 1 ? "result" : "results";
+    announce(`${results.length} ${resultNoun} on page ${page}.`);
 }
 
 
 export function renderEmptyState(message) {
     document.getElementById(RESULTS_CONTAINER_ID).innerHTML =
         `<div class="empty-state">${escapeHtml(message)}</div>`;
+    announce(message);
 }
 
 
@@ -162,12 +171,14 @@ export function renderSpinner() {
             <div>Searching the archives...</div>
         </div>
     `;
+    announce("Searching the archives...");
 }
 
 
 export function renderError(message) {
     document.getElementById(RESULTS_CONTAINER_ID).innerHTML =
         `<div class="error-msg">Search failed: ${escapeHtml(message)}</div>`;
+    announce(`Search failed: ${message}`);
 }
 
 

@@ -218,6 +218,14 @@ uv run ruff check .
 uv run python -m unittest discover -s tests -v
 ```
 
+Lint rules live in `[tool.ruff]` in `pyproject.toml` and cover import ordering
+and modern-syntax rewrites, so import order is settled by the tool rather than
+by hand. Apply the mechanical fixes with:
+
+```bash
+uv run ruff check --fix .
+```
+
 When an intentional route or response-model change modifies the OpenAPI
 contract, review `docs/user/API_REFERENCE.md` and regenerate the schema:
 

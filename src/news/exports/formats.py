@@ -13,7 +13,7 @@ import json
 import sqlite3
 from collections.abc import Sequence
 from contextlib import closing
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 _CSV_COLUMNS = [
@@ -146,7 +146,7 @@ def write_sqlite(
         for index_sql in _SQLITE_INDEXES:
             connection.execute(index_sql)
 
-        fetched_at = datetime.now(timezone.utc).isoformat()
+        fetched_at = datetime.now(UTC).isoformat()
         inserted = 0
 
         for article in articles:

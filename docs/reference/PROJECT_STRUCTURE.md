@@ -108,6 +108,7 @@ in `docs/plans/PROJECT_REFACTOR_PLAN.md`.
 │   │   ├── test_retry.py
 │   │   └── providers/
 │   │       ├── test_acled.py
+│   │       ├── test_article_date_contract.py
 │   │       ├── test_gdelt.py
 │   │       ├── test_guardian.py
 │   │       ├── test_mediacloud.py

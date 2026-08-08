@@ -11,12 +11,12 @@ import {
     buildApiParams,
     buildExportUrl,
     copyCurrentUrl,
+    focusQueryField,
     readSearchForm,
     setDefaultDates,
     syncQueryToUrl,
 } from "./form.js";
 import {
-    announce,
     closeArticleDialog,
     clearStatus,
     renderEmptyState,
@@ -30,7 +30,7 @@ import {
     renderSourceReports,
     renderSources,
     renderSpinner,
-    setResultsBusy,
+    setSearchLoading,
 } from "./render.js";
 import { setCurrentResults, setMeta, setPage, startSearch, state } from "./state.js";
 
@@ -41,17 +41,16 @@ const EMPTY_PAGE_STATE = {
     isLoading: false,
 };
 
+// Must stay in step with the narrow-layout @media breakpoint in styles.css.
+const NARROW_LAYOUT_MEDIA_QUERY = window.matchMedia("(max-width: 820px)");
+
 const searchFormElement = document.getElementById("search-form");
-const searchButtonElement = document.getElementById("search-btn");
-const queryInputElement = document.getElementById("query");
 const nextPageButtonElement = document.getElementById("next-page-btn");
 const previousPageButtonElement = document.getElementById("previous-page-btn");
 const resultsElement = document.getElementById("results");
 const articleDialogElement = document.getElementById("article-dialog");
 const articleDialogCloseButtonElement = document.getElementById("article-dialog-close");
 const copyLinkButtonElement = document.getElementById("copy-link-btn");
-
-const SEARCH_BUTTON_IDLE_LABEL = searchButtonElement.textContent;
 
 searchFormElement.addEventListener("submit", onSearchSubmit);
 nextPageButtonElement.addEventListener("click", onNextPageClick);
@@ -89,21 +88,7 @@ function onGlobalKeydown(event) {
         return;
     }
     event.preventDefault();
-    queryInputElement.focus();
-    queryInputElement.select();
-}
-
-
-/**
- * Reflect the in-flight state on the primary search button.
- *
- * Disabling it during a request prevents overlapping submissions and gives a
- * clear "working" cue that the spinner alone does not, since the button sits
- * far above the results region.
- */
-function setSearchButtonLoading(isLoading) {
-    searchButtonElement.disabled = isLoading;
-    searchButtonElement.textContent = isLoading ? "Searching..." : SEARCH_BUTTON_IDLE_LABEL;
+    focusQueryField();
 }
 
 
@@ -191,10 +176,14 @@ async function onSearchSubmit(event) {
  * On narrow screens the search form is tall enough to hide the results, so
  * bring the results region into view once a fresh search starts. Wide layouts
  * already show both columns and are left untouched.
+ *
+ * The scroll style is deliberately left unset so it inherits the stylesheet's
+ * `scroll-behavior`, which the `prefers-reduced-motion` block already turns off
+ * for readers who ask for that.
  */
 function scrollResultsIntoViewOnNarrowScreens() {
-    if (window.matchMedia("(max-width: 820px)").matches) {
-        resultsElement.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (NARROW_LAYOUT_MEDIA_QUERY.matches) {
+        resultsElement.scrollIntoView({ block: "start" });
     }
 }
 
@@ -224,9 +213,7 @@ async function executeSearch(requestedPage = state.currentPage) {
     state.currentAbortController = abortController;
 
     state.isLoading = true;
-    setSearchButtonLoading(true);
-    setResultsBusy(true);
-    announce(`Searching page ${requestedPage}...`);
+    setSearchLoading(true);
     renderPagination({
         currentPage: requestedPage,
         hasPrevious: requestedPage > 1,
@@ -251,11 +238,8 @@ async function executeSearch(requestedPage = state.currentPage) {
 
         if (payload.results.length === 0) {
             renderEmptyState("No results matched this provider page. Try broadening the date range, adding sources, or relaxing local filters.");
-            announce("No results found for this provider page.");
         } else {
-            renderResults(payload.results);
-            const resultNoun = payload.results.length === 1 ? "result" : "results";
-            announce(`${payload.results.length} ${resultNoun} on page ${requestedPage}.`);
+            renderResults(payload.results, requestedPage);
         }
 
         renderMeta(payload.meta, durationSeconds);
@@ -281,7 +265,6 @@ async function executeSearch(requestedPage = state.currentPage) {
         setMeta(null);
         clearStatus();
         renderError(error.message);
-        announce(`Search failed: ${error.message}`);
         renderPagination({ ...EMPTY_PAGE_STATE, currentPage: state.currentPage });
     } finally {
         // Only the request that still owns the abort controller may release the
@@ -289,8 +272,7 @@ async function executeSearch(requestedPage = state.currentPage) {
         if (state.currentAbortController === abortController) {
             state.isLoading = false;
             state.currentAbortController = null;
-            setSearchButtonLoading(false);
-            setResultsBusy(false);
+            setSearchLoading(false);
         }
     }
 }

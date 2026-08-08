@@ -7,6 +7,7 @@ import os
 import httpx
 
 from news.sources.base import Article, BaseSource, SourcePageResult, SourceSearchOptions
+from news.sources.common import iso_date_prefix
 from news.sources.retry import build_timeout, get_with_retry
 
 ACLED_PAGE_SIZE = 50
@@ -68,7 +69,10 @@ class AcledSource(BaseSource):
         return Article(
             title=title,
             url=raw.get("source_url", ""),
-            date=raw.get("event_date", ""),
+            # ACLED returns a bare event date today, but every adapter is
+            # required to emit YYYY-MM-DD; trimming here keeps that guarantee
+            # independent of upstream formatting changes.
+            date=iso_date_prefix(raw.get("event_date", "")),
             source="acled",
             domain=raw.get("source", ""),
             language="",

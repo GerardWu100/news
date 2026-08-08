@@ -74,3 +74,6 @@ The exact implemented tree and responsibility table live only in
 - 2026-07-26: Kept API module imports free of configuration reads so `news-server --config` is resolved before application construction.
 - 2026-07-29: Mirrored the podcast-downloader Docker operations pattern while keeping the unauthenticated API loopback-only and reserving host port 50023.
 - 2026-07-29: Made remote agent endpoints configurable through `NEWS_SERVER_URL` and kept the summary skill local to this workspace.
+- 2026-08-08: Moved lint rules into `pyproject.toml` so import order and modern-syntax rewrites are decided by ruff instead of by hand.
+- 2026-08-08: Gave `Article` one accessor for its provenance so the "no recorded sources means the originating source" rule is interpreted in a single place.
+- 2026-08-08: Made every browser render function announce its own outcome, because pairing announcements with render calls by hand had already left two error paths silent.

@@ -101,15 +101,24 @@ static/
 - `buildExportUrl(...)`: builds an exact-page JSON or CSV URL from active state.
 - `syncQueryToUrl(...)`: mirrors the active query back into the browser URL.
 - `copyCurrentUrl()`: copies the current search URL to the clipboard.
+- `focusQueryField()`: focuses and selects the topic input, so field ids stay
+  declared only in this module.
 
 ### `scripts/render.js`
 
+Every function that replaces the results region also writes a short sentence to
+the polite live region, so a caller cannot render a state that a screen reader
+never hears.
+
+- `setSearchLoading(...)`: disables and relabels the search button and sets
+  `aria-busy` on the results region for the duration of a request.
 - `renderSources(...)`: draws source checkboxes and applies configured defaults.
 - `renderMeta(...)`: shows the current provider page, counts, and latency.
 - `renderResearchWindow(...)`: shows the inclusive information boundary.
 - `renderResultActions(...)`: binds exact-page JSON and CSV downloads.
 - `renderSourceReports(...)`: shows source execution chips.
-- `renderResults(...)`: renders the current page of result cards.
+- `renderResults(...)`: renders the current page of result cards and announces
+  how many landed on which page.
 - `renderArticleDialog(...)`: opens the in-app detail dialog for one result.
 - `buildSafeArticleUrl(...)`: validates dialog URLs before they are rendered.
 - `escapeAttribute(...)`: escapes attribute values used in rendered links.

@@ -128,7 +128,12 @@ async def search_all_detailed(
     source_pages = await asyncio.gather(*tasks)
 
     articles: list[Article] = []
-    for source, (page, error_message) in zip(selected_sources, source_pages):
+    # gather() preserves task order, so the two sequences are the same length;
+    # strict=True turns any future drift into an error instead of dropping the
+    # trailing sources silently from the reports.
+    for source, (page, error_message) in zip(
+        selected_sources, source_pages, strict=True
+    ):
         reports.append(
             SourceQueryReport(
                 name=source.name,

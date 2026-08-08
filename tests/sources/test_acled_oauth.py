@@ -5,7 +5,7 @@ from __future__ import annotations
 import io
 import json
 import unittest
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from urllib.error import HTTPError
@@ -21,7 +21,7 @@ from news.sources.acled_oauth import (
     request_oauth_token,
 )
 
-FIXED_TIME = datetime(2026, 7, 26, 15, 30, tzinfo=timezone.utc)
+FIXED_TIME = datetime(2026, 7, 26, 15, 30, tzinfo=UTC)
 
 
 def _build_config() -> OAuthConfig:

@@ -28,10 +28,21 @@ class Article:
     matched_sources: tuple[str, ...] = ()
     duplicate_count: int = 1
 
+    @property
+    def effective_sources(self) -> tuple[str, ...]:
+        """Return which providers this record represents.
+
+        ``matched_sources`` stays empty until deduplication merges a record, so
+        an unmerged article reports the single provider that supplied it. Every
+        caller that needs provenance must go through this property so the
+        empty-tuple convention is interpreted in exactly one place.
+        """
+        return self.matched_sources or (self.source,)
+
     def to_dict(self) -> dict[str, Any]:
         """Serialize to a JSON-friendly ``dict``."""
         data = asdict(self)
-        data["matched_sources"] = list(self.matched_sources or (self.source,))
+        data["matched_sources"] = list(self.effective_sources)
         return data
 
 

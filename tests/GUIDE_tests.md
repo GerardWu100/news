@@ -122,6 +122,11 @@ Package marker files are omitted from the tree.
 - `test_docker_setup.py` protects the loopback host port, Toronto time,
   persistent data mount, external network, image command, and first-boot
   configuration behavior without requiring a Docker daemon.
+- `sources/providers/test_article_date_contract.py` asserts across every
+  adapter that `Article.date` is a bare `YYYY-MM-DD` string or empty. Sorting
+  and same-day duplicate matching both compare that field as raw text, so a
+  drifting adapter produces wrong output without raising, and only a
+  cross-provider check catches it.
 
 ### How to run
 
@@ -134,3 +139,4 @@ uv run python -m unittest discover -s tests -v
 
 - 2026-07-26: Organized tests by production responsibility and kept live provider checks outside the deterministic default suite.
 - 2026-07-29: Added daemon-independent deployment contract tests because Docker socket access is not guaranteed in every development environment.
+- 2026-08-08: Added a cross-provider date-format contract test after one adapter silently emitted a datetime, which broke sorting and duplicate matching without failing any per-provider test.

@@ -7,13 +7,12 @@ names, and non-positive cache limits fail before the application starts.
 
 from __future__ import annotations
 
+import tomllib
 from collections.abc import Mapping
 from dataclasses import dataclass
 from importlib import resources
 from pathlib import Path
 from typing import Any
-
-import tomllib
 
 from news.sources.registry import source_names
 from news.web.paths import config_path

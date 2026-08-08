@@ -13,7 +13,7 @@ import os
 from collections.abc import Callable, Mapping
 from contextlib import AbstractContextManager
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, BinaryIO, Protocol
 from urllib.parse import urlencode
@@ -183,7 +183,7 @@ def persist_token_fields(
     token_payload: Mapping[str, Any],
     env_file: Path,
     *,
-    clock: Callable[[], datetime] = lambda: datetime.now(timezone.utc),
+    clock: Callable[[], datetime] = lambda: datetime.now(UTC),
 ) -> StoredToken:
     """Validate useful token fields and update one dotenv file in one write.
 
@@ -218,7 +218,7 @@ def persist_token_fields(
     obtained_at = clock()
     if obtained_at.tzinfo is None or obtained_at.utcoffset() is None:
         raise ValueError("OAuth persistence clock must return a timezone-aware time.")
-    obtained_at_utc = obtained_at.astimezone(timezone.utc).isoformat()
+    obtained_at_utc = obtained_at.astimezone(UTC).isoformat()
     stored_token = StoredToken(
         access_token=access_token,
         token_type=_clean_optional_value(token_payload.get("token_type")) or "Bearer",
@@ -245,7 +245,7 @@ def obtain_and_persist_token(
     env_file: Path,
     *,
     opener: UrlOpener = urlopen,
-    clock: Callable[[], datetime] = lambda: datetime.now(timezone.utc),
+    clock: Callable[[], datetime] = lambda: datetime.now(UTC),
     timeout_seconds: int = DEFAULT_TIMEOUT_SECONDS,
 ) -> StoredToken:
     """Request a token and persist its useful fields.
