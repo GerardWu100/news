@@ -136,11 +136,15 @@ def _merge_duplicate_group(group: Sequence[Article]) -> Article:
     # can contain articles that an earlier pass already merged. Union each
     # member's recorded provenance and sum their counts so both totals cover
     # every original record, not just this group's direct members.
-    matched_sources = tuple(sorted({
-        source_name
-        for article in group
-        for source_name in article.effective_sources
-    }))
+    matched_sources = tuple(
+        sorted(
+            {
+                source_name
+                for article in group
+                for source_name in article.effective_sources
+            }
+        )
+    )
     total_duplicate_count = sum(article.duplicate_count for article in group)
     merged_text_fields = {
         field_name: _pick_richest_text(

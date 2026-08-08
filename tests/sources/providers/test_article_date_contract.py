@@ -42,7 +42,11 @@ PROVIDER_DATE_CASES = (
     (
         "acled",
         AcledSource._to_article,
-        {"event_date": "2024-01-15", "notes": "Event text", "source_url": "https://a/1"},
+        {
+            "event_date": "2024-01-15",
+            "notes": "Event text",
+            "source_url": "https://a/1",
+        },
     ),
     (
         "gdelt",
@@ -52,26 +56,30 @@ PROVIDER_DATE_CASES = (
     (
         "guardian",
         GuardianSource._to_article,
-        {"webPublicationDate": "2024-01-15T12:00:00Z", "webTitle": "Story",
-         "webUrl": "https://a/3"},
+        {
+            "webPublicationDate": "2024-01-15T12:00:00Z",
+            "webTitle": "Story",
+            "webUrl": "https://a/3",
+        },
     ),
     (
         "mediacloud",
         MediaCloudSource._to_article,
-        {"publish_date": "2024-01-15 00:00:00", "title": "Story",
-         "url": "https://a/4"},
+        {"publish_date": "2024-01-15 00:00:00", "title": "Story", "url": "https://a/4"},
     ),
     (
         "newsapi",
         lambda raw: newsapi_to_article(raw, requested_language="en"),
-        {"publishedAt": "2024-01-15T12:00:00Z", "title": "Story",
-         "url": "https://a/5"},
+        {"publishedAt": "2024-01-15T12:00:00Z", "title": "Story", "url": "https://a/5"},
     ),
     (
         "nyt",
         NewYorkTimesSource._to_article,
-        {"pub_date": "2024-01-15T12:00:00+0000", "headline": {"main": "Story"},
-         "web_url": "https://a/6"},
+        {
+            "pub_date": "2024-01-15T12:00:00+0000",
+            "headline": {"main": "Story"},
+            "web_url": "https://a/6",
+        },
     ),
 )
 
