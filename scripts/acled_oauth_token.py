@@ -11,7 +11,6 @@ from pathlib import Path
 from urllib.error import HTTPError, URLError
 
 from dotenv import load_dotenv
-
 from news.sources.acled_oauth import (
     load_oauth_config,
     mask_secret,

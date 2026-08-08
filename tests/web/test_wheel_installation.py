@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import subprocess
 import sys
+import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
-import unittest
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 

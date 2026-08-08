@@ -6,7 +6,6 @@ import unittest
 from unittest.mock import AsyncMock, patch
 
 import httpx
-
 from news.sources.retry import get_with_retry
 
 

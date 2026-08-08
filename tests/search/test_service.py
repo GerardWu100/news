@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from collections.abc import Sequence
 import unittest
+from collections.abc import Sequence
 
 from news.search import build_search_request, run_search
 from news.sources import SourceQueryReport

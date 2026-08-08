@@ -6,9 +6,9 @@ from .service import SearchExecutor, run_search
 from .validation import build_search_request
 
 __all__ = [
+    "SearchExecutor",
     "SearchRequest",
     "SearchResult",
-    "SearchExecutor",
     "build_search_request",
     "canonicalize_url",
     "deduplicate_articles",

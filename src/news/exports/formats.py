@@ -11,8 +11,8 @@ import csv
 import io
 import json
 import sqlite3
-from contextlib import closing
 from collections.abc import Sequence
+from contextlib import closing
 from datetime import datetime, timezone
 from typing import Any
 

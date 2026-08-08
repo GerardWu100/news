@@ -7,7 +7,7 @@ providers even when upstream query semantics differ.
 from __future__ import annotations
 
 import re
-from typing import Sequence
+from collections.abc import Sequence
 
 from ..sources.base import Article
 from .models import SearchRequest

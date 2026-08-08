@@ -9,12 +9,12 @@ from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
 from fastapi.testclient import TestClient
-
 from news.api.app import create_app
-from news.sources.base import Article, SourceSearchOptions
 from news.sources import SourceQueryReport
+from news.sources.base import Article, SourceSearchOptions
 from news.web.config import load_settings
 from news.web.paths import config_path, static_dir
+
 from tests.fixtures.search_results import build_provider_response
 
 

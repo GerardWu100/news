@@ -10,8 +10,8 @@ from __future__ import annotations
 
 import copy
 from collections import OrderedDict
+from collections.abc import Callable
 from time import monotonic
-from typing import Callable
 
 from news.web.config import CacheSettings
 

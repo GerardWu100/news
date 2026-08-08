@@ -6,11 +6,11 @@ to support sequential pagination and graceful handling of rate limiting.
 
 from __future__ import annotations
 
-from collections import OrderedDict
-from dataclasses import dataclass
 import os
+from collections import OrderedDict
+from collections.abc import Callable
+from dataclasses import dataclass
 from time import monotonic
-from typing import Callable
 
 import httpx
 

@@ -6,7 +6,7 @@ sorting, metadata construction, and optional request-level caching.
 
 from __future__ import annotations
 
-from typing import Awaitable, Callable, Sequence
+from collections.abc import Awaitable, Callable, Sequence
 
 from ..sources import SourceQueryReport, search_all_detailed
 from ..sources.base import Article, SourceSearchOptions

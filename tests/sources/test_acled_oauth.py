@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import io
 import json
+import unittest
 from datetime import datetime, timezone
 from pathlib import Path
 from tempfile import TemporaryDirectory
-import unittest
 from urllib.error import HTTPError
 from urllib.parse import parse_qs
 from urllib.request import Request

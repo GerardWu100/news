@@ -11,6 +11,7 @@ from news.search.models import SearchRequest
 from news.search.service import run_search
 from news.sources import SourceQueryReport
 from news.sources.base import Article, SourceSearchOptions
+
 from tests.fixtures.search_results import (
     build_provider_response,
     build_search_result,

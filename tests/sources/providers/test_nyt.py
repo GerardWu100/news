@@ -5,10 +5,11 @@ from __future__ import annotations
 import unittest
 
 import httpx
-
 from news.sources.base import SourceSearchOptions
-from news.sources.providers.nyt import DEFAULT_RATE_LIMIT_COOLDOWN_SECONDS
-from news.sources.providers.nyt import NewYorkTimesSource
+from news.sources.providers.nyt import (
+    DEFAULT_RATE_LIMIT_COOLDOWN_SECONDS,
+    NewYorkTimesSource,
+)
 
 
 class NewYorkTimesNormalizationTests(unittest.TestCase):

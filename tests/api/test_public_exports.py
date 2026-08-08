@@ -4,13 +4,14 @@ from __future__ import annotations
 
 import unittest
 
-import news
 import news.api
 import news.cli
 import news.exports
 import news.search
 import news.sources
 import news.web
+
+import news
 
 
 class PublicExportTests(unittest.TestCase):

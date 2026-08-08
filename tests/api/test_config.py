@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import dataclasses
+import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
-import unittest
 from unittest.mock import patch
 
 from news.web.config import SettingsError, load_settings

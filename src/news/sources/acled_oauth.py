@@ -10,11 +10,12 @@ from __future__ import annotations
 
 import json
 import os
+from collections.abc import Callable, Mapping
 from contextlib import AbstractContextManager
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, BinaryIO, Callable, Mapping, Protocol
+from typing import Any, BinaryIO, Protocol
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 

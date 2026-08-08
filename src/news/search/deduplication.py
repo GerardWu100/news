@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable, Sequence
 from dataclasses import replace
-from typing import Callable, Sequence
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from ..sources.base import Article
@@ -76,8 +76,7 @@ def canonicalize_url(raw_url: str) -> str:
         return ""
 
     host = parsed.netloc.lower()
-    if host.startswith("www."):
-        host = host[4:]
+    host = host.removeprefix("www.")
 
     normalized_query_pairs = [
         (key, value)

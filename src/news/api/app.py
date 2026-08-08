@@ -12,7 +12,6 @@ from collections.abc import Callable
 from pathlib import Path
 
 from dotenv import load_dotenv
-
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles

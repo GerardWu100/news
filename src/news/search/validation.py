@@ -6,8 +6,8 @@ and returns immutable ``SearchRequest`` objects used by the service layer.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from datetime import date
-from typing import Sequence
 
 from ..sources.registry import source_names as registered_source_names
 from .errors import SearchValidationError

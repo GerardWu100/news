@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import subprocess
 import sys
+import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
-import unittest
 
 
 class ServerCommandTests(unittest.TestCase):

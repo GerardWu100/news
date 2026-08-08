@@ -7,8 +7,8 @@ from contextlib import redirect_stdout
 from io import StringIO
 from pathlib import Path
 from unittest.mock import patch
-import tomllib
 
+import tomllib
 from news.cli.output import format_table
 from news.cli.parser import (
     DEFAULT_SERVER_URL,

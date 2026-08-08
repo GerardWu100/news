@@ -5,8 +5,8 @@ from __future__ import annotations
 from fastapi import Query
 
 from news.search import build_search_request
-from news.search.validation import split_csv_values
 from news.search.models import SearchRequest
+from news.search.validation import split_csv_values
 
 
 class SearchQueryParams:

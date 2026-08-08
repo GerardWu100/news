@@ -6,7 +6,6 @@ import unittest
 from unittest.mock import AsyncMock, patch
 
 import httpx
-
 from news.sources.base import SourceSearchOptions
 from news.sources.providers.mediacloud import (
     DEFAULT_RATE_LIMIT_COOLDOWN_SECONDS,
