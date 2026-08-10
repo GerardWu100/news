@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Google Trends: What the Data Can Provide</title>
+<style>
+  :root {
+    --text: #1a1a1a;
+    --muted: #555;
+    --bg: #ffffff;
+    --panel: #f6f7f9;
+    --border: #d8dce2;
+    --accent: #0b5fa5;
+    --good: #1a7a3a;
+    --bad: #b03030;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --text: #e8e8e8;
+      --muted: #aaa;
+      --bg: #14161a;
+      --panel: #1e2128;
+      --border: #3a3f47;
+      --accent: #6ab0e8;
+      --good: #6cc98a;
+      --bad: #e08080;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 0 clamp(1em, 4vw, 3.2em);
+    font-family: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 1.125rem;
+    line-height: 1.6;
+    color: var(--text);
+    background: var(--bg);
+  }
+  main { padding: 2em 0 4em; }
+  h1 { font-size: 1.9em; line-height: 1.25; margin: 0.6em 0 0.4em; }
+  h2 { font-size: 1.4em; margin: 2em 0 0.5em; border-bottom: 1px solid var(--border); padding-bottom: 0.25em; }
+  h3 { font-size: 1.15em; margin: 1.5em 0 0.4em; }
+  p { margin: 0.6em 0; }
+  .lede { color: var(--muted); font-size: 1.05em; }
+  table {
+    border-collapse: collapse;
+    margin: 1em 0;
+    width: 100%;
+  }
+  .scroll { overflow-x: auto; }
+  th, td {
+    border: 1px solid var(--border);
+    padding: 0.45em 0.7em;
+    text-align: left;
+    vertical-align: top;
+  }
+  th { background: var(--panel); }
+  code, pre {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.92em;
+  }
+  code { background: var(--panel); padding: 0.1em 0.35em; border-radius: 4px; }
+  pre {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.9em 1.1em;
+    overflow-x: auto;
+  }
+  pre code { background: none; padding: 0; }
+  .callout {
+    background: var(--panel);
+    border-left: 4px solid var(--accent);
+    border-radius: 4px;
+    padding: 0.8em 1.1em;
+    margin: 1em 0;
+  }
+  .works { color: var(--good); font-weight: 600; }
+  .broken { color: var(--bad); font-weight: 600; }
+  .sample-note { color: var(--muted); font-size: 0.9em; margin-top: -0.5em; }
+  ul, ol { padding-left: 1.4em; }
+  li { margin: 0.3em 0; }
+</style>
+</head>
+<body>
+<main>
+
+<h1>Google Trends: What the Data Can Provide</h1>
+<p class="lede">
+A decision document for the news project. It explains what Google Trends
+measures, every data type that is currently retrievable for free, the request
+options, the limits that matter for quantitative research, and a menu of
+features that could be built. Nothing described here is implemented; this page
+exists so you can choose.
+</p>
+
+<h2>1. What Google Trends Measures</h2>
+<p>
+Google Trends reports how often people typed a term into Google search,
+expressed as a <strong>relative index from 0 to 100</strong>. The value 100 is
+assigned to the moment of highest search volume <em>within the window and
+keyword set you requested</em>; every other value is scaled against that peak.
+</p>
+<p>
+Concretely: if "bitcoin" scores 100 on May 12 and 50 on June 3, people
+searched it half as much on June 3 as at the May peak. But if you re-request a
+wider window that contains an even bigger spike, both numbers shrink, because
+the scale is anchored to the new peak. Two consequences follow:
+</p>
+<ul>
+  <li><strong>No absolute counts, ever.</strong> You cannot learn how many
+  searches happened, only the shape of attention over time.</li>
+  <li><strong>Numbers are only comparable within one response.</strong>
+  Requesting several keywords together (up to five) puts them on one shared
+  scale, which is how cross-keyword comparison is done.</li>
+</ul>
+<p>
+This is a <em>public attention</em> signal. It complements the news project's
+article retrieval: articles say what was published; Trends says what ordinary
+people were actively curious about, including things the press had not
+covered yet.
+</p>
+
+<h2>2. Retrievable Data Types</h2>
+<p>
+Verified against the live endpoints from this machine on 2026-08-09 using the
+free <code>pytrends</code> library:
+</p>
+<div class="scroll">
+<table>
+  <tr><th>Data type</th><th>Status</th><th>What you get</th><th>Question it answers</th></tr>
+  <tr>
+    <td>Interest over time</td>
+    <td class="works">works</td>
+    <td>Dated series of 0-100 values for up to 5 keywords, plus a flag marking the still-accumulating last period</td>
+    <td>How did attention to X move across this window?</td>
+  </tr>
+  <tr>
+    <td>Interest by region</td>
+    <td class="works">works</td>
+    <td>One 0-100 value per country, state/province, city, or United States metro area</td>
+    <td>Where is the attention concentrated?</td>
+  </tr>
+  <tr>
+    <td>Related queries</td>
+    <td class="works">works</td>
+    <td>Two ranked lists: "top" (highest-volume companion searches, 0-100) and "rising" (fastest-growing, percent growth; extreme growth is flagged as breakout)</td>
+    <td>What else are people who search X also searching?</td>
+  </tr>
+  <tr>
+    <td>Suggestions / topic IDs</td>
+    <td class="works">works</td>
+    <td>Google's disambiguated entity identifiers for a term (for example "Bitcoin -- Cryptocurrency" vs the literal string)</td>
+    <td>Which entity do I actually mean, so results are not polluted by same-spelling terms?</td>
+  </tr>
+  <tr>
+    <td>Related topics</td>
+    <td class="broken">broken upstream</td>
+    <td>Returns empty data since a Google backend change</td>
+    <td>--</td>
+  </tr>
+  <tr>
+    <td>Trending searches (today)</td>
+    <td class="broken">broken upstream</td>
+    <td>Endpoint removed by Google (HTTP 404)</td>
+    <td>--</td>
+  </tr>
+  <tr>
+    <td>Multirange comparison</td>
+    <td class="broken">broken upstream</td>
+    <td>Comparing different date ranges in one request fails (HTTP 400)</td>
+    <td>--</td>
+  </tr>
+</table>
+</div>
+
+<h3>Sample: interest over time</h3>
+<p class="sample-note">Live fetch, keywords "bitcoin" and "ethereum", United States, last 3 months, daily granularity.</p>
+<div class="scroll">
+<table>
+  <tr><th>date</th><th>bitcoin</th><th>ethereum</th><th>partial</th></tr>
+  <tr><td>2026-05-10</td><td>40</td><td>8</td><td>no</td></tr>
+  <tr><td>2026-05-11</td><td>53</td><td>9</td><td>no</td></tr>
+  <tr><td>2026-05-12</td><td>55</td><td>9</td><td>no</td></tr>
+  <tr><td>...</td><td>...</td><td>...</td><td>...</td></tr>
+  <tr><td>2026-08-09</td><td>29</td><td>6</td><td>no</td></tr>
+  <tr><td>2026-08-10</td><td>27</td><td>6</td><td>yes (still accumulating)</td></tr>
+</table>
+</div>
+<p>
+Reading it: both keywords share one scale, so "ethereum" at 8 while "bitcoin"
+is at 40 means bitcoin drew roughly five times the search volume that day.
+</p>
+
+<h3>Sample: related queries</h3>
+<p class="sample-note">Live fetch, keyword "bitcoin", United States, last 3 months ("top" list, first rows).</p>
+<div class="scroll">
+<table>
+  <tr><th>rank</th><th>query</th><th>relative volume</th></tr>
+  <tr><td>1</td><td>bitcoin price</td><td>100</td></tr>
+  <tr><td>2</td><td>bitcoin stock</td><td>23</td></tr>
+  <tr><td>3</td><td>bitcoin today</td><td>22</td></tr>
+  <tr><td>4</td><td>bitcoin price today</td><td>16</td></tr>
+  <tr><td>5</td><td>bitcoin usd</td><td>15</td></tr>
+</table>
+</div>
+<p>
+The companion "rising" list ranks by growth rate instead of volume. Rising
+queries are an early-attention signal: query spikes around an emerging event
+often precede the headline coverage the news providers return.
+</p>
+
+<h3>Sample: interest by region</h3>
+<p class="sample-note">Live fetch, keyword "bitcoin", United States by state, last 3 months (first rows).</p>
+<div class="scroll">
+<table>
+  <tr><th>state</th><th>relative interest</th></tr>
+  <tr><td>Alabama</td><td>36</td></tr>
+  <tr><td>Alaska</td><td>54</td></tr>
+  <tr><td>Arizona</td><td>46</td></tr>
+  <tr><td>Arkansas</td><td>28</td></tr>
+</table>
+</div>
+
+<h2>3. Request Options</h2>
+<div class="scroll">
+<table>
+  <tr><th>Option</th><th>Values</th><th>Notes</th></tr>
+  <tr>
+    <td>Keywords</td>
+    <td>1 to 5 per request</td>
+    <td>All keywords in one request share one 0-100 scale. Comparing more than 5 requires overlapping batches and rescaling through a shared anchor keyword.</td>
+  </tr>
+  <tr>
+    <td>Timeframe</td>
+    <td><code>today 3-m</code>, <code>today 12-m</code>, <code>today 5-y</code>, <code>all</code>, <code>now 7-d</code>, or explicit dates <code>2025-01-01 2025-06-30</code></td>
+    <td>Historical data reaches back to 2004. The window length dictates granularity (next table).</td>
+  </tr>
+  <tr>
+    <td>Geography</td>
+    <td><code>""</code> worldwide, <code>US</code> country, <code>US-NY</code> state, <code>CA</code> Canada, ...</td>
+    <td>Standard two-letter country codes with optional region suffix.</td>
+  </tr>
+  <tr>
+    <td>Category</td>
+    <td>About 1,400 numeric Google categories</td>
+    <td>For example Finance or Investing; restricts which searches count, disambiguating terms like "apple".</td>
+  </tr>
+  <tr>
+    <td>Search property</td>
+    <td>Web (default), News, Images, YouTube, Shopping</td>
+    <td>News-search-only interest is possible and thematically close to this project.</td>
+  </tr>
+</table>
+</div>
+
+<h3>Granularity is decided by window length</h3>
+<div class="scroll">
+<table>
+  <tr><th>Requested window</th><th>Granularity you receive</th></tr>
+  <tr><td>Up to about 7 days</td><td>Hourly</td></tr>
+  <tr><td>About 7 days to 9 months</td><td>Daily</td></tr>
+  <tr><td>9 months to 5 years</td><td>Weekly</td></tr>
+  <tr><td>More than 5 years</td><td>Monthly</td></tr>
+</table>
+</div>
+<p>
+You cannot ask for daily values over 3 years directly. Getting a long daily
+history requires fetching overlapping shorter windows and stitching them by
+rescaling through the overlap -- a known technique, but it must be built
+deliberately.
+</p>
+
+<h2>4. Limits That Matter for Quantitative Research</h2>
+<ol>
+  <li><strong>Relative scaling.</strong> Every number depends on the window
+  and keyword batch it was fetched with. Series fetched at different times or
+  with different windows are not directly comparable without rescaling.</li>
+  <li><strong>Sampling noise.</strong> Google computes the index from a sample
+  of searches. Fetching the identical request twice can return slightly
+  different values. Serious pipelines fetch several times and average.</li>
+  <li><strong>Not point-in-time.</strong> Today's fetch of 2025 data is not
+  what you would have seen in 2025. Backtesting on freshly fetched history
+  carries revision risk. The honest fix is storing every fetch with its
+  timestamp and building your own point-in-time archive going forward.</li>
+  <li><strong>Rate limiting.</strong> The endpoints are unofficial and
+  aggressively rate limited (HTTP 429 after bursts). Bulk collection needs
+  spacing, retries, and ideally caching.</li>
+  <li><strong>Low-volume censoring.</strong> Terms or regions below a volume
+  threshold return 0 or are omitted entirely, which can look like "no
+  interest" when it means "not enough data".</li>
+</ol>
+
+<h2>5. Access Routes</h2>
+<div class="scroll">
+<table>
+  <tr><th>Route</th><th>Cost</th><th>Status as of 2026-08</th></tr>
+  <tr>
+    <td><code>pytrends</code> (Python library)</td>
+    <td>Free</td>
+    <td>Archived April 2025, unmaintained -- yet its three core functions verifiably work today from this machine. Risk: any Google backend change can break it permanently.</td>
+  </tr>
+  <tr>
+    <td><code>trendspyg</code> (Python library)</td>
+    <td>Free</td>
+    <td>The only actively maintained successor (five releases since July 2026). Young, single maintainer, small user base.</td>
+  </tr>
+  <tr>
+    <td>Official Google Trends API</td>
+    <td>Free (gated)</td>
+    <td>Alpha since July 2025, application-gated; most developers are not admitted yet. The long-term stable answer if access opens.</td>
+  </tr>
+  <tr>
+    <td>SerpAPI / Glimpse (commercial)</td>
+    <td>Roughly \$50+/month</td>
+    <td>Reliable and maintained; only worth it if Trends data becomes load-bearing.</td>
+  </tr>
+</table>
+</div>
+<div class="callout">
+Whatever the route, the sane design is one thin internal interface with the
+chosen library isolated behind it, so a dead library is a one-file swap and
+the rest of the project never notices.
+</div>
+
+<h2>6. Feature Menu for the News Project</h2>
+<p>
+Ordered roughly from foundational to optional. Each row is independently
+choosable.
+</p>
+<div class="scroll">
+<table>
+  <tr><th>#</th><th>Feature</th><th>What it gives you</th><th>Effort</th></tr>
+  <tr>
+    <td>1</td>
+    <td>Interest-over-time retrieval (CLI and/or API route)</td>
+    <td>The core series: attention over a chosen window, up to 5 keywords, table/JSON/CSV output</td>
+    <td>Small</td>
+  </tr>
+  <tr>
+    <td>2</td>
+    <td>Related-queries retrieval</td>
+    <td>Top and rising companion searches; the rising list doubles as an event-discovery signal</td>
+    <td>Small</td>
+  </tr>
+  <tr>
+    <td>3</td>
+    <td>Regional breakdown retrieval</td>
+    <td>Country/state/city attention map data</td>
+    <td>Small</td>
+  </tr>
+  <tr>
+    <td>4</td>
+    <td>Browser integration</td>
+    <td>A trends chart beside search results for the selected historical window -- the item already on the project roadmap</td>
+    <td>Medium</td>
+  </tr>
+  <tr>
+    <td>5</td>
+    <td>Long daily history via window stitching</td>
+    <td>Daily-granularity series over multiple years, assembled from overlapping fetches</td>
+    <td>Medium</td>
+  </tr>
+  <tr>
+    <td>6</td>
+    <td>Point-in-time archive</td>
+    <td>Scheduled fetches stored with timestamps (SQLite or ClickHouse), building revision-safe history for backtests</td>
+    <td>Medium</td>
+  </tr>
+  <tr>
+    <td>7</td>
+    <td>Caching and rate-limit management</td>
+    <td>A short-lived response cache plus request spacing, so bulk or repeated use stops hitting HTTP 429</td>
+    <td>Small</td>
+  </tr>
+  <tr>
+    <td>8</td>
+    <td>Wikipedia pageviews as a companion source</td>
+    <td>Absolute daily view counts from an official free API -- no sampling, no relative scaling; a better-behaved attention proxy to cross-check Trends</td>
+    <td>Small</td>
+  </tr>
+</table>
+</div>
+
+<h2>TL;DR</h2>
+<p>
+Google Trends can give the project four working data types -- attention over
+time, attention by region, companion queries (top and rising), and entity
+disambiguation -- filtered by window, geography, category, and search
+property, back to 2004. All values are a relative 0-100 index shaped by
+sampling, window-dependent granularity, and rate limits; none are absolute
+counts, and none are point-in-time safe without building an archive. Free
+access rides on unofficial libraries (working today, breakable tomorrow), so
+any implementation should hide the library behind one replaceable interface.
+Pick features from the menu in section 6.
+</p>
+
+</main>
+</body>
+</html>
