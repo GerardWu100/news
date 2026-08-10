@@ -109,10 +109,18 @@ def create_app(
         _build_login_sessions(settings) if login_sessions is None else login_sessions
     )
     static_assets = static_dir()
+    # The interactive documentation and schema routes are switched off because
+    # they answer without a session and would list every route and parameter to
+    # anyone who reaches the port. The schema itself is still available offline
+    # through ``application.openapi()``, which is how the checked-in contract in
+    # docs/reference/openapi.json is generated and tested.
     application = FastAPI(
         title=APP_TITLE,
         description=APP_DESCRIPTION,
         version=APP_VERSION,
+        openapi_url=None,
+        docs_url=None,
+        redoc_url=None,
     )
     application.state.settings = settings
     application.state.search_cache = active_cache
