@@ -137,9 +137,14 @@ never hears.
 - `renderSourceReports(...)`: shows source request status chips.
 - `renderResults(...)`: displays the current page of result cards and announces
   how many landed on which page.
+- `applyCardEntranceDelays(...)`: staggers the card entrance animation through
+  the style property. The page's Content Security Policy forbids inline style
+  attributes, but allows a script to write to an element's style.
 - `renderArticleDialog(...)`: opens the in-app detail dialog for one result.
 - `buildSafeArticleUrl(...)`: validates dialog URLs before they are displayed.
-- `escapeAttribute(...)`: escapes attribute values used in links.
+- `escapeHtml(...)`: the single escaper. It escapes angle brackets, ampersands,
+  and both quote characters, so one function is safe in element content and in
+  a quoted attribute and a caller cannot pick the wrong one.
 - `renderPagination(...)`: controls the previous/next page buttons and label.
 - `clearStatus()`: clears result status and hides the boundary and action group.
 

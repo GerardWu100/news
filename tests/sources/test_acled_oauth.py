@@ -13,6 +13,7 @@ from urllib.parse import parse_qs
 from urllib.request import Request
 
 from news.sources.acled_oauth import (
+    ENV_FILE_PERMISSION_MODE,
     OAuthConfig,
     extract_access_token,
     load_oauth_config,
@@ -62,6 +63,24 @@ class OAuthConfigTests(unittest.TestCase):
 
         with self.assertRaisesRegex(ValueError, "ACLED_USERNAME"):
             load_oauth_config(environment)
+
+    def test_load_oauth_config_refuses_an_unencrypted_token_url(self) -> None:
+        """The request body carries the account password in readable form."""
+        for token_url in (
+            "http://example.com/oauth/token",
+            "example.com/oauth/token",
+        ):
+            with self.subTest(token_url=token_url):
+                environment = {
+                    "ACLED_OAUTH_TOKEN_URL": token_url,
+                    "ACLED_OAUTH_GRANT_TYPE": "password",
+                    "ACLED_OAUTH_CLIENT_ID": "acled",
+                    "ACLED_USERNAME": "researcher@example.com",
+                    "ACLED_PASSWORD": "private-password",
+                }
+
+                with self.assertRaisesRegex(ValueError, "https"):
+                    load_oauth_config(environment)
 
 
 class OAuthRequestTests(unittest.TestCase):
@@ -179,6 +198,20 @@ class OAuthPersistenceTests(unittest.TestCase):
         self.assertEqual(contents.count("ACLED_BEARER_TOKEN="), 1)
         self.assertIn("ACLED_BEARER_EXPIRES_IN=3600", contents)
         self.assertIn("ACLED_REFRESH_TOKEN=refresh-me", contents)
+
+    def test_a_new_env_file_is_readable_only_by_its_owner(self) -> None:
+        """It holds the sign-in password, provider keys, and the ACLED token."""
+        with TemporaryDirectory() as temporary_directory:
+            env_file = Path(temporary_directory) / ".env"
+
+            persist_token_fields(
+                {"access_token": "new-token"},
+                env_file,
+                clock=lambda: FIXED_TIME,
+            )
+            permission_bits = env_file.stat().st_mode & 0o777
+
+        self.assertEqual(permission_bits, ENV_FILE_PERMISSION_MODE)
 
     def test_obtain_and_persist_accepts_network_and_clock_injection(self) -> None:
         """The combined workflow should remain fully offline in tests."""

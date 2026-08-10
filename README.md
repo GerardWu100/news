@@ -102,6 +102,12 @@ docker compose up --build -d news
 
 Open `http://127.0.0.1:50023`. Host port `50023` avoids the podcast service’s `50022` default. On first boot, the container copies the repository `config.toml` into the persistent data directory. Later rebuilds preserve operator changes.
 
+Before the first start, create the data directory and set `NEWS_UID` and `NEWS_GID` in `.env` to your own `id -u` and `id -g`. The container serves as an unprivileged account, so it must run as the owner of that directory:
+
+```bash
+mkdir -p ~/.containers/news
+```
+
 An AI agent can use the same CLI against a private remote deployment:
 
 ```bash
@@ -114,7 +120,7 @@ uv run news-search "central bank" \
   --quiet
 ```
 
-The explicit `--server URL` option overrides `NEWS_SERVER_URL`. The application does not provide user authentication, so remote access should use an authenticated Transport Layer Security (TLS) reverse proxy or a private virtual private network (VPN), not a publicly exposed container port.
+The explicit `--server URL` option overrides `NEWS_SERVER_URL`. The command line signs in with `UI_USERNAME` and `UI_PASSWORD` on every request, so those credentials travel in a header. Send them only over an encrypted connection: put remote access behind a Transport Layer Security (TLS) reverse proxy or a private virtual private network (VPN), never a publicly exposed container port on plain HTTP.
 
 See `docs/user/DOCKER.md` for configuration, operations, Dockerized CLI use, and the security boundary. The workspace-only `.agents/skills/summarize-news-cli/` skill teaches an AI agent how to retrieve, audit, and summarize CLI results. The accompanying local article is `blog/index.md`; it is not copied into the website repository.
 

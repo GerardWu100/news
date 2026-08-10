@@ -49,30 +49,62 @@ def api_credentials() -> tuple[str, str] | None:
     return username, password
 
 
+def build_api_client() -> httpx.Client:
+    """Build the HTTP client used for every request to the news server.
+
+    Every server route that returns news data requires the account, so the
+    credentials belong on the client rather than on individual calls. Building
+    the client in one place keeps the search route and the download routes from
+    drifting apart.
+
+    Returns
+    -------
+    httpx.Client
+        Client carrying the shared timeout, redirect policy, and account.
+    """
+    return httpx.Client(
+        timeout=REQUEST_TIMEOUT_SECONDS,
+        follow_redirects=True,
+        auth=api_credentials(),
+    )
+
+
+def rejected_credentials_error(server: str) -> RuntimeError:
+    """Build the error shown when the server refuses the account.
+
+    Parameters
+    ----------
+    server : str
+        Base server address the request was sent to.
+
+    Returns
+    -------
+    RuntimeError
+        Message naming the two settings to fix rather than repeating the raw
+        HTTP status, which does not tell the reader what to change.
+    """
+    return RuntimeError(
+        f"{server} rejected the sign-in details. Set "
+        f"{ENV_USERNAME_KEY} and {ENV_PASSWORD_KEY} in .env to the "
+        "same account the server was started with."
+    )
+
+
 def fetch_api_page(args: argparse.Namespace, page: int) -> dict[str, Any]:
     """Fetch one source page through the running HTTP API.
 
     Raises
     ------
     RuntimeError
-        If the server rejects the credentials, with a message naming the two
-        settings to fix rather than repeating the raw HTTP status.
+        If the server rejects the credentials.
     """
-    with httpx.Client(
-        timeout=REQUEST_TIMEOUT_SECONDS,
-        follow_redirects=True,
-        auth=api_credentials(),
-    ) as client:
+    with build_api_client() as client:
         response = client.get(
             f"{args.server.rstrip('/')}/api/search",
             params=build_api_params(args, page=page),
         )
         if response.status_code == UNAUTHORIZED_STATUS:
-            raise RuntimeError(
-                f"{args.server} rejected the sign-in details. Set "
-                f"{ENV_USERNAME_KEY} and {ENV_PASSWORD_KEY} in .env to the "
-                "same account the server was started with."
-            )
+            raise rejected_credentials_error(args.server)
         response.raise_for_status()
         return response.json()
 

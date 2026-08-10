@@ -124,6 +124,43 @@ class AuthStore:
         """Return the current failed-login counters for every client address."""
         return self._read(self.login_state_file)
 
+    def update_sessions(
+        self,
+        update: Callable[[JsonState], None],
+        max_age_seconds: int,
+    ) -> JsonState:
+        """Apply one read-modify-write transaction to the session file.
+
+        The read, the change, and the write happen under a single exclusive
+        lock, so two processes signing in at the same moment cannot overwrite
+        each other's session.
+
+        Parameters
+        ----------
+        update : Callable[[JsonState], None]
+            Function that edits the session mapping in place.
+        max_age_seconds : int
+            Session lifetime. Expired records are dropped before ``update``
+            runs, so a caller never sees one.
+
+        Returns
+        -------
+        JsonState
+            The mapping as written.
+        """
+        with locked_text_file(
+            self._lock_file(self.session_file),
+            "a+",
+            fcntl.LOCK_EX,
+        ):
+            state = _live_sessions(
+                self._read_unlocked(self.session_file),
+                max_age_seconds,
+            )
+            update(state)
+            self._write_unlocked(self.session_file, state)
+            return state
+
     def load_sessions(self, max_age_seconds: int) -> JsonState:
         """Return well-formed sessions that have not expired.
 
@@ -137,24 +174,41 @@ class AuthStore:
         Returns
         -------
         JsonState
-            Mapping of session identifier to ``{"created_at": <unix seconds>}``.
+            Mapping of session identifier to its stored fields.
         """
-        raw_sessions = self._read(self.session_file)
-        current_time = time.time()
-        valid_sessions: JsonState = {}
-        for session_id, session in raw_sessions.items():
-            try:
-                created_at = float(session.get("created_at", 0))
-            except (TypeError, ValueError):
-                continue
-            session_age_seconds = current_time - created_at
-            if (
-                math.isfinite(created_at)
-                and 0 <= session_age_seconds <= max_age_seconds
-            ):
-                valid_sessions[session_id] = {"created_at": created_at}
-        return valid_sessions
+        return _live_sessions(self._read(self.session_file), max_age_seconds)
 
     def save_sessions(self, sessions: JsonState) -> None:
         """Replace the remembered sessions in one step."""
         self._write(self.session_file, sessions)
+
+
+def _live_sessions(raw_sessions: JsonState, max_age_seconds: int) -> JsonState:
+    """Return the sessions that are well formed and have not expired.
+
+    Parameters
+    ----------
+    raw_sessions : JsonState
+        Sessions exactly as read from the file.
+    max_age_seconds : int
+        Session lifetime. Records older than this, records created in the
+        future, and records whose creation time is not a finite number are
+        dropped.
+
+    Returns
+    -------
+    JsonState
+        Surviving sessions with their stored fields preserved, so a sign-out
+        token saved beside the creation time is not lost on the next write.
+    """
+    current_time = time.time()
+    valid_sessions: JsonState = {}
+    for session_id, session in raw_sessions.items():
+        try:
+            created_at = float(session.get("created_at", 0))
+        except (TypeError, ValueError):
+            continue
+        session_age_seconds = current_time - created_at
+        if math.isfinite(created_at) and 0 <= session_age_seconds <= max_age_seconds:
+            valid_sessions[session_id] = {**session, "created_at": created_at}
+    return valid_sessions

@@ -7,10 +7,9 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-import httpx
-
 from news.exports.formats import format_csv, format_json, write_sqlite
 
+from .fetch import UNAUTHORIZED_STATUS, build_api_client, rejected_credentials_error
 from .parser import build_api_params
 
 
@@ -133,13 +132,24 @@ def write_local_export(
 
 
 def download_api_export(args: argparse.Namespace) -> str:
-    """Download a single-page API export directly from the package API."""
+    """Download a single-page export from the running HTTP API.
+
+    The download routes require the same account as the search route, so this
+    reuses the shared client instead of sending an anonymous request.
+
+    Raises
+    ------
+    RuntimeError
+        If the server rejects the credentials.
+    """
     export_path = f"/api/export/{args.export}"
-    with httpx.Client(timeout=30.0, follow_redirects=True) as client:
+    with build_api_client() as client:
         response = client.get(
             f"{args.server.rstrip('/')}{export_path}",
             params=build_api_params(args),
         )
+        if response.status_code == UNAUTHORIZED_STATUS:
+            raise rejected_credentials_error(args.server)
         response.raise_for_status()
         return response.text
 

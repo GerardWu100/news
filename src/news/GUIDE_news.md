@@ -28,14 +28,46 @@ failed-attempt counters in locked, atomically replaced JSON files, and
 `web/security.py` decides response headers, the client address, and whether the
 connection used HTTPS.
 
+Sessions are never cached in memory. Every check reads the session file under
+its lock through `AuthStore`, and every change is one locked read-modify-write.
+That costs a small file read per signed-in request and buys correctness when
+more than one process serves the application: a browser that signs in through
+one worker is recognized by all of them. The sign-out token lives in the
+session record for the same reason, so the page that shows the button and the
+request that submits it need not reach the same process.
+
+`web/security.py` also decides when proxy headers may be believed.
+`trust_forwarded_headers` alone is not enough: the machine that opened the
+connection must also be on the loopback interface or a private network, which
+is where a reverse proxy in front of this server lives. Without that second
+condition, any caller could send `X-Forwarded-For` and spend another caller's
+failed-attempt budget.
+
 `api/auth.py` holds the runtime state and the routes. `LoginSessions` owns
-sessions, form tokens, failure counting, and the short-lived cache of accepted
-HTTP Basic headers, which exists because hashing is deliberately slow.
+form tokens, failure counting, and the short-lived cache of accepted HTTP Basic
+headers, which exists because hashing is deliberately slow. That cache is
+emptied when the account file's modification time changes, so a header accepted
+under the old password stops working as soon as the password does. Both the
+pending form tokens and the failed-attempt file are bounded, because callers
+who have proved nothing yet can add to either.
+
 `require_signed_in` is the dependency attached to every data route;
 `request_is_signed_in` is the same check without the exception, used by the
 root route so a signed-out browser is redirected rather than refused.
 `api/login_page.py` renders the one server-built page, because the rest of the
 browser client is static and cannot carry a server-issued token.
+
+## Browser protection headers
+
+`api/app.py` attaches protection headers in a middleware rather than route by
+route, so a route added later cannot quietly serve data without them. Routes
+that need a wider policy set their own first, and the middleware fills in only
+what is missing. Three policies exist because the responses load different
+things: the search page needs its own scripts and the linked web fonts, the
+sign-in page needs only its inline stylesheet, and JSON, CSV, and redirect
+responses need nothing at all. Neither page allows inline scripts or inline
+styles, so the browser code sets the result-card animation delay through the
+style property rather than through a `style` attribute in the markup.
 
 The factory accepts a `LoginSessions`, so tests point sign-in state at a
 temporary directory instead of the operator's data directory.
@@ -50,6 +82,14 @@ page. The CLI emits full search details in JSON or streams compact article-only
 JSONL for later model work.
 The API application owns the process-local cache and passes it into the search
 service; low-level search modules do not read configuration files.
+
+Two callers asking the identical question at the same moment share one round of
+provider requests rather than each spending the rate limits. The search service
+keeps the running searches in a small mapping keyed by the validated request; a
+later caller waits on the search already in flight and receives its own copy of
+the result. A caller that gives up does not cancel the search the others are
+still waiting on. This matters because a reloaded browser page, or two commands
+started together, produce exactly this overlap.
 
 The application factory also accepts a provider executor and source-status
 function. Production uses the registered adapters; tests supply offline fakes

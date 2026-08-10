@@ -15,6 +15,9 @@ publishing, and an external reverse-proxy network named `single`.
 | Persistent data | `${HOME}/.containers/news` | Keeps settings outside the image |
 | Docker network | external `single` | Lets an existing reverse proxy reach the container |
 | Browser defaults | English; Guardian and NYT selected | Copied from `config.toml` on first boot |
+| Container account | `NEWS_UID`:`NEWS_GID`, unprivileged | Keeps root out of the container and off the mounted directory |
+| Root filesystem | read-only, with a `/tmp` in memory | The application writes only to the mounted data directory |
+| Privileges | all capabilities dropped, `no-new-privileges` | Nothing here needs any of them |
 
 The mounted `config.toml` is seeded only when
 `${HOME}/.containers/news/config.toml` does not exist. Image upgrades therefore
@@ -32,6 +35,19 @@ cp .env.example .env
 `UI_USERNAME` and `UI_PASSWORD` are required. Without both, the container starts
 but refuses every request, and the entrypoint prints a warning saying so. See
 `docs/user/SIGN_IN.md` for what the server does with them.
+
+The container serves as an unprivileged account rather than as root, so it must
+run as the owner of the mounted directory. Create that directory and record
+your own identifiers in `.env`:
+
+```bash
+mkdir -p ~/.containers/news
+printf 'NEWS_UID=%s\nNEWS_GID=%s\n' "$(id -u)" "$(id -g)" >> .env
+```
+
+Without this the container stops on the first boot and prints the exact
+commands to run. Docker creates a missing bind-mount directory owned by root,
+which an unprivileged container cannot write to.
 
 Compose reads that root `.env` and passes the account and provider settings to
 the container. Create the shared network once if the reverse-proxy stack has not

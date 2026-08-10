@@ -152,13 +152,52 @@ async def _safe_search(
     source: BaseSource,
     options: SourceSearchOptions,
 ) -> tuple[SourcePageResult, str]:
-    """Catch one source failure so it cannot stop the other searches."""
+    """Catch one source failure so it cannot stop the other searches.
+
+    The failure is logged without the exception text. Several sources take
+    their key as a query parameter, so the request URL that an HTTP error
+    carries would otherwise write that key into the log file.
+    """
     try:
         page = await source.search(options)
         return page, ""
     except Exception as exc:
-        logger.exception("Source %s failed", source.name)
+        logger.warning(
+            "Source %s failed: %s (%s)",
+            source.name,
+            type(exc).__name__,
+            _redacted_failure_detail(exc),
+        )
         return SourcePageResult(articles=[], has_more=False), _format_source_error(exc)
+
+
+def _redacted_failure_detail(exc: Exception) -> str:
+    """Describe one adapter failure without repeating any credential.
+
+    Parameters
+    ----------
+    exc : Exception
+        Failure raised by a source adapter.
+
+    Returns
+    -------
+    str
+        The HTTP status and the request address with its query string removed,
+        or a short description when the failure carries no request.
+    """
+    request = getattr(exc, "request", None)
+    request_url = getattr(request, "url", None)
+    if request_url is None:
+        return "no request details"
+
+    # Keep only scheme, host, and path. Every provider key this project sends
+    # travels in the query string or in a header, so neither survives here.
+    safe_address = str(httpx.URL(request_url).copy_with(query=None, fragment=None))
+    response = getattr(exc, "response", None)
+    status_code = getattr(response, "status_code", None)
+    if status_code is None:
+        return safe_address
+    return f"HTTP {status_code} from {safe_address}"
 
 
 def _format_source_error(exc: Exception) -> str:

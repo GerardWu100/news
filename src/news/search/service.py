@@ -6,6 +6,8 @@ duplicate removal, sorting, search details, and optional request caching.
 
 from __future__ import annotations
 
+import asyncio
+import copy
 from collections.abc import Awaitable, Callable, Sequence
 
 from ..sources import SourceQueryReport, search_all_detailed
@@ -20,6 +22,12 @@ SearchExecutor = Callable[
     Awaitable[tuple[list[Article], list[SourceQueryReport]]],
 ]
 
+# Searches that are already running, keyed by the request that started them.
+# Sources are rate limited, so two callers asking the same question at the same
+# moment should cost one round of provider requests, not two. Entries are
+# removed as soon as the search finishes.
+_searches_in_flight: dict[SearchRequest, asyncio.Task[SearchResult]] = {}
+
 
 async def run_search(
     request: SearchRequest,
@@ -29,6 +37,10 @@ async def run_search(
     cache: SearchResultCache | None = None,
 ) -> SearchResult:
     """Run one validated search request and return the API response.
+
+    An identical request that is already running is joined rather than
+    repeated, so a reloaded browser page or two commands started together do
+    not each spend the provider rate limits.
 
     Parameters
     ----------
@@ -53,6 +65,51 @@ async def run_search(
         if cached_result is not None:
             return cached_result
 
+    running_search = _searches_in_flight.get(request)
+    if running_search is None:
+        running_search = asyncio.ensure_future(
+            _execute_search(request, executor, use_cache=use_cache, cache=cache)
+        )
+        _searches_in_flight[request] = running_search
+        try:
+            result = await running_search
+        finally:
+            _searches_in_flight.pop(request, None)
+    else:
+        # Wait without cancelling: cancelling this caller must not cancel the
+        # search the other callers are also waiting on.
+        result = await asyncio.shield(running_search)
+
+    # Every caller gets its own copy, so one caller editing the response cannot
+    # change what another caller sees.
+    return copy.deepcopy(result)
+
+
+async def _execute_search(
+    request: SearchRequest,
+    executor: SearchExecutor,
+    *,
+    use_cache: bool,
+    cache: SearchResultCache | None,
+) -> SearchResult:
+    """Query the sources and assemble one response.
+
+    Parameters
+    ----------
+    request : SearchRequest
+        Fully validated request inputs for one search call.
+    executor : SearchExecutor
+        Async function that queries sources.
+    use_cache : bool
+        Whether the finished result should be stored.
+    cache : SearchResultCache | None
+        Cache to store the result in, when one was supplied.
+
+    Returns
+    -------
+    SearchResult
+        Normalized articles and search details.
+    """
     source_options = SourceSearchOptions(
         query=request.query,
         start_date=request.start_date,

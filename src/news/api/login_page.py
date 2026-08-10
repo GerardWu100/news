@@ -126,7 +126,7 @@ def render_login_page(
         Identifier the server uses to find the stored copy of ``form_token``.
     headers : dict[str, str]
         Response headers, normally from
-        :func:`news.web.security.security_headers`.
+        :func:`news.web.security.login_page_headers`.
 
     Returns
     -------

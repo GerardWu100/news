@@ -6,6 +6,17 @@ services:
     ports:
       - "127.0.0.1:50023:8000"
     restart: unless-stopped
+    # Serve as your own account so the mounted data directory stays writable.
+    # Find the values with 'id -u' and 'id -g' and set them in .env.
+    user: "${NEWS_UID:-1000}:${NEWS_GID:-1000}"
+    # The application writes only to the mounted data directory.
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     environment:
       TZ: America/Toronto
       NEWS_DATA_DIR: /data
@@ -50,6 +61,11 @@ services:
     image: local/news:latest
     entrypoint:
       - news-search
+    user: "${NEWS_UID:-1000}:${NEWS_GID:-1000}"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     environment:
       NEWS_SERVER_URL: http://news:8000
       # The command line signs in with the same account as the browser.

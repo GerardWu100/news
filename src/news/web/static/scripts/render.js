@@ -13,6 +13,11 @@ const WINDOW_BANNER_ID = "window-banner";
 const A11Y_STATUS_ID = "a11y-status";
 const SEARCH_BUTTON_ID = "search-btn";
 
+// Each result card starts its entrance animation slightly after the one above
+// it, up to a cap so a full page of results does not crawl in.
+const CARD_ENTRANCE_STEP_SECONDS = 0.03;
+const MAX_CARD_ENTRANCE_DELAY_SECONDS = 0.3;
+
 /**
  * Announce a short status message to screen readers.
  *
@@ -51,15 +56,29 @@ export function setSearchLoading(isLoading) {
         .setAttribute("aria-busy", String(isLoading));
 }
 
+/**
+ * Make one value safe to place anywhere in an HTML template.
+ *
+ * Article text arrives from outside sources, so it is never trusted. Angle
+ * brackets and ampersands are escaped so the value cannot start a tag, and
+ * both quote characters are escaped so it cannot end an attribute either. One
+ * escaper that is safe in both places means a caller can never pick the wrong
+ * one.
+ *
+ * Parameters
+ * ----------
+ * value : string
+ *     Untrusted text, or any value that converts to text.
+ *
+ * Returns
+ * -------
+ * string
+ *     Text safe for element content and for a quoted attribute value.
+ */
 function escapeHtml(value) {
     const div = document.createElement("div");
     div.textContent = value || "";
-    return div.innerHTML;
-}
-
-
-function escapeAttribute(value) {
-    return escapeHtml(value)
+    return div.innerHTML
         .replaceAll("\"", "&quot;")
         .replaceAll("'", "&#39;");
 }
@@ -93,7 +112,7 @@ export function renderSources(sources, defaultSources = []) {
             : `${source.display_name} (no key)`;
         return `
             <label class="checkbox-label source-pill">
-                <input type="checkbox" name="source" value="${source.name}" ${checked} ${disabled}>
+                <input type="checkbox" name="source" value="${escapeHtml(source.name)}" ${checked} ${disabled}>
                 <span>${escapeHtml(label)}</span>
             </label>
         `;
@@ -151,8 +170,31 @@ export function renderResults(results, page) {
         return createResultCard(result, index);
     }).join("");
     container.innerHTML = html;
+    applyCardEntranceDelays(container);
     const resultNoun = results.length === 1 ? "result" : "results";
     announce(`${results.length} ${resultNoun} on page ${page}.`);
+}
+
+/**
+ * Stagger the entrance animation of the freshly inserted result cards.
+ *
+ * The delay is set through the style property rather than a ``style``
+ * attribute in the card markup. The page's Content Security Policy does not
+ * allow inline style attributes, but it does allow a script to write to an
+ * element's style, so the animation survives the stricter policy.
+ *
+ * Parameters
+ * ----------
+ * container : Element
+ *     Results container whose cards were just replaced.
+ */
+function applyCardEntranceDelays(container) {
+    const cards = container.querySelectorAll(".result-card");
+    cards.forEach(function setEntranceDelay(card, index) {
+        const delaySeconds = Math.min(index * CARD_ENTRANCE_STEP_SECONDS,
+            MAX_CARD_ENTRANCE_DELAY_SECONDS);
+        card.style.animationDelay = `${delaySeconds}s`;
+    });
 }
 
 
@@ -228,7 +270,7 @@ export function closeArticleDialog() {
 function createResultCard(result, index) {
     const preview = truncateText(result.summary || result.content || "", 280);
     return `
-        <article class="result-card source-${result.source}" style="animation-delay: ${Math.min(index * 0.03, 0.3)}s">
+        <article class="result-card source-${escapeHtml(result.source)}">
             <div class="result-card-topline">
                 <div class="result-card-badges">${renderSourceBadges(result)}</div>
                 ${result.date ? `<span class="result-card-date">${escapeHtml(result.date)}</span>` : ""}
@@ -241,7 +283,7 @@ function createResultCard(result, index) {
                 ${result.domain ? `<span>Domain ${escapeHtml(result.domain)}</span>` : ""}
                 ${result.language ? `<span>Language ${escapeHtml(result.language.toUpperCase())}</span>` : ""}
                 ${result.section ? `<span>Section ${escapeHtml(result.section)}</span>` : ""}
-                ${result.duplicate_count > 1 ? `<span class="duplicate-pill">${result.duplicate_count} merged records</span>` : ""}
+                ${result.duplicate_count > 1 ? `<span class="duplicate-pill">${escapeHtml(String(result.duplicate_count))} merged records</span>` : ""}
             </div>
         </article>
     `;
@@ -254,7 +296,8 @@ function renderSourceBadges(result) {
         : [result.source];
 
     return sources.map(function buildSourceBadge(source) {
-        return `<span class="badge badge-${source}">${escapeHtml(source)}</span>`;
+        const safeSource = escapeHtml(source);
+        return `<span class="badge badge-${safeSource}">${safeSource}</span>`;
     }).join("");
 }
 
@@ -275,7 +318,7 @@ function createArticleDialogContent(result) {
         </div>
         ${result.summary ? `<p class="article-dialog-summary">${escapeHtml(result.summary)}</p>` : ""}
         <div class="article-dialog-text">${escapeHtml(bodyText)}</div>
-        ${safeUrl ? `<a class="article-dialog-link" href="${escapeAttribute(safeUrl)}" target="_blank" rel="noopener">Open source article</a>` : ""}
+        ${safeUrl ? `<a class="article-dialog-link" href="${escapeHtml(safeUrl)}" target="_blank" rel="noopener">Open source article</a>` : ""}
     `;
 }
 

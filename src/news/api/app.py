@@ -13,7 +13,7 @@ from __future__ import annotations
 import argparse
 import logging
 import os
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -52,6 +52,12 @@ from news.web.paths import (
     session_state_path,
     static_dir,
 )
+from news.web.security import (
+    data_response_headers,
+    request_is_secure,
+    search_page_headers,
+    static_asset_headers,
+)
 
 APP_TITLE = "Historical News Search Engine"
 APP_DESCRIPTION = (
@@ -61,6 +67,7 @@ APP_DESCRIPTION = (
 APP_VERSION = "0.1.0"
 SERVER_HOST = "127.0.0.1"
 SERVER_PORT = 8000
+STATIC_URL_PREFIX = "/static"
 SourceStatusProvider = Callable[[], list[dict[str, object]]]
 
 _logger = logging.getLogger("news.api.app")
@@ -117,6 +124,32 @@ def create_app(
     )
     application.include_router(build_auth_router())
 
+    @application.middleware("http")
+    async def apply_security_headers(
+        request: Request,
+        call_next: Callable[[Request], Awaitable[Response]],
+    ) -> Response:
+        """Attach browser-protection headers to every response.
+
+        Routes that need a wider Content Security Policy, such as the search
+        page and the sign-in page, set their own before this runs; only the
+        headers a response does not already carry are filled in here. That way
+        no route can be added later that quietly serves data without them.
+        """
+        response = await call_next(request)
+        connection_is_secure = request_is_secure(
+            request,
+            settings.security.trust_forwarded_headers,
+        )
+        if request.url.path.startswith(STATIC_URL_PREFIX):
+            headers = static_asset_headers(connection_is_secure=connection_is_secure)
+        else:
+            headers = data_response_headers(connection_is_secure=connection_is_secure)
+
+        for header_name, header_value in headers.items():
+            response.headers.setdefault(header_name, header_value)
+        return response
+
     @application.get("/healthz", include_in_schema=False)
     async def healthz() -> dict[str, str]:
         """Report that the process is serving, without exposing any data."""
@@ -127,7 +160,15 @@ def create_app(
         """Serve the browser app, or the sign-in page when signed out."""
         if not request_is_signed_in(request):
             return RedirectResponse(url=LOGIN_PATH, status_code=302)
-        return FileResponse(str(static_assets / "index.html"))
+        return FileResponse(
+            str(static_assets / "index.html"),
+            headers=search_page_headers(
+                connection_is_secure=request_is_secure(
+                    request,
+                    settings.security.trust_forwarded_headers,
+                )
+            ),
+        )
 
     @application.get(
         "/api/config",

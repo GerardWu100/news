@@ -43,6 +43,43 @@ class DockerDeploymentTests(unittest.TestCase):
             dockerfile,
         )
 
+    def test_image_serves_as_an_unprivileged_account(self) -> None:
+        """Root in the container would own every file written to the host."""
+        dockerfile = (PROJECT_ROOT / "Dockerfile").read_text(encoding="utf-8")
+
+        self.assertIn("USER news", dockerfile)
+        # The account must be created before it is selected, or the build fails
+        # on a machine where the name happens not to exist.
+        self.assertLess(
+            dockerfile.index("useradd"),
+            dockerfile.index("USER news"),
+        )
+
+    def test_compose_drops_privileges_and_keeps_the_filesystem_read_only(
+        self,
+    ) -> None:
+        """A compromised process should reach nothing but the mounted data."""
+        compose = (PROJECT_ROOT / "docker-compose.yml").read_text(encoding="utf-8")
+
+        self.assertIn("no-new-privileges:true", compose)
+        self.assertIn("cap_drop:", compose)
+        self.assertIn("read_only: true", compose)
+        self.assertIn('user: "${NEWS_UID:-1000}:${NEWS_GID:-1000}"', compose)
+
+    def test_entrypoint_explains_an_unwritable_data_directory(self) -> None:
+        """An unprivileged container cannot fix the mount's owner itself."""
+        entrypoint = (PROJECT_ROOT / "docker-entrypoint.sh").read_text(encoding="utf-8")
+
+        self.assertIn('if [ ! -w "$DATA_DIR" ]; then', entrypoint)
+        self.assertIn("NEWS_UID", entrypoint)
+
+    def test_example_environment_documents_the_container_account(self) -> None:
+        """An operator copying the example needs both identifiers present."""
+        example = (PROJECT_ROOT / ".env.example").read_text(encoding="utf-8")
+
+        self.assertIn("NEWS_UID=", example)
+        self.assertIn("NEWS_GID=", example)
+
     def test_entrypoint_seeds_config_without_overwriting_operator_changes(self) -> None:
         """First boot should copy defaults only when no mounted config exists."""
         entrypoint = (PROJECT_ROOT / "docker-entrypoint.sh").read_text(encoding="utf-8")

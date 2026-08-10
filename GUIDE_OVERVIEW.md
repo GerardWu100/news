@@ -74,8 +74,10 @@ The exact tree is maintained in `docs/reference/PROJECT_STRUCTURE.md`.
    leaves a session cookie, and a program through an HTTP Basic header.
 5. The browser or CLI sends one validated search request.
 6. The search package checks whether the same request is already in its short-
-   lived memory cache.
-7. If it is not cached, the selected sources are queried in parallel.
+   lived memory cache, and then whether an identical request is already
+   running. A second caller joins the search in flight rather than spending the
+   provider rate limits twice.
+7. If neither applies, the selected sources are queried in parallel.
 8. Each source response is converted to the common article format.
 9. Local filters apply the same language, phrase, term, and domain rules to all
    sources.
@@ -97,9 +99,22 @@ plain account name and password into `.env`; startup turns the password into a
 PBKDF2 hash, stores only that, and re-verifies it on every boot. Failed
 attempts are counted per client address and a run of them refuses that address
 for a while, through both the form and the header. Sessions and counters live
-in files, so a restart does not sign everyone out and does not reset a limit.
+in files read and written under a lock, so a restart does not sign everyone out,
+a limit is not reset, and several server processes agree about who is signed in.
 Three routes stay open because none reveal results: the sign-in page, the
 browser's own static files, and the health check.
+
+Anything a caller can add to without proving the account is bounded: the
+failed-attempt file drops records once their window and ban have passed, and
+the sign-in form tokens held in memory have a ceiling. Proxy headers naming a
+different client are believed only when the machine that opened the connection
+is itself local or private, so the failed-attempt limit cannot be sidestepped
+by setting a header.
+
+Every response carries browser protection headers, attached in one place rather
+than route by route. Article text comes from outside sources and is rendered as
+inert text, and the Content Security Policy allows no inline script or style,
+so injected markup has nothing to execute.
 
 ## Reliability and operations
 
@@ -118,7 +133,9 @@ browser's own static files, and the health check.
 
 - Pages follow the source’s own pagination. They are not one globally merged
   sliding window.
-- Cache entries live in one process and expire quickly.
+- Cache entries live in one process and expire quickly. Sharing between
+  identical requests running at the same moment is also per process, so two
+  worker processes can still each query the sources once.
 - Direct CLI mode skips the cache so an ad hoc request gets fresh results.
 - Publication-date filtering reduces look-ahead risk but does not prove when an
   article first became tradable information. Source timestamps, revisions,

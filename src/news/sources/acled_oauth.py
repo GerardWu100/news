@@ -15,15 +15,20 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, BinaryIO, Protocol
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urlparse
 from urllib.request import Request, urlopen
 
 DEFAULT_TIMEOUT_SECONDS = 30
-COMMON_USER_AGENT = (
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
-    "(KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
-)
+# Identify this client honestly, so ACLED can see who is calling and this
+# project does not misrepresent itself as a browser.
+CLIENT_USER_AGENT = "news-research-client/0.1 (+https://github.com/frenzied-org)"
 TOKEN_KEYS = ("access_token", "token", "accessToken")
+# The `.env` file holds passwords and provider keys, so only its owner may read
+# it.
+ENV_FILE_PERMISSION_MODE = 0o600
+# The account password is posted in the request body, so the connection has to
+# protect it.
+REQUIRED_TOKEN_URL_SCHEME = "https"
 
 
 class UrlOpener(Protocol):
@@ -121,6 +126,16 @@ def load_oauth_config(
         raise ValueError("ACLED_USERNAME still contains an example placeholder.")
     if config.password.lower().startswith("your_"):
         raise ValueError("ACLED_PASSWORD still contains an example placeholder.")
+
+    # The password travels in the request body, so a plain connection would put
+    # it on the wire in readable form.
+    token_url_scheme = urlparse(config.token_url).scheme.lower()
+    if token_url_scheme != REQUIRED_TOKEN_URL_SCHEME:
+        raise ValueError(
+            f"ACLED_OAUTH_TOKEN_URL must start with "
+            f"{REQUIRED_TOKEN_URL_SCHEME}:// because the request carries the "
+            f"account password. Found: {token_url_scheme or 'no scheme'}."
+        )
     return config
 
 
@@ -169,7 +184,7 @@ def request_oauth_token(
     request = Request(config.token_url, data=form_body, method="POST")
     request.add_header("Content-Type", "application/x-www-form-urlencoded")
     request.add_header("Accept", "application/json")
-    request.add_header("User-Agent", COMMON_USER_AGENT)
+    request.add_header("User-Agent", CLIENT_USER_AGENT)
 
     with opener(request, timeout=timeout_seconds) as response:
         payload = json.loads(response.read().decode("utf-8"))
@@ -306,7 +321,12 @@ def _clean_optional_value(value: object) -> str:
 
 
 def _update_env_file(path: Path, updates: Mapping[str, str]) -> None:
-    """Update dotenv keys while preserving unrelated lines and comments."""
+    """Update dotenv keys while preserving unrelated lines and comments.
+
+    The file is left readable only by its owner. It holds the browser sign-in
+    password, the ACLED account password, and every provider key, so the
+    default permissions a new file would receive are too open.
+    """
     existing_lines = (
         path.read_text(encoding="utf-8").splitlines() if path.exists() else []
     )
@@ -331,3 +351,4 @@ def _update_env_file(path: Path, updates: Mapping[str, str]) -> None:
 
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text("\n".join(output_lines) + "\n", encoding="utf-8")
+    path.chmod(ENV_FILE_PERMISSION_MODE)

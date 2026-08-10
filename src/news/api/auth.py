@@ -39,10 +39,10 @@ from fastapi import APIRouter, Form, HTTPException, Request
 from fastapi.responses import RedirectResponse, Response
 
 from news.api.login_page import render_login_page
-from news.web.auth_store import AuthStore, JsonState
+from news.web.auth_store import AuthStore, JsonRecord, JsonState
 from news.web.credentials import load_ui_credentials
 from news.web.passwords import verify_password
-from news.web.security import client_ip, request_is_secure, security_headers
+from news.web.security import client_ip, login_page_headers, request_is_secure
 
 SESSION_COOKIE_NAME = "news_session"
 SESSION_MAX_AGE_SECONDS = 30 * 24 * 60 * 60
@@ -50,6 +50,14 @@ FORM_TOKEN_TTL_SECONDS = 10 * 60
 MAX_FAILED_ATTEMPTS = 5
 FAILURE_WINDOW_SECONDS = 10 * 60
 BAN_SECONDS = 15 * 60
+# A record is useless once its window has passed and its ban has expired.
+# Without this, the failed-login file would keep one row per address forever,
+# and every failed attempt rewrites the whole file.
+FAILURE_RECORD_LIFETIME_SECONDS = FAILURE_WINDOW_SECONDS + BAN_SECONDS
+# An unauthenticated caller can request sign-in forms in a loop, so the number
+# of unreturned tokens held in memory is capped. The oldest are dropped first;
+# a caller whose token is dropped simply reloads the form.
+MAX_PENDING_FORM_TOKENS = 2048
 # Hashing a password takes about a third of a second on purpose, so a command
 # line that pages through results is not made to pay that on every request.
 BASIC_CREDENTIAL_CACHE_SECONDS = 300
@@ -76,9 +84,13 @@ _MESSAGE_FOR_REASON: dict[str, str] = {
 class LoginSessions:
     """Hold sign-in state for one running application.
 
-    Sessions and failed-login counters survive a restart because they are kept
-    in files; the in-memory copies here are the fast path. Form tokens are
-    memory-only, so a restart simply asks the browser to reload the form.
+    Sessions and failed-login counters live in files, and every read and write
+    goes through the locked store rather than through a copy held in memory.
+    That costs one small file read per signed-in request and buys correctness
+    when more than one process serves the application: a browser that signs in
+    through one worker is recognized by all of them. Form tokens and the
+    password-hash cache are per process, so at worst a caller reloads a form or
+    pays one hash.
 
     Parameters
     ----------
@@ -102,17 +114,29 @@ class LoginSessions:
         self.credentials_file = credentials_file
         self.trust_forwarded_headers = trust_forwarded_headers
         self._lock = threading.RLock()
-        self._sessions: JsonState = auth_store.load_sessions(SESSION_MAX_AGE_SECONDS)
-        # session identifier -> sign-out token
-        self._session_tokens: dict[str, str] = {}
         # one-time form token identifier -> {"token": str, "created_at": float}
         self._form_tokens: dict[str, dict[str, float | str]] = {}
         # digest of an accepted Authorization header -> expiry time
         self._accepted_basic_headers: dict[str, float] = {}
+        # Modification time of the account file the cache above was filled
+        # under. A different value means the password changed.
+        self._cached_credentials_changed_at = self.credentials_changed_at()
 
     def login_is_configured(self) -> bool:
         """Return whether a stored account name and password hash exist."""
         return load_ui_credentials(self.credentials_file) is not None
+
+    def credentials_changed_at(self) -> float:
+        """Return when the stored account was last written, or zero.
+
+        Reading the file's modification time is how a running process notices
+        that the operator changed the password, so a header accepted under the
+        old one stops being accepted.
+        """
+        try:
+            return self.credentials_file.stat().st_mtime
+        except OSError:
+            return 0.0
 
     def client_address(self, request: Request) -> str:
         """Return the address that failed attempts are counted against."""
@@ -188,6 +212,12 @@ class LoginSessions:
             token_id = secrets.token_urlsafe(16)
             token = secrets.token_urlsafe(32)
             self._form_tokens[token_id] = {"token": token, "created_at": time.time()}
+
+            # Drop the oldest tokens once the cap is reached. Python keeps
+            # insertion order, so the first key is always the oldest.
+            while len(self._form_tokens) > MAX_PENDING_FORM_TOKENS:
+                oldest_token_id = next(iter(self._form_tokens))
+                self._form_tokens.pop(oldest_token_id, None)
         return token_id, token
 
     def consume_form_token(self, token_id: str, token: str) -> bool:
@@ -205,57 +235,86 @@ class LoginSessions:
     def start_session(self) -> str:
         """Create a session and return the identifier for the cookie."""
         session_id = secrets.token_urlsafe(32)
-        with self._lock:
-            self._drop_expired_sessions()
-            self._sessions[session_id] = {"created_at": time.time()}
-            self.auth_store.save_sessions(self._sessions)
+
+        def add_session(sessions: JsonState) -> None:
+            """Record the new session beside the ones already stored."""
+            sessions[session_id] = {"created_at": time.time()}
+
+        self.auth_store.update_sessions(add_session, SESSION_MAX_AGE_SECONDS)
         return session_id
 
     def end_session(self, session_id: str | None) -> None:
-        """Forget one session and its sign-out token."""
+        """Forget one session, and with it its sign-out token."""
         if not session_id:
             return
-        with self._lock:
-            self._sessions.pop(session_id, None)
-            self._session_tokens.pop(session_id, None)
-            self.auth_store.save_sessions(self._sessions)
+
+        def remove_session(sessions: JsonState) -> None:
+            """Drop the signed-out session from the stored mapping."""
+            sessions.pop(session_id, None)
+
+        self.auth_store.update_sessions(remove_session, SESSION_MAX_AGE_SECONDS)
 
     def session_is_valid(self, request: Request) -> bool:
         """Return whether the request carries a live session cookie."""
-        session_id = request.cookies.get(SESSION_COOKIE_NAME)
-        if not session_id:
-            return False
-        with self._lock:
-            session = self._sessions.get(session_id)
-            if session is None:
-                return False
-            if _session_has_expired(session.get("created_at")):
-                self._sessions.pop(session_id, None)
-                self._session_tokens.pop(session_id, None)
-                self.auth_store.save_sessions(self._sessions)
-                return False
-        return True
+        return self._stored_session(request) is not None
 
     def sign_out_token(self, request: Request) -> str:
-        """Return this session's sign-out token, creating it when needed."""
+        """Return this session's sign-out token, creating it when needed.
+
+        The token is kept in the session record rather than in memory, so a
+        sign-out form built by one process is accepted by any process.
+        """
         session_id = request.cookies.get(SESSION_COOKIE_NAME, "")
         if not session_id:
             return ""
-        with self._lock:
-            token = self._session_tokens.get(session_id, "")
-            if not token:
-                token = secrets.token_urlsafe(32)
-                self._session_tokens[session_id] = token
-            return token
+
+        issued_token = secrets.token_urlsafe(32)
+        stored_tokens: dict[str, str] = {}
+
+        def read_or_add_token(sessions: JsonState) -> None:
+            """Reuse this session's token, or store a freshly made one."""
+            session = sessions.get(session_id)
+            if session is None:
+                return
+            existing_token = str(session.get("sign_out_token", ""))
+            if existing_token:
+                stored_tokens["token"] = existing_token
+                return
+            session["sign_out_token"] = issued_token
+            stored_tokens["token"] = issued_token
+
+        self.auth_store.update_sessions(read_or_add_token, SESSION_MAX_AGE_SECONDS)
+        return stored_tokens.get("token", "")
 
     def sign_out_token_is_valid(self, request: Request, token: str) -> bool:
         """Check a submitted sign-out token against the stored one."""
-        session_id = request.cookies.get(SESSION_COOKIE_NAME, "")
-        with self._lock:
-            expected_token = self._session_tokens.get(session_id, "")
+        session = self._stored_session(request)
+        if session is None:
+            return False
+        expected_token = str(session.get("sign_out_token", ""))
         if not expected_token:
             return False
         return secrets.compare_digest(token, expected_token)
+
+    def _stored_session(self, request: Request) -> JsonRecord | None:
+        """Return the stored record for this request's cookie, if it is live.
+
+        Parameters
+        ----------
+        request : Request
+            Current request, whose cookie names the session.
+
+        Returns
+        -------
+        JsonRecord | None
+            The session's stored fields, or ``None`` when the cookie is
+            missing, unknown, or expired.
+        """
+        session_id = request.cookies.get(SESSION_COOKIE_NAME)
+        if not session_id:
+            return None
+        sessions = self.auth_store.load_sessions(SESSION_MAX_AGE_SECONDS)
+        return sessions.get(session_id)
 
     def basic_header_is_valid(self, authorization_header: str) -> bool:
         """Check an HTTP Basic ``Authorization`` header.
@@ -263,7 +322,9 @@ class LoginSessions:
         A header that verifies is remembered by digest for
         ``BASIC_CREDENTIAL_CACHE_SECONDS`` so a run of command-line requests
         does not repeat the deliberately slow password hashing every time. Only
-        the digest is kept, never the password.
+        the digest is kept, never the password. Writing a new account file
+        empties the cache, so a header accepted under the old password stops
+        working immediately rather than at the end of its remaining time.
 
         Parameters
         ----------
@@ -282,7 +343,11 @@ class LoginSessions:
 
         header_digest = hashlib.sha256(authorization_header.encode("utf-8")).hexdigest()
         now = time.time()
+        credentials_written_at = self.credentials_changed_at()
         with self._lock:
+            if credentials_written_at != self._cached_credentials_changed_at:
+                self._accepted_basic_headers.clear()
+                self._cached_credentials_changed_at = credentials_written_at
             self._accepted_basic_headers = {
                 digest: expires_at
                 for digest, expires_at in self._accepted_basic_headers.items()
@@ -314,20 +379,6 @@ class LoginSessions:
         """Drop remembered Basic headers, for example after a password change."""
         with self._lock:
             self._accepted_basic_headers.clear()
-
-    def _drop_expired_sessions(self) -> None:
-        """Remove expired sessions from memory and from the session file."""
-        expired_session_ids = [
-            session_id
-            for session_id, session in self._sessions.items()
-            if _session_has_expired(session.get("created_at"))
-        ]
-        if not expired_session_ids:
-            return
-        for session_id in expired_session_ids:
-            self._sessions.pop(session_id, None)
-            self._session_tokens.pop(session_id, None)
-        self.auth_store.save_sessions(self._sessions)
 
     def _drop_expired_form_tokens(self) -> None:
         """Remove sign-in form tokens that were never returned."""
@@ -425,7 +476,9 @@ def build_auth_router() -> APIRouter:
             message=message,
             form_token=token,
             form_token_id=token_id,
-            headers=security_headers(),
+            headers=login_page_headers(
+                connection_is_secure=sessions.connection_is_secure(request)
+            ),
         )
 
     @router.post(LOGIN_PATH, include_in_schema=False)
@@ -524,18 +577,6 @@ def _redirect_to_login(reason: str) -> RedirectResponse:
     return RedirectResponse(url=f"{LOGIN_PATH}?reason={reason}", status_code=303)
 
 
-def _session_has_expired(created_at_value: float | int | str | None) -> bool:
-    """Return whether a stored creation time is missing, odd, or too old."""
-    try:
-        created_at = float(created_at_value or 0)
-    except (TypeError, ValueError):
-        return True
-    if not math.isfinite(created_at):
-        return True
-    session_age_seconds = time.time() - created_at
-    return not 0 <= session_age_seconds <= SESSION_MAX_AGE_SECONDS
-
-
 def _ban_seconds_remaining(state: JsonState, address: str) -> int:
     """Return the seconds left on this address's ban, or zero."""
     record = state.get(address, {})
@@ -549,6 +590,44 @@ def _ban_seconds_remaining(state: JsonState, address: str) -> int:
     return int(remaining_seconds) + 1 if remaining_seconds > 0 else 0
 
 
+def _drop_stale_failure_records(state: JsonState, now: float) -> None:
+    """Remove failure records that can no longer affect any decision.
+
+    A record matters only while its address is inside the rolling failure
+    window or still banned. Anything older changes nothing, so keeping it only
+    grows the file that every failed attempt has to read and rewrite.
+
+    Parameters
+    ----------
+    state : JsonState
+        Failed-login mapping, edited in place.
+    now : float
+        Current Unix time in seconds.
+    """
+    stale_addresses = [
+        address
+        for address, record in state.items()
+        if _failure_record_is_stale(record, now)
+    ]
+    for address in stale_addresses:
+        del state[address]
+
+
+def _failure_record_is_stale(record: JsonRecord, now: float) -> bool:
+    """Return whether one failure record has outlived its usefulness."""
+    try:
+        last_failure_at = float(record.get("last_failed", 0) or 0)
+        banned_until = float(record.get("banned_until", 0) or 0)
+    except (TypeError, ValueError):
+        # A record that cannot be read is a record that cannot be trusted.
+        return True
+    if not math.isfinite(last_failure_at) or not math.isfinite(banned_until):
+        return True
+    if banned_until > now:
+        return False
+    return now - last_failure_at > FAILURE_RECORD_LIFETIME_SECONDS
+
+
 def _add_failure(state: JsonState, address: str) -> None:
     """Count one failure for an address and set a ban once the limit is hit.
 
@@ -560,6 +639,9 @@ def _add_failure(state: JsonState, address: str) -> None:
         Client address responsible for the failed attempt.
     """
     now = time.time()
+    # Clear out spent records first, so the file this write produces stays
+    # proportional to the addresses that are currently failing.
+    _drop_stale_failure_records(state, now)
     record = state.get(address, {})
     try:
         last_failure_at = float(record.get("last_failed", 0))
@@ -584,6 +666,10 @@ def _add_failure(state: JsonState, address: str) -> None:
 
 
 def _reset_failures(state: JsonState, address: str) -> None:
-    """Clear the failure counters and ban for one address."""
-    if address in state:
-        state[address] = {"failed": 0, "last_failed": 0, "banned_until": 0}
+    """Forget one address after a success and drop other spent records.
+
+    Removing the row rather than zeroing it keeps the file free of entries
+    that record nothing.
+    """
+    state.pop(address, None)
+    _drop_stale_failure_records(state, time.time())
