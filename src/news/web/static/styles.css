@@ -723,6 +723,33 @@ select:focus {
     background: rgba(255, 255, 255, 0.34);
 }
 
+.session-controls {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.sign-out-form {
+    margin: 0;
+}
+
+.sign-out-button {
+    padding: 0.5rem 0.85rem;
+    color: var(--page-muted);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    background: transparent;
+    border: 1px solid var(--hairline);
+    border-radius: 999px;
+}
+
+.sign-out-button:hover {
+    color: var(--page-accent);
+    border-color: var(--page-accent);
+}
+
 .hero-grid {
     align-items: end;
     justify-content: space-between;

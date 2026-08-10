@@ -9,6 +9,9 @@ __pycache__/
 .env
 .env.*
 !.env.example
+.ui_credentials.json
+.ui_sessions.json*
+.login_state.json*
 blog/
 docs/
 outputs/

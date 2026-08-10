@@ -4,15 +4,20 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import os
 from typing import Any
 
 import httpx
 from dotenv import load_dotenv
 
 from news.search.validation import split_csv_values
+from news.web.credentials import ENV_PASSWORD_KEY, ENV_USERNAME_KEY
 from news.web.paths import env_path
 
 from .parser import build_api_params
+
+REQUEST_TIMEOUT_SECONDS = 30.0
+UNAUTHORIZED_STATUS = 401
 
 
 def fetch_page(args: argparse.Namespace, *, page: int) -> dict[str, Any]:
@@ -22,13 +27,52 @@ def fetch_page(args: argparse.Namespace, *, page: int) -> dict[str, Any]:
     return fetch_api_page(args, page=page)
 
 
+def api_credentials() -> tuple[str, str] | None:
+    """Return the account name and password used for API requests.
+
+    The server requires a signed-in account, and the command line proves the
+    account with HTTP Basic authentication: the same two values the browser
+    sign-in form takes, sent as a header on every request.
+
+    Returns
+    -------
+    tuple[str, str] | None
+        ``(username, password)`` when both ``UI_USERNAME`` and ``UI_PASSWORD``
+        are set, otherwise ``None``. Requests are still sent without
+        credentials in that case so the server, not this function, decides
+        whether they are needed.
+    """
+    username = os.getenv(ENV_USERNAME_KEY, "").strip()
+    password = os.getenv(ENV_PASSWORD_KEY, "")
+    if not username or not password:
+        return None
+    return username, password
+
+
 def fetch_api_page(args: argparse.Namespace, page: int) -> dict[str, Any]:
-    """Fetch one source page through the running HTTP API."""
-    with httpx.Client(timeout=30.0, follow_redirects=True) as client:
+    """Fetch one source page through the running HTTP API.
+
+    Raises
+    ------
+    RuntimeError
+        If the server rejects the credentials, with a message naming the two
+        settings to fix rather than repeating the raw HTTP status.
+    """
+    with httpx.Client(
+        timeout=REQUEST_TIMEOUT_SECONDS,
+        follow_redirects=True,
+        auth=api_credentials(),
+    ) as client:
         response = client.get(
             f"{args.server.rstrip('/')}/api/search",
             params=build_api_params(args, page=page),
         )
+        if response.status_code == UNAUTHORIZED_STATUS:
+            raise RuntimeError(
+                f"{args.server} rejected the sign-in details. Set "
+                f"{ENV_USERNAME_KEY} and {ENV_PASSWORD_KEY} in .env to the "
+                "same account the server was started with."
+            )
         response.raise_for_status()
         return response.json()
 

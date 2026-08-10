@@ -12,3 +12,8 @@ ttl_seconds = 300
 
 # Store no more than this many search results in memory.
 max_entries = 100
+
+[security]
+# Believe proxy headers when reading the client address and HTTPS state.
+# Keep this false unless a reverse proxy you control sits in front.
+trust_forwarded_headers = false

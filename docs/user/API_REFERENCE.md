@@ -2,6 +2,20 @@
 
 Base URL when running locally: `http://127.0.0.1:8000`
 
+## Signing in
+
+Every route below requires the account set through `UI_USERNAME` and
+`UI_PASSWORD`. A program sends it as HTTP Basic authentication:
+
+```bash
+curl -u "$UI_USERNAME:$UI_PASSWORD" "http://127.0.0.1:8000/api/config"
+```
+
+Without valid credentials the route answers `401` with a JSON `detail`. The
+response has no `WWW-Authenticate` header, so a browser shows the application's
+own sign-in page rather than a native password box. `GET /healthz` and the files
+under `/static` need no account. Full rules are in `docs/user/SIGN_IN.md`.
+
 ## Common query parameters
 
 The search and export routes accept the same parameters.

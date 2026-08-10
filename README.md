@@ -44,14 +44,19 @@ Several sources can improve coverage, but more sources do not automatically remo
 
 ## Quick start
 
-Install dependencies and start the browser application:
+Install dependencies, set a sign-in account, and start the browser application:
 
 ```bash
 uv sync
+cp .env.example .env   # set UI_USERNAME and UI_PASSWORD
 uv run news-server
 ```
 
-Open `http://127.0.0.1:8000`, choose the historical window, and search.
+Open `http://127.0.0.1:8000`, sign in, choose the historical window, and search.
+
+Every route that returns news data needs that account; without it the server
+starts and refuses every request. `docs/user/SIGN_IN.md` explains how the
+password is stored and how the command line signs in.
 
 For live-reload development:
 
@@ -115,7 +120,7 @@ See `docs/user/DOCKER.md` for configuration, operations, Dockerized CLI use, and
 
 ## Configuration
 
-Copy `.env.example` to `.env` and fill in credentials only for the sources you want to enable. Commands look for this optional file in the current working directory.
+Copy `.env.example` to `.env`, set `UI_USERNAME` and `UI_PASSWORD`, and fill in credentials only for the sources you want to enable. Commands look for this file in the data directory, which is `NEWS_DATA_DIR` when set and the current working directory otherwise.
 
 ```bash
 cp .env.example .env
@@ -153,6 +158,7 @@ Treat an LLM-generated signal as a model output, not as evidence that a strategy
 ## Documentation
 
 - API reference: `docs/user/API_REFERENCE.md`
+- Sign-in and security: `docs/user/SIGN_IN.md`
 - Docker deployment: `docs/user/DOCKER.md`
 - Completed refactoring plan: `docs/plans/PROJECT_REFACTOR_PLAN.md`
 - Developer structure reference: `docs/reference/PROJECT_STRUCTURE.md`

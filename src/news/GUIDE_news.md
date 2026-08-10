@@ -6,7 +6,8 @@ The `news` package implements historical news retrieval from several sources.
 
 ## Subpackages
 
-- `api/`: FastAPI app, route models, and query parameter parsing.
+- `api/`: FastAPI app, route models, query parameter parsing, sign-in routes,
+  and the check that closes every data route.
 - `search/`: validation, shared date handling, cache, filters, duplicate
   removal, sorting, and search details.
 - `sources/`: source registry, parallel requests, retries, source adapters, and
@@ -14,7 +15,30 @@ The `news` package implements historical news retrieval from several sources.
 - `exports/`: CSV, JSON, and SQLite writers.
 - `cli/`: command parser, fetch paths, table/JSON/JSONL output, and command flow.
 - `web/`: installed browser files, packaged defaults, settings-path helpers,
-  and validated settings.
+  validated settings, password hashing, stored sign-in state, and
+  request-security helpers.
+
+## Sign-in
+
+`web/passwords.py` holds the PBKDF2 hashing and the constant-time check.
+`web/credentials.py` turns `UI_USERNAME` and `UI_PASSWORD` into
+`.ui_credentials.json` on every startup and re-verifies the stored hash, so no
+hashing command exists. `web/auth_store.py` keeps remembered sessions and
+failed-attempt counters in locked, atomically replaced JSON files, and
+`web/security.py` decides response headers, the client address, and whether the
+connection used HTTPS.
+
+`api/auth.py` holds the runtime state and the routes. `LoginSessions` owns
+sessions, form tokens, failure counting, and the short-lived cache of accepted
+HTTP Basic headers, which exists because hashing is deliberately slow.
+`require_signed_in` is the dependency attached to every data route;
+`request_is_signed_in` is the same check without the exception, used by the
+root route so a signed-out browser is redirected rather than refused.
+`api/login_page.py` renders the one server-built page, because the rest of the
+browser client is static and cannot carry a server-issued token.
+
+The factory accepts a `LoginSessions`, so tests point sign-in state at a
+temporary directory instead of the operator's data directory.
 
 ## Runtime Flow
 

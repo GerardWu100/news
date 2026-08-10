@@ -15,14 +15,18 @@ from news.sources import SourceQueryReport
 from news.sources.base import Article, SourceSearchOptions
 from news.web.config import load_settings
 from news.web.paths import config_path, static_dir
+from tests.fixtures.authentication import (
+    attach_session_cookie,
+    build_login_sessions,
+)
 from tests.fixtures.search_results import build_provider_response
 
 
 class AppRouteTests(unittest.TestCase):
-    """Verify that the public HTTP routes stay wired correctly."""
+    """Verify that the signed-in HTTP routes stay wired correctly."""
 
     def setUp(self) -> None:
-        """Create an isolated app with deterministic provider dependencies."""
+        """Create an isolated, signed-in app with offline provider fakes."""
 
         async def fake_search_executor(
             _options: SourceSearchOptions,
@@ -42,12 +46,18 @@ class AppRouteTests(unittest.TestCase):
                 }
             ]
 
+        temporary_directory = TemporaryDirectory()
+        self.addCleanup(temporary_directory.cleanup)
+        self.login_sessions = build_login_sessions(Path(temporary_directory.name))
+
         application = create_app(
             load_settings(),
             search_executor=fake_search_executor,
             source_status_provider=fake_source_status,
+            login_sessions=self.login_sessions,
         )
         self.client = TestClient(application)
+        attach_session_cookie(self.client, self.login_sessions)
 
     def test_index_serves_frontend_shell(self) -> None:
         """The root page should serve the browser client."""

@@ -42,10 +42,12 @@ The exact tree is maintained in `docs/reference/PROJECT_STRUCTURE.md`.
 - Optional language, duplicate-removal, exact-phrase, excluded-term, and
   included/excluded-domain filters.
 - Optional source ranking and source-specific section filters.
-- Provider credentials from an optional `.env` in the process working
-  directory, created from `.env.example`.
-- Browser and cache settings from an explicit server option, `NEWS_CONFIG`, a
-  current-directory `config.toml`, or packaged defaults, in that order.
+- A sign-in account and provider credentials from `.env` in the data directory,
+  created from `.env.example`. The data directory is `NEWS_DATA_DIR` when set
+  and the working directory otherwise.
+- Browser, cache, and proxy-trust settings from an explicit server option,
+  `NEWS_CONFIG`, a current-directory `config.toml`, or packaged defaults, in
+  that order.
 - An optional local or remote server address from `--server` or
   `NEWS_SERVER_URL`.
 
@@ -64,25 +66,40 @@ The exact tree is maintained in `docs/reference/PROJECT_STRUCTURE.md`.
 
 1. The `news-server` command loads credentials, reads bind options, and asks
    the application factory to build the FastAPI app.
-2. Startup combines the selected operator settings with the packaged defaults,
+2. Startup hashes the sign-in password, checks the hash against it, and stores
+   only the hash. A missing account leaves every data route closed.
+3. Startup combines the selected operator settings with the packaged defaults,
    validates them, and creates a process-local cache.
-3. The browser or CLI sends one validated search request.
-4. The search package checks whether the same request is already in its short-
+4. The caller proves the account: a browser through the sign-in form, which
+   leaves a session cookie, and a program through an HTTP Basic header.
+5. The browser or CLI sends one validated search request.
+6. The search package checks whether the same request is already in its short-
    lived memory cache.
-5. If it is not cached, the selected sources are queried in parallel.
-6. Each source response is converted to the common article format.
-7. Local filters apply the same language, phrase, term, and domain rules to all
+7. If it is not cached, the selected sources are queried in parallel.
+8. Each source response is converted to the common article format.
+9. Local filters apply the same language, phrase, term, and domain rules to all
    sources.
-8. Optional duplicate removal first groups identical canonical URLs, then
-   obvious same-day copies with the same headline.
-9. The final source page is sorted and returned through the API.
-10. The browser displays the active date boundary and download links. The CLI
+10. Optional duplicate removal first groups identical canonical URLs, then
+    obvious same-day copies with the same headline.
+11. The final source page is sorted and returned through the API.
+12. The browser displays the active date boundary and download links. The CLI
     can print a table, JSON, or JSONL and write export files.
 
 In Docker, the server listens on all container interfaces on port 8000, while
 Compose publishes it only on host loopback at port 50023. The optional Docker
-CLI service and an authenticated reverse proxy on the external `single` network
-can reach the container without widening the host port.
+CLI service and a reverse proxy on the external `single` network can reach the
+container without widening the host port.
+
+### Sign-in model
+
+One shared account protects everything that returns news. The operator writes a
+plain account name and password into `.env`; startup turns the password into a
+PBKDF2 hash, stores only that, and re-verifies it on every boot. Failed
+attempts are counted per client address and a run of them refuses that address
+for a while, through both the form and the header. Sessions and counters live
+in files, so a restart does not sign everyone out and does not reset a limit.
+Three routes stay open because none reveal results: the sign-in page, the
+browser's own static files, and the health check.
 
 ## Reliability and operations
 
@@ -119,15 +136,23 @@ can reach the container without widening the host port.
   globals.
 - Public HTTP routes and response models are recorded in a generated OpenAPI
   schema and checked by tests.
-- The Docker health check requests the configuration route. Persistent
-  configuration is copied from the repository defaults only on first boot.
+- The Docker health check requests the open health route, so a container with
+  no signed-in browser is still reported as healthy. Persistent configuration
+  is copied from the repository defaults only on first boot.
+- Sign-in is one shared account with no second factor and no per-user
+  permissions. It protects the data and the provider quotas; it is not an
+  access-control system for several people.
+- The plain password stays in `.env` on disk. File permissions and a private
+  data directory are the protection, and that is a deliberate trade-off for not
+  needing a hashing command.
 
 ## Local conventions
 
 - Use `uv` for Python commands and dependency management.
 - Keep the frontend dependency-light.
-- Store provider credentials in the root `.env`.
+- Store the sign-in account and provider credentials in `.env`.
 - Keep project docs in sync after code changes.
 - Treat this project as a retrieval tool, not an analytics system.
-- Keep unauthenticated Docker ports private; use a VPN or authenticated TLS
-  reverse proxy for remote agents and set `NEWS_SERVER_URL`.
+- Keep Docker ports private and put a virtual private network or a Transport
+  Layer Security reverse proxy in front for remote agents, then set
+  `NEWS_SERVER_URL`. The password travels in plain text without that layer.

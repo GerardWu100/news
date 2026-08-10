@@ -22,14 +22,19 @@ do not overwrite operator changes.
 
 ## Start the service
 
-Copy the credential template and fill only the provider keys you use:
+Copy the credential template, set the sign-in account, and fill only the
+provider keys you use:
 
 ```bash
 cp .env.example .env
 ```
 
-Compose reads that root `.env` and passes the provider settings to the
-container. Create the shared network once if the reverse-proxy stack has not
+`UI_USERNAME` and `UI_PASSWORD` are required. Without both, the container starts
+but refuses every request, and the entrypoint prints a warning saying so. See
+`docs/user/SIGN_IN.md` for what the server does with them.
+
+Compose reads that root `.env` and passes the account and provider settings to
+the container. Create the shared network once if the reverse-proxy stack has not
 already created it:
 
 ```bash
@@ -43,8 +48,13 @@ docker compose up --build -d news
 docker compose ps
 ```
 
-Open `http://127.0.0.1:50023`. The health check requests `/api/config` inside
-the container.
+Open `http://127.0.0.1:50023` and sign in. The health check requests `/healthz`
+inside the container, which needs no account so that a signed-out container is
+still reported as healthy.
+
+The mounted data directory also holds the sign-in state: `.ui_credentials.json`
+(account name and hashed password), `.ui_sessions.json` (remembered browsers),
+and `.login_state.json` (failed-attempt counters).
 
 Useful commands:
 
@@ -95,13 +105,17 @@ docker compose run --rm \
   --quiet
 ```
 
-For a remote agent, put an authenticated Transport Layer Security (TLS) reverse
-proxy or a private virtual private network (VPN) in front of the `news`
-container and point `NEWS_SERVER_URL` at that address. The FastAPI application
-has no user-authentication layer. Do not publish port 8000 or change the host
-bind to `0.0.0.0` on an internet-facing machine without a separate access
-control layer; otherwise strangers could consume the configured provider
-quotas.
+The command line signs in with the same `UI_USERNAME` and `UI_PASSWORD` as the
+browser, sent as an HTTP Basic header on every request. Compose passes both to
+the `news-cli` service; outside Docker they come from `.env`.
+
+For a remote agent, still put a Transport Layer Security (TLS) reverse proxy or
+a private virtual private network (VPN) in front of the `news` container and
+point `NEWS_SERVER_URL` at that address. The account protects the data, but it
+travels in plain text without TLS, and a single shared account is not an
+access-control system. Set `security.trust_forwarded_headers = true` in
+`config.toml` when a proxy you control sits in front, so failed-attempt limits
+count the real client address.
 
 The workspace-local skill at `.agents/skills/summarize-news-cli/SKILL.md`
 teaches agents to retrieve, check, and summarize the structured result without

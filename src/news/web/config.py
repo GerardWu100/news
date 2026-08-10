@@ -17,9 +17,10 @@ from typing import Any
 from news.sources.registry import source_names
 from news.web.paths import config_path
 
-ROOT_SETTING_KEYS = frozenset({"frontend", "cache"})
+ROOT_SETTING_KEYS = frozenset({"frontend", "cache", "security"})
 FRONTEND_SETTING_KEYS = frozenset({"default_english_only", "default_sources"})
 CACHE_SETTING_KEYS = frozenset({"ttl_seconds", "max_entries"})
+SECURITY_SETTING_KEYS = frozenset({"trust_forwarded_headers"})
 
 
 class SettingsError(ValueError):
@@ -66,11 +67,28 @@ class CacheSettings:
 
 
 @dataclass(frozen=True, slots=True)
+class SecuritySettings:
+    """Login-related request handling.
+
+    Attributes
+    ----------
+    trust_forwarded_headers : bool
+        Whether ``X-Forwarded-For``, ``X-Forwarded-Proto``, and Cloudflare's
+        ``CF-Connecting-IP`` and ``CF-Visitor`` headers may be believed. Turn
+        this on only behind a reverse proxy you control, because any client
+        can set these headers when it reaches the server directly.
+    """
+
+    trust_forwarded_headers: bool
+
+
+@dataclass(frozen=True, slots=True)
 class AppSettings:
     """Complete application settings."""
 
     frontend: FrontendSettings
     cache: CacheSettings
+    security: SecuritySettings
 
 
 def load_settings(path: Path | str | None = None) -> AppSettings:
@@ -137,6 +155,7 @@ def _validate_known_keys(config: Mapping[str, Any], *, source: str) -> None:
     for table_name, allowed_keys in (
         ("frontend", FRONTEND_SETTING_KEYS),
         ("cache", CACHE_SETTING_KEYS),
+        ("security", SECURITY_SETTING_KEYS),
     ):
         table = config.get(table_name, {})
         if not isinstance(table, Mapping):
@@ -180,6 +199,7 @@ def _parse_settings(config: Mapping[str, Any]) -> AppSettings:
     """Convert a validated-key mapping into typed settings."""
     frontend = config["frontend"]
     cache = config["cache"]
+    security = config["security"]
 
     default_english_only = frontend["default_english_only"]
     if not isinstance(default_english_only, bool):
@@ -208,6 +228,10 @@ def _parse_settings(config: Mapping[str, Any]) -> AppSettings:
     if len(set(normalized_sources)) != len(normalized_sources):
         raise SettingsError("frontend.default_sources cannot contain duplicates")
 
+    trust_forwarded_headers = security["trust_forwarded_headers"]
+    if not isinstance(trust_forwarded_headers, bool):
+        raise SettingsError("security.trust_forwarded_headers must be true or false")
+
     return AppSettings(
         frontend=FrontendSettings(
             default_english_only=default_english_only,
@@ -220,6 +244,7 @@ def _parse_settings(config: Mapping[str, Any]) -> AppSettings:
                 "cache.max_entries",
             ),
         ),
+        security=SecuritySettings(trust_forwarded_headers=trust_forwarded_headers),
     )
 
 

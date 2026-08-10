@@ -37,8 +37,10 @@ study into non-overlapping windows and label each one.
 
 ## Call a remote Docker server
 
-Prefer a private virtual private network (VPN) address or an authenticated
-Transport Layer Security (TLS) reverse-proxy URL. Set the endpoint once:
+Prefer a private virtual private network (VPN) address or a Transport Layer
+Security (TLS) reverse-proxy URL. The server also requires a sign-in account:
+set `UI_USERNAME` and `UI_PASSWORD` in `.env`, and `news-search` sends them on
+every request. Set the endpoint once:
 
 ```bash
 export NEWS_SERVER_URL="https://news.example.com"
@@ -64,9 +66,13 @@ That container defaults to `http://news:8000`. For another protected remote
 server, add `-e NEWS_SERVER_URL="https://news.example.com"` before the
 `news-cli` service name.
 
-Never invent a remote hostname or expose port 8000 publicly. The application
-does not implement user authentication; remote protection belongs at the
-private network or reverse-proxy boundary.
+Never invent a remote hostname or expose port 8000 publicly. The single shared
+account protects the data, but it is not an access-control system and the
+password travels in plain text without TLS, so remote protection still belongs
+at the private network or reverse-proxy boundary. A request that comes back
+saying the sign-in details were rejected means `UI_USERNAME` or `UI_PASSWORD`
+does not match the account the server was started with; never guess at other
+values.
 
 ## Inspect before summarizing
 

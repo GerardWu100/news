@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import subprocess
 import sys
 import unittest
@@ -9,6 +10,8 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
+ACCOUNT_NAME = "wheel-smoke"
+ACCOUNT_PASSWORD = "wheel-smoke-password"
 
 
 class WheelInstallationTests(unittest.TestCase):
@@ -64,13 +67,19 @@ class WheelInstallationTests(unittest.TestCase):
                 text=True,
             )
 
-            # Exercise both packaged resources through one application and client instance.
+            # Exercise the packaged resources through one application and
+            # client instance. The account comes from the environment, which
+            # is what a container passes in, and the credential file lands in
+            # the working directory used below.
             smoke_script = (
                 "from fastapi.testclient import TestClient\n"
                 "from news.api.app import create_configured_app\n"
                 "app = create_configured_app()\n"
                 "client = TestClient(app)\n"
-                "response = client.get('/')\n"
+                "signed_out = client.get('/', follow_redirects=False)\n"
+                "assert signed_out.status_code == 302, signed_out.text\n"
+                "assert signed_out.headers['location'] == '/login'\n"
+                f"response = client.get('/', auth=('{ACCOUNT_NAME}', '{ACCOUNT_PASSWORD}'))\n"
                 "assert response.status_code == 200, response.text\n"
                 "assert 'Historical News' in response.text\n"
                 "favicon = client.get('/static/favicon.svg')\n"
@@ -83,4 +92,9 @@ class WheelInstallationTests(unittest.TestCase):
                 check=True,
                 capture_output=True,
                 text=True,
+                env={
+                    **os.environ,
+                    "UI_USERNAME": ACCOUNT_NAME,
+                    "UI_PASSWORD": ACCOUNT_PASSWORD,
+                },
             )

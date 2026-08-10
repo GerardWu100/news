@@ -34,6 +34,8 @@ This file records the repository as it exists. Proposed changes belong in
 │       ├── GUIDE_news.md
 │       ├── api/
 │       │   ├── app.py
+│       │   ├── auth.py
+│       │   ├── login_page.py
 │       │   ├── models.py
 │       │   └── params.py
 │       ├── cli/
@@ -65,9 +67,14 @@ This file records the repository as it exists. Proposed changes belong in
 │       │       ├── newsapi.py
 │       │       └── nyt.py
 │       └── web/
+│           ├── auth_store.py
 │           ├── config.py
+│           ├── credentials.py
 │           ├── default_config.toml
+│           ├── file_locks.py
+│           ├── passwords.py
 │           ├── paths.py
+│           ├── security.py
 │           └── static/
 │               ├── GUIDE_static.md
 │               ├── index.html
@@ -77,6 +84,7 @@ This file records the repository as it exists. Proposed changes belong in
 │                   ├── app.js
 │                   ├── form.js
 │                   ├── render.js
+│                   ├── session.js
 │                   └── state.js
 ├── scripts/
 │   ├── GUIDE_scripts.md
@@ -87,15 +95,18 @@ This file records the repository as it exists. Proposed changes belong in
 │   ├── test_docker_setup.py
 │   ├── api/
 │   │   ├── test_app.py
+│   │   ├── test_auth.py
 │   │   ├── test_config.py
 │   │   ├── test_openapi_contract.py
 │   │   ├── test_public_exports.py
 │   │   └── test_server_cli.py
 │   ├── cli/
-│   │   └── test_cli.py
+│   │   ├── test_cli.py
+│   │   └── test_cli_authentication.py
 │   ├── exports/
 │   │   └── test_formats.py
 │   ├── fixtures/
+│   │   ├── authentication.py
 │   │   └── search_results.py
 │   ├── search/
 │   │   ├── test_cache.py
@@ -115,6 +126,8 @@ This file records the repository as it exists. Proposed changes belong in
 │   │       ├── test_newsapi.py
 │   │       └── test_nyt.py
 │   └── web/
+│       ├── test_credentials.py
+│       ├── test_passwords.py
 │       ├── test_static.py
 │       └── test_wheel_installation.py
 └── docs/
@@ -125,7 +138,8 @@ This file records the repository as it exists. Proposed changes belong in
     │   └── openapi.json
     └── user/
         ├── API_REFERENCE.md
-        └── DOCKER.md
+        ├── DOCKER.md
+        └── SIGN_IN.md
 ```
 
 Package marker files named `__init__.py` are omitted from the tree for
@@ -135,12 +149,12 @@ readability.
 
 | Path | Responsibility |
 |---|---|
-| `src/news/api/` | Hypertext Transfer Protocol (HTTP) routes, request parsing, and response models |
+| `src/news/api/` | Hypertext Transfer Protocol (HTTP) routes, request parsing, response models, sign-in routes, and the check that closes every data route |
 | `src/news/cli/` | Command parsing, fetch modes, terminal output, and exports |
 | `src/news/exports/` | CSV, JSON, and SQLite serialization |
 | `src/news/search/` | Validated search behavior, cache, filters, duplicate removal, and search details |
 | `src/news/sources/` | Source access, ACLED OAuth setup, retries and pauses, registry, and parallel requests |
-| `src/news/web/` | Typed configuration validation, package defaults, path lookup, and installed browser assets |
+| `src/news/web/` | Typed configuration validation, package defaults, path lookup, password hashing, stored sign-in state, and installed browser assets |
 | `.agents/skills/summarize-news-cli/` | Workspace-local AI-agent retrieval, coverage audit, and summary procedure |
 | `blog/` | Local-only article source about the deployment and agent workflow |
 | `scripts/` | Thin ACLED credential and OpenAPI generation commands |
@@ -152,10 +166,10 @@ readability.
 
 ## Important Root Files
 
-- `config.toml`: documented browser and cache settings.
+- `config.toml`: documented browser, cache, and proxy-trust settings.
 - `pyproject.toml`: dependencies, package discovery, and executable commands.
 - `README.md`: setup, normal commands, and documentation links.
-- `.env.example`: secret-free provider credential template.
+- `.env.example`: secret-free sign-in account and provider credential template.
 - `Dockerfile`, `docker-compose.yml`, `docker-entrypoint.sh`, and
   `.dockerignore`: self-hosted deployment boundary.
 - `GUIDE_OVERVIEW.md`: conceptual system flow and constraints.

@@ -10,6 +10,9 @@ services:
       TZ: America/Toronto
       NEWS_DATA_DIR: /data
       NEWS_CONFIG: /data/config.toml
+      # Sign-in account. Without both values the server answers nothing.
+      UI_USERNAME: ${UI_USERNAME:-}
+      UI_PASSWORD: ${UI_PASSWORD:-}
       NYT_API_KEY: ${NYT_API_KEY:-}
       NYT_API_SECRET: ${NYT_API_SECRET:-}
       MEDIACLOUD_API_KEY: ${MEDIACLOUD_API_KEY:-}
@@ -34,7 +37,7 @@ services:
         - CMD
         - python
         - -c
-        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/config', timeout=5)"
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=5)"
       interval: 30s
       timeout: 10s
       retries: 3
@@ -49,6 +52,9 @@ services:
       - news-search
     environment:
       NEWS_SERVER_URL: http://news:8000
+      # The command line signs in with the same account as the browser.
+      UI_USERNAME: ${UI_USERNAME:-}
+      UI_PASSWORD: ${UI_PASSWORD:-}
     networks:
       - single
 

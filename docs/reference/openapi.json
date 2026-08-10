@@ -404,23 +404,6 @@
   },
   "openapi": "3.1.0",
   "paths": {
-    "/": {
-      "get": {
-        "description": "Serve the browser app.",
-        "operationId": "index__get",
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            },
-            "description": "Successful Response"
-          }
-        },
-        "summary": "Index"
-      }
-    },
     "/api/config": {
       "get": {
         "description": "Return the validated browser settings.",

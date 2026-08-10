@@ -12,3 +12,13 @@ ttl_seconds = 300
 
 # Store no more than this many search results in memory.
 max_entries = 100
+
+[security]
+# Believe proxy headers such as X-Forwarded-For, X-Forwarded-Proto,
+# CF-Connecting-IP, and CF-Visitor when reading the client address and
+# deciding whether the browser connection used HTTPS.
+# Allowed values: true, false.
+# Set true only behind a reverse proxy you control, such as a Cloudflare
+# Tunnel. Set false when clients reach this server directly, because any
+# client can otherwise forge these headers.
+trust_forwarded_headers = false

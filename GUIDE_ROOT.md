@@ -9,19 +9,28 @@ configuration, user documentation, and local operator settings.
 
 ### Runtime flow
 
-1. `news-server` reads optional credentials, settings, and bind options.
-2. The application factory creates a local cache and connects the source
-   request and status functions.
-3. Browser or CLI input becomes one validated search request.
-4. Selected sources are queried in parallel and their records are normalized.
-5. Local filtering, cautious duplicate removal, and stable sorting produce one
+1. `news-server` reads credentials, settings, and bind options, then hashes the
+   sign-in password and verifies the stored hash.
+2. The application factory creates a local cache, loads remembered sessions,
+   and connects the source request and status functions.
+3. A browser signs in through a form and keeps a session cookie; the CLI sends
+   the same account as an HTTP Basic header. Data routes refuse everything
+   else.
+4. Browser or CLI input becomes one validated search request.
+5. Selected sources are queried in parallel and their records are normalized.
+6. Local filtering, cautious duplicate removal, and stable sorting produce one
    source page.
-6. The API returns JSON; the CLI can also write CSV, JSON, or SQLite.
+7. The API returns JSON; the CLI can also write CSV, JSON, or SQLite.
 
 ### Runtime files and generated files
 
-- `.env` in the process working directory holds optional credentials and the
-  optional `NEWS_SERVER_URL` CLI default. It is never tracked.
+- The data directory is `NEWS_DATA_DIR` when set and the process working
+  directory otherwise. Docker points it at the mounted `/data`.
+- `.env` in the data directory holds the sign-in account, provider credentials,
+  and the optional `NEWS_SERVER_URL` CLI default. It is never tracked.
+- `.ui_credentials.json`, `.ui_sessions.json`, and `.login_state.json` in the
+  data directory hold the hashed password, remembered browsers, and
+  failed-attempt counters. All three are owner-only and never tracked.
 - External TOML settings override packaged defaults through `--config`,
   `NEWS_CONFIG`, or `config.toml` in the current directory, in that order.
 - Docker seeds the repository defaults into `${HOME}/.containers/news` once and
@@ -39,8 +48,8 @@ The exact tree and responsibility table are in
 
 - `README.md`: setup, normal commands, and documentation links.
 - `pyproject.toml`: dependencies, package discovery, package data, and commands.
-- `config.toml`: local browser and cache settings.
-- `.env.example`: secret-free credential template.
+- `config.toml`: local browser, cache, and proxy-trust settings.
+- `.env.example`: secret-free sign-in account and credential template.
 - `Dockerfile`, `docker-compose.yml`, and `docker-entrypoint.sh`: self-hosted
   image, deployment defaults, persistent settings, and Dockerized CLI use.
 - `.dockerignore`: files excluded from the image build context.
@@ -52,7 +61,7 @@ The exact tree and responsibility table are in
 - `scripts/`: small local commands; see `scripts/GUIDE_scripts.md`.
 - `tests/`: deterministic tests by production responsibility; see
   `tests/GUIDE_tests.md`.
-- `docs/user/`: user-facing API and Docker documentation.
+- `docs/user/`: user-facing API, Docker, and sign-in documentation.
 - `docs/reference/`: exact structure and generated OpenAPI definition.
 - `docs/plans/`: plans, with checkboxes for completed and outstanding work.
 
@@ -68,3 +77,6 @@ The exact tree and responsibility table are in
 - 2026-08-08: Moved lint rules into `pyproject.toml` so ruff, rather than manual judgment, decides import order and modern-syntax rewrites.
 - 2026-08-08: Gave `Article` one accessor for source history so its fallback rule is applied in one place.
 - 2026-08-08: Made every browser display function announce its result because two error paths had previously stayed silent.
+- 2026-08-10: Adopted the podcast downloader's sign-in model, so the operator sets a plain account in `.env` and startup, not a separate command, produces the stored hash.
+- 2026-08-10: Gave the command line HTTP Basic against the same account rather than a second token, because one secret is easier to rotate than two and the CLI already reads `.env`.
+- 2026-08-10: Left `WWW-Authenticate` off the 401 responses so the browser shows this application's sign-in page instead of its own native password box.

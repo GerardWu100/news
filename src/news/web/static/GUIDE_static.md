@@ -32,8 +32,16 @@ column on smaller screens.
 The hero feature badges use explicit list and list-item semantics so assistive
 technology receives the same grouping visible in the layout.
 
+The page is served only to a signed-in browser. Two things follow from that.
+The page asks the server who is signed in and fills the sign-out button's token
+from the answer, because a static file cannot carry a server-issued token. And
+any API call that comes back as 401, which is what an expired session looks
+like, sends the reader to the sign-in page instead of showing a search error.
+
 ### Logic spine
 
+0. The page loads the current session, shows the account name in the masthead,
+   and fills the sign-out form's token.
 1. On load, the page fetches `/api/config` and `/api/sources`.
 2. Configured default sources are preselected, and the default date range is initialized in browser-local calendar time.
 3. If the browser URL already contains a search query, the form is restored from that URL and the search runs again automatically.
@@ -64,6 +72,7 @@ static/
     ├── app.js            -- UI coordination, submission, page navigation, export, and share-link actions.
     ├── form.js           -- Form reading, URL hydration/sync, and export/share-link helpers.
     ├── render.js         -- Cutoff, result, action, status, dialog, and safe-link display.
+    ├── session.js        -- Signed-in account name and the sign-out form token.
     └── state.js          -- In-memory state for the active search.
 ```
 
@@ -76,7 +85,9 @@ static/
   banner, result actions, pagination, and dialog.
 - Places exact-page JSON/CSV downloads and the copy-link button beside the
   displayed search summary.
-- Loads the packaged SVG favicon, stylesheet, and JavaScript entrypoint.
+- Holds the masthead account label and the sign-out form, whose token is filled
+  in by script rather than written into the file.
+- Loads the packaged SVG favicon, stylesheet, and both JavaScript entrypoints.
 
 ### `styles.css`
 
@@ -91,6 +102,13 @@ static/
 - `fetchConfig()`: fetches `/api/config`.
 - `fetchSources()`: fetches `/api/sources`.
 - `fetchSearch(params)`: fetches `/api/search` with the active query params.
+- A 401 from any of these sends the browser to `/login`, because an expired
+  session makes every call fail the same way.
+
+### `scripts/session.js`
+
+- `loadSession()`: reads `/api/session`, writes the account name into the
+  masthead label, and fills the hidden sign-out token. Runs on import.
 
 ### `scripts/form.js`
 
@@ -150,3 +168,5 @@ never hears.
 - 2026-07-26: Moved the browser assets into the Python package so installed wheels can serve them without locating a repository root.
 - 2026-07-26: Kept the dependency-free editorial theme while making the
   research sequence—not decoration—the basis of the page hierarchy.
+- 2026-08-10: Kept the sign-in page server-rendered instead of adding it here,
+  because a static file cannot carry the one-time token the form must return.

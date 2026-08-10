@@ -23,6 +23,15 @@ class DockerDeploymentTests(unittest.TestCase):
         self.assertIn("NEWS_SERVER_URL: http://news:8000", compose)
         self.assertIn("external: true", compose)
 
+    def test_compose_passes_the_account_and_checks_an_open_route(self) -> None:
+        """The container needs the account, and its health check must not need one."""
+        compose = (PROJECT_ROOT / "docker-compose.yml").read_text(encoding="utf-8")
+
+        self.assertIn("UI_USERNAME: ${UI_USERNAME:-}", compose)
+        self.assertIn("UI_PASSWORD: ${UI_PASSWORD:-}", compose)
+        self.assertIn("/healthz", compose)
+        self.assertNotIn("/api/config', timeout=5", compose)
+
     def test_image_runs_server_on_all_container_interfaces(self) -> None:
         """The image command should make the server reachable through Docker."""
         dockerfile = (PROJECT_ROOT / "Dockerfile").read_text(encoding="utf-8")
@@ -40,3 +49,10 @@ class DockerDeploymentTests(unittest.TestCase):
 
         self.assertIn('if [ ! -f "$CONFIG_PATH" ]; then', entrypoint)
         self.assertIn('cp "$DEFAULT_CONFIG_PATH" "$CONFIG_PATH"', entrypoint)
+
+    def test_entrypoint_warns_when_the_account_is_missing(self) -> None:
+        """A closed server is easier to diagnose from the container log."""
+        entrypoint = (PROJECT_ROOT / "docker-entrypoint.sh").read_text(encoding="utf-8")
+
+        self.assertIn('[ -z "${UI_USERNAME:-}" ]', entrypoint)
+        self.assertIn('[ -z "${UI_PASSWORD:-}" ]', entrypoint)

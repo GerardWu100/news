@@ -6,6 +6,8 @@
  */
 
 const API_ROOT = "";
+const LOGIN_PATH = "/login";
+const UNAUTHORIZED_STATUS = 401;
 
 export async function fetchConfig() {
     return fetchJson("/api/config");
@@ -27,6 +29,12 @@ async function fetchJson(path, signal = null) {
     }
 
     const response = await fetch(API_ROOT + path, options);
+    // An expired or missing session makes every call fail the same way, so
+    // send the reader to the sign-in page instead of showing a search error.
+    if (response.status === UNAUTHORIZED_STATUS) {
+        window.location.assign(LOGIN_PATH);
+        throw new Error("Your session expired. Sign in again.");
+    }
     if (!response.ok) {
         throw new Error(await extractApiError(response));
     }

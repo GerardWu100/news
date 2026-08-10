@@ -18,7 +18,13 @@
                 <span class="brand-mark" aria-hidden="true">N</span>
                 <span>Historical News</span>
             </div>
-            <span class="workspace-label">Market research</span>
+            <div class="session-controls">
+                <span class="workspace-label" id="signed-in-account">Market research</span>
+                <form class="sign-out-form" method="post" action="/logout">
+                    <input type="hidden" name="sign_out_token" id="sign-out-token" value="">
+                    <button type="submit" class="sign-out-button">Sign out</button>
+                </form>
+            </div>
         </div>
 
         <div class="hero-grid">
@@ -263,6 +269,7 @@
         </div>
     </dialog>
 
+    <script type="module" src="/static/scripts/session.js"></script>
     <script type="module" src="/static/scripts/app.js"></script>
 </body>
 </html>

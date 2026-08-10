@@ -14,4 +14,12 @@ if [ ! -f "$CONFIG_PATH" ]; then
     echo "[startup] Created $CONFIG_PATH from the image defaults"
 fi
 
+# Make a missing sign-in account obvious here, because the server answers
+# every request with 401 until both values are present.
+if [ -z "${UI_USERNAME:-}" ] || [ -z "${UI_PASSWORD:-}" ]; then
+    echo "[startup] WARNING: UI_USERNAME or UI_PASSWORD is unset; the server"
+    echo "[startup] will refuse every request. Set both in .env beside"
+    echo "[startup] docker-compose.yml and restart."
+fi
+
 exec "$@"

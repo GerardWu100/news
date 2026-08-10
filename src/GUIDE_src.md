@@ -12,8 +12,12 @@ outside `src/`.
 
 ## Development Notes
 
+- Set `UI_USERNAME` and `UI_PASSWORD` in `.env` before starting anything. Every
+  route that returns news data refuses requests without them.
 - Use `uv run news-server` to start the local API and frontend server. Add
   `--reload` only during development; `--host` and `--port` control the bind.
 - Use `uv run news-search ...` for command-line search and export workflows.
-  `NEWS_SERVER_URL` supplies a reusable local or remote API base URL.
+  `NEWS_SERVER_URL` supplies a reusable local or remote API base URL, and the
+  same two account settings are sent as an HTTP Basic header. `--direct` skips
+  HTTP and therefore needs no account.
 - Keep reusable Python logic under `src/news/`.
