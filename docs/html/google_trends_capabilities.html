@@ -383,6 +383,127 @@ choosable.
 </table>
 </div>
 
+<h2>7. Implementation Blueprint</h2>
+<p>
+A complete implementation was built, verified against the live endpoints, and
+then removed so features could be chosen deliberately. It lives in git
+history: commit <code>38ff678</code> added it, commit <code>3a70fac</code>
+reverted it, so any subset can be restored without rewriting. This section
+records that design and the ideas that go beyond it.
+</p>
+
+<h3>Architecture that was built and verified</h3>
+<pre>
+Google's private endpoints
+        |
+        |  pytrends (the only file that knows the library exists)
+        v
+src/news/trends/google.py     GoogleTrendsClient
+        |                     - fresh session per call (tokens expire)
+        |                     - one retry with backoff on HTTP 429
+        |                     - DataFrame -> plain dataclasses
+        v
+src/news/trends/models.py     TrendsClient interface + result models
+        |                     InterestOverTime / InterestByRegion /
+        |                     RelatedQueries, each with fetched_at
+        +----------------------+
+        |                      |
+        v                      v
+FastAPI routes            news-trends CLI
+/api/trends/interest      interest | regions | related
+/api/trends/regions       table / json / csv output
+/api/trends/related       calls the package directly
+</pre>
+
+<h3>Design decisions worth keeping, and why</h3>
+<ul>
+  <li><strong>Trends is its own package, not a news provider.</strong> The
+  article pipeline normalizes records into one schema, filters, and
+  deduplicates. A 0-100 time series fits none of that, so forcing it into the
+  provider registry would corrupt both abstractions.</li>
+  <li><strong>The library hides behind one interface.</strong> Routes, CLI,
+  and tests depend on a small <code>TrendsClient</code> interface; only one
+  module imports <code>pytrends</code>. When the archived library breaks, the
+  swap (to <code>trendspyg</code> or the official API) touches one file.</li>
+  <li><strong>Synchronous route handlers on purpose.</strong> The library
+  blocks on HTTP; declaring the FastAPI routes as plain functions makes the
+  framework run them in its worker thread pool, keeping the async event loop
+  free for article searches.</li>
+  <li><strong>The CLI skips the server.</strong> Unlike article search, Trends
+  needs no server-held credentials and no cross-provider orchestration, so
+  <code>news-trends</code> calls the package directly and works without a
+  running server.</li>
+  <li><strong>Errors map by fault.</strong> Bad inputs (empty keywords, more
+  than five, bad resolution) return HTTP 422; upstream Google failures,
+  including rate limits, return HTTP 502 with a plain-language message.</li>
+  <li><strong>Every result carries <code>fetched_at</code>.</strong> Because
+  Google samples and rescales, a stored result is only meaningful together
+  with when it was fetched. Stamping it from day one makes a future
+  point-in-time archive possible.</li>
+  <li><strong>Tests stay offline.</strong> Twenty-three tests covered frame
+  conversion, validation, retry rules, route serialization, and CLI rendering
+  through fake clients and fake DataFrames -- the same policy the project
+  applies to news providers, since live Google behavior is not deterministic.</li>
+</ul>
+
+<h3>Ideas beyond the previous build</h3>
+<div class="scroll">
+<table>
+  <tr><th>Menu item</th><th>Implementation sketch</th></tr>
+  <tr>
+    <td>4. Browser integration</td>
+    <td>Add a trends panel to the existing frontend that calls
+    <code>/api/trends/interest</code> with the search window's dates as an
+    explicit timeframe, so the chart shows attention during the same
+    historical period as the articles. Needs a small chart renderer and a
+    date-window bridge from the search form.</td>
+  </tr>
+  <tr>
+    <td>5. Long daily history</td>
+    <td>Fetch overlapping windows of at most 9 months, then rescale each
+    window so values agree on the overlap (divide by the ratio of overlapping
+    means) and concatenate. The seams inherit sampling noise, so fetch each
+    window more than once and average before stitching.</td>
+  </tr>
+  <tr>
+    <td>6. Point-in-time archive</td>
+    <td>A table keyed by (keyword set, timeframe, geo, fetched_at) storing
+    the raw series -- SQLite through the existing export layer, or ClickHouse
+    for research joins. A scheduled daily fetch of a fixed keyword list turns
+    the relative-index problem into your own absolute history going
+    forward.</td>
+  </tr>
+  <tr>
+    <td>7. Caching and rate limits</td>
+    <td>Reuse the search cache pattern: a short time-to-live in-process cache
+    keyed by the full request, plus the existing cooldown idea from the news
+    providers (after a 429, fail fast locally for a window instead of
+    hammering Google).</td>
+  </tr>
+  <tr>
+    <td>More than 5 keywords</td>
+    <td>Batch keywords with one shared anchor keyword in every batch, then
+    rescale all batches onto the anchor's scale. Doubles or triples request
+    count, so it depends on caching being in place first.</td>
+  </tr>
+  <tr>
+    <td>8. Wikipedia pageviews</td>
+    <td>A sibling package with the same interface shape, calling the official
+    Wikimedia pageviews API: absolute daily counts, no sampling, no relative
+    scaling, generous limits. Cross-checking both attention measures guards
+    against artifacts in either.</td>
+  </tr>
+</table>
+</div>
+
+<h3>How to bring any of it back</h3>
+<ul>
+  <li>Everything at once: <code>git revert 3a70fac</code>.</li>
+  <li>A subset: restore files from <code>38ff678</code> (for example
+  <code>git checkout 38ff678 -- src/news/trends/</code>) and trim routes,
+  CLI, and docs to the chosen features.</li>
+</ul>
+
 <h2>TL;DR</h2>
 <p>
 Google Trends can give the project four working data types -- attention over
@@ -393,7 +514,9 @@ sampling, window-dependent granularity, and rate limits; none are absolute
 counts, and none are point-in-time safe without building an archive. Free
 access rides on unofficial libraries (working today, breakable tomorrow), so
 any implementation should hide the library behind one replaceable interface.
-Pick features from the menu in section 6.
+Pick features from the menu in section 6; section 7 records the verified
+implementation design sitting in git history, ready to restore in part or in
+full.
 </p>
 
 </main>
