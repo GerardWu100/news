@@ -1,9 +1,8 @@
-"""Reusable ACLED OAuth token acquisition and local persistence.
+"""Request an ACLED OAuth token and save its useful fields locally.
 
-The module owns the network request, response validation, and credential-file
-update. The command wrapper supplies process environment values and handles
-terminal presentation. Network and clock callables are injectable so tests
-remain deterministic and offline.
+This module handles the network request, response checks, and `.env` update.
+The command wrapper supplies environment values and terminal messages. Network
+and clock functions can be replaced so tests stay offline and repeatable.
 """
 
 from __future__ import annotations
@@ -28,7 +27,7 @@ TOKEN_KEYS = ("access_token", "token", "accessToken")
 
 
 class UrlOpener(Protocol):
-    """Callable interface used to execute the OAuth request."""
+    """Function shape used to make the OAuth request."""
 
     def __call__(
         self,
@@ -36,7 +35,7 @@ class UrlOpener(Protocol):
         *,
         timeout: int,
     ) -> AbstractContextManager[BinaryIO]:
-        """Open one URL request and return a readable context manager."""
+        """Open one URL request and return a readable response."""
         ...
 
 
@@ -67,7 +66,7 @@ class OAuthConfig:
 
 @dataclass(frozen=True, slots=True)
 class StoredToken:
-    """Non-raw token values persisted for later provider requests.
+    """Useful token fields saved for later ACLED requests.
 
     Attributes
     ----------
@@ -93,7 +92,7 @@ class StoredToken:
 def load_oauth_config(
     environ: Mapping[str, str] | None = None,
 ) -> OAuthConfig:
-    """Load and validate OAuth request fields from an environment mapping.
+    """Load and validate OAuth fields from an environment mapping.
 
     Parameters
     ----------
@@ -145,7 +144,7 @@ def request_oauth_token(
     Returns
     -------
     dict[str, Any]
-        Decoded token response object.
+        Decoded token response dictionary.
 
     Raises
     ------
@@ -185,21 +184,22 @@ def persist_token_fields(
     *,
     clock: Callable[[], datetime] = lambda: datetime.now(UTC),
 ) -> StoredToken:
-    """Validate useful token fields and update one dotenv file in one write.
+    """Validate useful token fields and update one `.env` file in one write.
 
     Parameters
     ----------
     token_payload : Mapping[str, Any]
         Decoded provider response.
     env_file : Path
-        Dotenv file to update. It is created when absent.
+        `.env` file to update. It is created when absent.
     clock : Callable[[], datetime], optional
-        Acquisition-time provider. Tests may inject a fixed UTC time.
+        Function that supplies the acquisition time. Tests may inject a fixed
+        UTC time.
 
     Returns
     -------
     StoredToken
-        Normalized values written to the dotenv file.
+        Normalized values written to the `.env` file.
 
     Raises
     ------
@@ -255,7 +255,7 @@ def obtain_and_persist_token(
     config : OAuthConfig
         Validated ACLED request fields.
     env_file : Path
-        Dotenv destination for provider credentials.
+        `.env` destination for source credentials.
     opener : UrlOpener, optional
         Injectable network function.
     clock : Callable[[], datetime], optional
@@ -266,7 +266,7 @@ def obtain_and_persist_token(
     Returns
     -------
     StoredToken
-        Normalized values persisted for the ACLED provider adapter.
+        Normalized values saved for the ACLED source adapter.
     """
     payload = request_oauth_token(
         config,
@@ -320,7 +320,7 @@ def _update_env_file(path: Path, updates: Mapping[str, str]) -> None:
             output_lines.append(line)
             continue
 
-        # Replace the first occurrence and drop stale duplicate definitions.
+        # Replace the first occurrence and remove duplicate definitions.
         if key in pending_updates:
             output_lines.append(f"{key}={pending_updates.pop(key)}")
 

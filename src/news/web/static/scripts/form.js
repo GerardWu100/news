@@ -1,8 +1,8 @@
 /**
- * Form and URL helpers for the browser search experience.
+ * Helpers for reading the search form and keeping it in the browser URL.
  *
- * The module keeps query parsing and serialization in one place so UI code can
- * treat searches as plain objects.
+ * Keeping this conversion in one place lets the rest of the page work with
+ * ordinary JavaScript objects.
  */
 
 const DEFAULT_LOOKBACK_DAYS = 30;
@@ -31,9 +31,9 @@ const ADVANCED_FIELD_ID_BY_PARAM = {
 
 
 /**
- * Move keyboard focus to the topic field and select whatever it holds.
+ * Focus the topic field and select its current value.
  *
- * Kept here so form-field ids stay declared in one module.
+ * Keeping it here also keeps form-field ids in one module.
  */
 export function focusQueryField() {
     const queryInput = getElement(QUERY_INPUT_ID);
@@ -177,21 +177,21 @@ export function buildApiParams(query, page) {
 }
 
 /**
- * Build a same-origin download URL for the active provider page.
+ * Build a download URL for the active source page.
  *
  * Parameters
  * ----------
  * format : string
- *     Export representation. Valid values are ``json`` and ``csv``.
+ *     File format. Valid values are ``json`` and ``csv``.
  * query : object
- *     Validated browser search state.
+ *     Current browser search state.
  * page : number
- *     Provider page currently visible in the browser.
+ *     Source page currently visible in the browser.
  *
  * Returns
  * -------
  * string
- *     Relative API URL carrying the exact active search parameters.
+ *     Relative API URL carrying the active search parameters.
  */
 export function buildExportUrl(format, query, page) {
     const params = new URLSearchParams(buildApiParams(query, page));

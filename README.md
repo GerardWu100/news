@@ -1,82 +1,48 @@
 # News Search Engine
 
-Retrieve news published within a specific historical period through a FastAPI
-application programming interface (API), a browser interface, or a command-line
-interface (CLI).
+Search news from a specific historical period through a browser, a command-line interface (CLI), or an application programming interface (API).
 
 ## Purpose
 
-The project has two purposes:
+This project supports two kinds of research:
 
-1. **Train human market intuition from news:** use the browser to study the news
-   available during a past period, form a view of the market at that point, and
-   compare that view with what happened afterward.
-2. **Give an artificial intelligence (AI) agent point-in-time news:** let an
-   agent retrieve news from one specific historical period without exposing it
-   to later news. The structured command-line interface (CLI) output supports
-   reproducible agent research and downstream experiments.
+1. **Study the news as it looked at the time:** choose a past window in the browser, form a view of the market, and compare that view with what happened later.
+2. **Give an artificial intelligence (AI) agent time-limited news:** retrieve only the news published inside one historical window, without adding later coverage to the search results. The structured CLI output is designed for repeatable research and later experiments.
 
-Restricting news by publication date helps reduce **look-ahead bias**, which
-means using information that would not have been available when a historical
-decision was made. It does not remove every source of bias. Provider archives
-can be incomplete, publication timestamps may differ from the time information
-became tradable, articles can be revised, and an LLM may already know later
-events from its training data. A serious backtest must enforce the information
-cutoff for every input—not only the retrieved news—and lag signals until they
-could realistically have been acted on.
+The publication-date limit helps reduce **look-ahead bias**: using information that would not have been available when a historical decision was made. It does not remove every source of bias. Archives can be incomplete, timestamps may not match when information became tradable, articles can change after publication, and a large language model (LLM) may already know later events from its training data. A serious backtest must apply the information cutoff to every input—not only the news—and delay signals until they could realistically have been traded.
 
-This repository retrieves and exports news. It does not currently calculate
-returns, simulate trades, or report backtest performance.
+This repository retrieves and exports news. It does not calculate returns, simulate trades, or report backtest performance.
 
 ## Roadmap
 
-Planned next steps focus on making the browser a richer point-in-time research
-workspace:
+Planned work would make the browser a broader historical research workspace:
 
 - Add historical Google Trends data for the selected period.
 - Add macroeconomic data that was available during the selected period.
-- Add an AI-agent news summary, produced through a large language model (LLM)
-  API call, to the browser and optionally to the CLI.
-- Show the next configurable number of days of major financial and economic
-  data releases in the browser.
+- Add an AI-agent news summary, produced through an LLM API call, to the browser and optionally to the CLI.
+- Show the next configurable number of days of major financial and economic data releases in the browser.
 
 ## Interfaces
 
 | Interface | Intended user | Best for |
 |---|---|---|
-| Browser front end | Person | Exploring a fixed historical window, reading provider context, and practising market intuition |
-| CLI | LLM, script, or researcher | Reproducible searches, structured JavaScript Object Notation (JSON), JSON Lines (JSONL), and multi-page collection |
-| HTTP API | Application | Integrating retrieval into another research system |
+| Browser | Person | Exploring a fixed historical window, reading source context, and practising market intuition |
+| CLI | LLM, script, or researcher | Repeatable searches, structured JavaScript Object Notation (JSON), JSON Lines (JSONL), and multi-page collection |
+| HTTP API | Application | Adding news retrieval to another research system |
 
-The browser keeps the inclusive start and end dates visible as the information
-boundary. It can download the current provider page as JSON or comma-separated
-values (CSV). The CLI supports a readable table for people, a complete JSON
-payload for tools, and one article per line in JSONL for streaming workflows.
+The browser keeps the inclusive start and end dates visible as the information boundary. It can download the current source page as JSON or comma-separated values (CSV). The CLI supports a readable table for people, a complete JSON response for programs, and one article per line in JSONL for streaming workflows.
 
-## Providers
+## Sources
 
-The project is not limited to The New York Times (NYT) and The Guardian. It has
-adapters for GDELT, MediaCloud, ACLED, NYT, The Guardian, and NewsAPI.
+The project has adapters for GDELT, MediaCloud, ACLED, The New York Times (NYT), The Guardian, and NewsAPI.
 
-NYT and The Guardian are useful publisher sources because they expose
-documented developer APIs and broad archives. They are not assumed to be
-neutral, complete, or the only providers with free access. GDELT can run here
-without credentials; the other configured adapters require provider-specific
-keys or tokens. Provider plans, historical-depth limits, licensing, and
-rate limits change, so verify each provider's current terms before relying on
-it for production or commercial research.
+NYT and The Guardian are useful publisher sources because they offer documented developer APIs and broad archives. They are not assumed to be neutral, complete, or the only sources with free access. GDELT can run without credentials; the other configured adapters require source-specific keys or tokens. Provider plans, archive limits, licenses, and rate limits change, so check each provider’s current terms before using it for production or commercial research.
 
-The packaged browser configuration selects NYT and The Guardian by default
-because they are recognizable publisher archives with consistent article
-metadata. That default is a usability choice, not a claim that they are
-unbiased or uniquely free.
+The packaged browser configuration selects NYT and The Guardian by default because they are recognizable publisher archives with consistent article details. That is a usability choice, not a claim that they are unbiased or uniquely free.
 
-Using several providers can improve coverage, but adding sources does not by
-itself eliminate selection, geographic, editorial, survivorship, or language
-bias. The normalized results retain their source so downstream research can
-measure or filter those differences.
+Several sources can improve coverage, but more sources do not automatically remove selection, geographic, editorial, survivorship, or language bias. Normalized results keep their source name so later research can measure or filter those differences.
 
-## Quick Start
+## Quick start
 
 Install dependencies and start the browser application:
 
@@ -99,7 +65,7 @@ For a human-readable CLI result:
 uv run news-search "inflation" -s 2025-01-01 -e 2025-03-01
 ```
 
-For an LLM or another program, collect every available provider page as JSON:
+For an LLM or another program, collect every available source page as JSON:
 
 ```bash
 uv run news-search "inflation" \
@@ -109,7 +75,7 @@ uv run news-search "inflation" \
   --format json
 ```
 
-For a streaming pipeline, emit one compact JSON article per line:
+For a stream, emit one compact JSON article per line:
 
 ```bash
 uv run news-search "central bank" \
@@ -118,24 +84,18 @@ uv run news-search "central bank" \
   --format jsonl
 ```
 
-Run `uv run news-search --help` for source filters, exact phrases, domain
-filters, pagination, direct mode, and file exports.
+Run `uv run news-search --help` for source filters, exact phrases, domain filters, pagination, direct mode, and file exports.
 
 ## Docker
 
-The deployment mirrors the sibling podcast-downloader defaults: Python 3.13
-slim, `uv`, Toronto time, `restart: unless-stopped`, persistent configuration
-under `${HOME}/.containers/news`, loopback-only publishing, and the external
-`single` reverse-proxy network.
+The deployment uses Python 3.13 slim, `uv`, Toronto time, `restart: unless-stopped`, persistent configuration under `${HOME}/.containers/news`, loopback-only publishing, and the external `single` reverse-proxy network.
 
 ```bash
 docker network create single  # one time, if it does not already exist
 docker compose up --build -d news
 ```
 
-Open `http://127.0.0.1:50023`. Host port `50023` avoids the podcast service's
-`50022` default. The first boot copies the repository `config.toml` into the
-persistent data directory; later container rebuilds preserve operator changes.
+Open `http://127.0.0.1:50023`. Host port `50023` avoids the podcast service’s `50022` default. On first boot, the container copies the repository `config.toml` into the persistent data directory. Later rebuilds preserve operator changes.
 
 An AI agent can use the same CLI against a private remote deployment:
 
@@ -149,22 +109,13 @@ uv run news-search "central bank" \
   --quiet
 ```
 
-The explicit `--server URL` option overrides `NEWS_SERVER_URL`. The application
-does not implement user authentication, so remote access should use an
-authenticated Transport Layer Security (TLS) reverse proxy or a private
-virtual private network (VPN), not a publicly exposed container port.
+The explicit `--server URL` option overrides `NEWS_SERVER_URL`. The application does not provide user authentication, so remote access should use an authenticated Transport Layer Security (TLS) reverse proxy or a private virtual private network (VPN), not a publicly exposed container port.
 
-See `docs/user/DOCKER.md` for configuration, operations, Dockerized CLI use,
-and the security boundary. The workspace-only
-`.agents/skills/summarize-news-cli/` skill teaches an AI agent how to retrieve,
-audit, and summarize CLI results. The accompanying local article is
-`blog/index.md`; it is not copied into the website repository.
+See `docs/user/DOCKER.md` for configuration, operations, Dockerized CLI use, and the security boundary. The workspace-only `.agents/skills/summarize-news-cli/` skill teaches an AI agent how to retrieve, audit, and summarize CLI results. The accompanying local article is `blog/index.md`; it is not copied into the website repository.
 
 ## Configuration
 
-Copy `.env.example` to `.env` and fill in credentials only for the providers
-you want to enable. Commands look for this optional file in the current working
-directory.
+Copy `.env.example` to `.env` and fill in credentials only for the sources you want to enable. Commands look for this optional file in the current working directory.
 
 ```bash
 cp .env.example .env
@@ -183,11 +134,9 @@ The server resolves configuration in this order:
 3. `config.toml` in the current working directory
 4. packaged defaults
 
-An external file can override only the settings it needs. Unknown keys, unknown
-source names, malformed TOML, and non-positive cache limits stop startup with a
-configuration error.
+An external file can override only the settings it needs. Unknown keys, unknown source names, malformed TOML, and non-positive cache limits stop startup with a configuration error.
 
-## Research Workflow
+## Research workflow
 
 ```mermaid
 flowchart LR
@@ -199,10 +148,7 @@ flowchart LR
     F --> G[Separate point-in-time backtest]
 ```
 
-Treat an LLM-generated signal as a model output, not as evidence that a strategy
-works. Save the query, exact date window, selected providers, prompt, model
-version, and raw retrieved articles with each experiment. Apply transaction
-costs and realistic execution timing in the downstream backtest.
+Treat an LLM-generated signal as a model output, not as evidence that a strategy works. Save the query, exact date window, selected sources, prompt, model version, and raw retrieved articles with each experiment. Apply transaction costs and realistic execution timing in the later backtest.
 
 ## Documentation
 
@@ -218,16 +164,13 @@ uv run ruff check .
 uv run python -m unittest discover -s tests -v
 ```
 
-Lint rules live in `[tool.ruff]` in `pyproject.toml` and cover import ordering
-and modern-syntax rewrites, so import order is settled by the tool rather than
-by hand. Apply the mechanical fixes with:
+Lint rules live in `[tool.ruff]` in `pyproject.toml` and cover import ordering and modern-syntax rewrites, so the tool decides those mechanical details. Apply the fixes with:
 
 ```bash
 uv run ruff check --fix .
 ```
 
-When an intentional route or response-model change modifies the OpenAPI
-contract, review `docs/user/API_REFERENCE.md` and regenerate the schema:
+When an intentional route or response-model change modifies the OpenAPI definition, review `docs/user/API_REFERENCE.md` and regenerate the schema:
 
 ```bash
 uv run python scripts/generate_openapi.py

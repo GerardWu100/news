@@ -12,12 +12,12 @@ from news.sources.providers.nyt import NewYorkTimesSource
 
 
 def build_default_sources() -> list[BaseSource]:
-    """Construct the default ordered provider adapter list.
+    """Construct the default ordered source-adapter list.
 
     Returns
     -------
     list[BaseSource]
-        Fresh provider adapter instances in the project-wide display order.
+        Fresh source-adapter instances in the project-wide display order.
     """
     return [
         GdeltSource(),
@@ -33,5 +33,5 @@ ALL_SOURCES: list[BaseSource] = build_default_sources()
 
 
 def source_names() -> set[str]:
-    """Return the registered provider names."""
+    """Return the registered source names."""
     return {source.name for source in ALL_SOURCES}

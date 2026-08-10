@@ -1,8 +1,7 @@
-"""Shared helper functions for source adapters.
+"""Small helpers shared by source adapters.
 
-This module keeps the small pieces of provider plumbing that are genuinely
-shared across multiple adapters: hostname normalization, ISO date trimming, and
-local cooldown tracking after rate limits.
+It contains the pieces shared by several adapters: hostname cleanup, ISO date
+trimming, and a short local pause after a source rate-limits a request.
 """
 
 from __future__ import annotations
@@ -16,7 +15,7 @@ import httpx
 
 
 def hostname_from_url(url: str) -> str:
-    """Return a lowercase hostname without a leading ``www.`` prefix."""
+    """Return a lowercase hostname without a leading ``www.``."""
     hostname = urlparse(url).netloc.lower()
     return hostname.removeprefix("www.")
 
@@ -40,12 +39,12 @@ def parse_retry_after_seconds(
 
 @dataclass(slots=True)
 class CooldownWindow:
-    """Track a short fail-fast window after a source returns HTTP 429."""
+    """Track a short pause after a source returns HTTP 429."""
 
     until: float = 0.0
 
     def activate(self, seconds: int) -> int:
-        """Start a cooldown window and return the stored duration."""
+        """Start the pause and return its stored duration."""
         cooldown_seconds = max(1, seconds)
         self.until = monotonic() + cooldown_seconds
         return cooldown_seconds
@@ -56,7 +55,7 @@ class CooldownWindow:
         *,
         default_seconds: int,
     ) -> int:
-        """Start a cooldown window using the response ``Retry-After`` header."""
+        """Start the pause using the response ``Retry-After`` header."""
         retry_after_seconds = parse_retry_after_seconds(
             response.headers.get("Retry-After", ""),
             default_seconds=default_seconds,
@@ -64,20 +63,20 @@ class CooldownWindow:
         return self.activate(retry_after_seconds)
 
     def remaining_seconds(self) -> int:
-        """Return the remaining cooldown in whole seconds."""
+        """Return the remaining pause in whole seconds."""
         remaining = self.until - monotonic()
         return max(0, ceil(remaining))
 
 
 def raise_if_cooling(cooldown: CooldownWindow, source_label: str) -> None:
-    """Fail fast while a source adapter is in a local post-429 cooldown.
+    """Stop early while a source is in its local post-429 pause.
 
     Parameters
     ----------
     cooldown : CooldownWindow
-        Per-adapter cooldown state updated after HTTP 429 responses.
+        Per-adapter pause state updated after HTTP 429 responses.
     source_label : str
-        Provider name shown in the raised ``RuntimeError`` message.
+        Source name shown in the raised ``RuntimeError`` message.
     """
     remaining_seconds = cooldown.remaining_seconds()
     if remaining_seconds <= 0:

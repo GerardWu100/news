@@ -1,4 +1,4 @@
-"""Adapter for the GDELT Project document search endpoint."""
+"""Adapter for the GDELT Project document-search endpoint."""
 
 from __future__ import annotations
 
@@ -19,7 +19,7 @@ GDELT_SORT_DATE_DESC = "DateDesc"
 
 
 class GdeltSource(BaseSource):
-    """Adapter for the GDELT Project Document API v2."""
+    """Read articles from the GDELT Project Document API v2."""
 
     name = "gdelt"
     display_name = "GDELT Project"
@@ -28,14 +28,14 @@ class GdeltSource(BaseSource):
     _BASE_URL = "https://api.gdeltproject.org/api/v2/doc/doc"
 
     def is_available(self) -> bool:
-        """Always available -- GDELT requires no credentials."""
+        """Return ``True`` because GDELT needs no credentials."""
         return True
 
     async def search(
         self,
         options: SourceSearchOptions,
     ) -> SourcePageResult:
-        """Query one GDELT page of articles."""
+        """Read one GDELT page of articles."""
         gdelt_start = options.start_date.replace("-", "") + "000000"
         gdelt_end = options.end_date.replace("-", "") + "235959"
 
@@ -83,7 +83,7 @@ class GdeltSource(BaseSource):
 
     @staticmethod
     def _to_article(raw: dict) -> Article:
-        """Convert one GDELT article dict into the shared ``Article`` schema."""
+        """Convert one GDELT article dictionary to the common format."""
         return Article(
             title=raw.get("title", ""),
             url=raw.get("url", ""),
@@ -99,8 +99,8 @@ def _format_gdelt_date(seen_date: str) -> str:
     if len(seen_date) < _GDELT_DATE_LEN:
         return ""
 
-    # GDELT returns compact timestamps; the project stores normalized article
-    # dates as ISO calendar strings for shared sorting and filtering.
+    # GDELT returns compact timestamps; store a normal calendar date so all
+    # sources sort and filter the same way.
     compact_date = seen_date[:_GDELT_DATE_LEN]
     year = compact_date[:4]
     month = compact_date[4:6]

@@ -1,14 +1,14 @@
 [frontend]
-# Show only English-language results when the browser first loads.
+# Show only English results when the browser first loads.
 default_english_only = true
 
-# Preselect these providers in the browser.
+# Select these sources when the browser first loads.
 # Allowed values: acled, gdelt, guardian, mediacloud, newsapi, nyt.
 default_sources = ["guardian", "nyt"]
 
 [cache]
-# Keep an in-memory search result for this many seconds.
+# Keep each search result in memory for this many seconds.
 ttl_seconds = 300
 
-# Store at most this many in-memory search results.
+# Store no more than this many search results in memory.
 max_entries = 100

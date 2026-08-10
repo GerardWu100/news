@@ -1,7 +1,7 @@
 """Adapter for the MediaCloud ``story-list`` endpoint.
 
-The adapter keeps a local continuation-token cache and temporary cooldown state
-to support sequential pagination and graceful handling of rate limiting.
+The adapter keeps a local continuation-token cache and a temporary pause so it
+can move through pages and handle rate limits cleanly.
 """
 
 from __future__ import annotations
@@ -31,14 +31,14 @@ MEDIACLOUD_PAGE_SIZE = 50
 
 @dataclass(frozen=True, slots=True)
 class PaginationTokenEntry:
-    """One cached MediaCloud continuation token."""
+    """One cached MediaCloud page token."""
 
     stored_at: float
     token: str
 
 
 class PaginationTokenStore:
-    """Small expiring cache for MediaCloud continuation tokens."""
+    """Small expiring store for MediaCloud page tokens."""
 
     def __init__(
         self,
@@ -67,7 +67,7 @@ class PaginationTokenStore:
         ] = OrderedDict()
 
     def get(self, key: tuple[object, ...], page: int) -> str:
-        """Return a live token for one query/page pair."""
+        """Return an unexpired token for one query and page."""
         self._evict_expired()
         page_tokens = self._tokens.get(key, {})
         entry = page_tokens.get(page)
@@ -78,7 +78,7 @@ class PaginationTokenStore:
         return entry.token
 
     def set(self, key: tuple[object, ...], page: int, token: str) -> None:
-        """Store the token needed to fetch a future page."""
+        """Store the token needed to fetch the next page."""
         if not token:
             return
 
@@ -93,7 +93,7 @@ class PaginationTokenStore:
             self._tokens.popitem(last=False)
 
     def _evict_expired(self) -> None:
-        """Drop expired query/page token entries."""
+        """Drop expired query and page tokens."""
         now = self._clock()
         empty_keys: list[tuple[object, ...]] = []
         for key, page_tokens in self._tokens.items():
@@ -115,7 +115,7 @@ _PAGINATION_TOKENS = PaginationTokenStore()
 
 
 class MediaCloudSource(BaseSource):
-    """Adapter for the MediaCloud v4 ``story-list`` endpoint."""
+    """Read story details from the MediaCloud v4 endpoint."""
 
     name = "mediacloud"
     display_name = "MediaCloud"
@@ -124,18 +124,18 @@ class MediaCloudSource(BaseSource):
     _BASE_URL = "https://search.mediacloud.org/api/search/story-list"
 
     def __init__(self) -> None:
-        """Initialize transient rate-limit state for this adapter instance."""
+        """Initialize the temporary rate-limit state for this adapter."""
         self._cooldown = CooldownWindow()
 
     def is_available(self) -> bool:
-        """Available when ``MEDIACLOUD_API_KEY`` is set in the environment."""
+        """Return ``True`` when ``MEDIACLOUD_API_KEY`` is set."""
         return bool(os.getenv("MEDIACLOUD_API_KEY"))
 
     async def search(
         self,
         options: SourceSearchOptions,
     ) -> SourcePageResult:
-        """Query one MediaCloud page of story metadata."""
+        """Read one MediaCloud page of story details."""
         raise_if_cooling(self._cooldown, "MediaCloud")
         api_key = os.getenv("MEDIACLOUD_API_KEY", "")
 
@@ -148,8 +148,8 @@ class MediaCloudSource(BaseSource):
             "page_size": str(MEDIACLOUD_PAGE_SIZE),
         }
 
-        # Continuation tokens are query-specific and only exist after the
-        # preceding page has been requested.
+        # Page tokens belong to one query and exist only after the previous page
+        # has been requested.
         pagination_key = _build_pagination_key(options)
         pagination_token = (
             _PAGINATION_TOKENS.get(pagination_key, options.page)
@@ -182,7 +182,7 @@ class MediaCloudSource(BaseSource):
         headers: dict[str, str],
         params: dict[str, str],
     ) -> dict:
-        """Fetch JSON and turn 429s into a local cooldown window."""
+        """Fetch JSON and turn 429 responses into a local pause."""
         try:
             async with httpx.AsyncClient(
                 timeout=build_timeout(
@@ -208,20 +208,19 @@ class MediaCloudSource(BaseSource):
                 )
                 raise RuntimeError(
                     "MediaCloud rate limited this query. "
-                    f"Cooling down for {retry_after_seconds} seconds."
+                    f"Pausing for {retry_after_seconds} seconds."
                 ) from exc
             raise
 
     @staticmethod
     def _to_article(raw: dict) -> Article:
-        """Convert one MediaCloud story into the shared ``Article`` schema."""
+        """Convert one MediaCloud story to the common ``Article`` format."""
         return Article(
             title=raw.get("title", ""),
             url=raw.get("url", ""),
-            # MediaCloud reports ``publish_date`` with a time component (for
-            # example "2024-01-15 00:00:00"); trim it to a bare ``YYYY-MM-DD``
-            # date so sorting and the same-day syndicated-title dedup key match
-            # the format every other adapter produces.
+            # MediaCloud includes a time component, such as
+            # "2024-01-15 00:00:00". Keep only YYYY-MM-DD so sorting and
+            # same-day duplicate checks match the other sources.
             date=iso_date_prefix(raw.get("publish_date", "")),
             source="mediacloud",
             domain=raw.get("media_name", ""),
@@ -230,7 +229,7 @@ class MediaCloudSource(BaseSource):
 
 
 def _build_pagination_key(options: SourceSearchOptions) -> tuple[object, ...]:
-    """Build a stable cache key for MediaCloud continuation tokens."""
+    """Build a stable key for MediaCloud page tokens."""
     return (
         options.query,
         options.start_date,

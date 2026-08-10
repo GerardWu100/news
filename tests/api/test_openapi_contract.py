@@ -1,4 +1,4 @@
-"""Contract test for the checked-in OpenAPI schema."""
+"""Test the checked-in OpenAPI definition."""
 
 from __future__ import annotations
 

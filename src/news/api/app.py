@@ -1,7 +1,7 @@
-"""FastAPI application construction for search and frontend delivery.
+"""Build the FastAPI application and serve the browser client.
 
-The application boundary loads credentials and validated settings once, builds
-the process-local cache, and injects those objects into route behavior.
+The application loads credentials and validated settings once, creates the
+process-local cache, and passes those objects to the route functions.
 """
 
 from __future__ import annotations
@@ -49,23 +49,23 @@ def create_app(
     search_executor: SearchExecutor = search_all_detailed,
     source_status_provider: SourceStatusProvider = get_source_status,
 ) -> FastAPI:
-    """Construct an application from validated runtime dependencies.
+    """Build an application from validated settings and supplied dependencies.
 
     Parameters
     ----------
     settings : AppSettings
-        Immutable frontend and cache settings.
+        Validated browser and cache settings.
     search_cache : SearchResultCache | None, optional
-        Cache supplied by a caller or test. ``None`` builds one from settings.
+        Cache supplied by a caller or test. ``None`` builds one from the settings.
     search_executor : SearchExecutor, optional
-        Provider fan-out function. Tests may inject an offline fake.
+        Function that queries sources. Tests may supply an offline fake.
     source_status_provider : SourceStatusProvider, optional
-        Provider metadata function. Tests may inject deterministic status.
+        Function that reports source status. Tests may supply deterministic data.
 
     Returns
     -------
     FastAPI
-        Fully configured application with routes and packaged static assets.
+        Application with routes and packaged browser files.
     """
     active_cache = (
         build_search_cache(settings.cache) if search_cache is None else search_cache
@@ -91,17 +91,17 @@ def create_app(
 
     @application.get("/api/config", response_model=FrontendConfigResponse)
     async def config() -> dict[str, object]:
-        """Return validated frontend configuration values."""
+        """Return the validated browser settings."""
         return settings.frontend.to_dict()
 
     @application.get("/api/sources", response_model=list[SourceStatusResponse])
     async def sources() -> list[dict[str, object]]:
-        """Return source metadata and availability."""
+        """Return source descriptions and availability."""
         return source_status_provider()
 
     @application.get("/api/search", response_model=SearchResponse)
     async def search(params: SearchQueryParams = Depends()) -> dict[str, object]:
-        """Search providers and return the merged article page."""
+        """Search the selected sources and return one merged page."""
         result = await _run_search_request(
             params,
             cache=active_cache,
@@ -111,7 +111,7 @@ def create_app(
 
     @application.get("/api/export/csv")
     async def export_csv(params: SearchQueryParams = Depends()) -> Response:
-        """Export the current provider page as comma-separated values (CSV)."""
+        """Download the current source page as comma-separated values (CSV)."""
         result = await _run_search_request(
             params,
             cache=active_cache,
@@ -125,7 +125,7 @@ def create_app(
 
     @application.get("/api/export/json")
     async def export_json(params: SearchQueryParams = Depends()) -> Response:
-        """Export the current provider page as JavaScript Object Notation."""
+        """Download the current source page as JavaScript Object Notation (JSON)."""
         result = await _run_search_request(
             params,
             cache=active_cache,
@@ -165,7 +165,7 @@ async def _run_search_request(
     cache: SearchResultCache,
     executor: SearchExecutor,
 ) -> SearchResult:
-    """Validate request parameters and run the shared search pipeline."""
+    """Validate request parameters and run the common search process."""
     try:
         request = params.to_search_request()
     except SearchValidationError as exc:
@@ -187,7 +187,7 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument(
         "--config",
         help=(
-            "TOML configuration path. Overrides NEWS_CONFIG and the "
+            "TOML settings path. Overrides NEWS_CONFIG and the "
             "current-directory config.toml."
         ),
     )

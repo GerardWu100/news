@@ -65,7 +65,7 @@ class CsvExportTests(unittest.TestCase):
         self.assertEqual(rows[0]["content"], "Full body text here.")
 
     def test_format_csv_serializes_matched_sources_as_json(self) -> None:
-        """CSV output should keep provider provenance as a JSON string."""
+        """CSV output should keep source names as a JSON string."""
         output = format_csv(SAMPLE_ARTICLES)
         rows = list(csv.DictReader(io.StringIO(output)))
 

@@ -1,7 +1,7 @@
-"""Search orchestration and API payload assembly.
+"""Coordinate searches and assemble the API response.
 
-This module coordinates source fan-out, post-filtering, optional deduplication,
-sorting, metadata construction, and optional request-level caching.
+This module coordinates parallel source requests, local filtering, optional
+duplicate removal, sorting, search details, and optional request caching.
 """
 
 from __future__ import annotations
@@ -28,26 +28,26 @@ async def run_search(
     use_cache: bool = True,
     cache: SearchResultCache | None = None,
 ) -> SearchResult:
-    """Run one validated search request and return the API payload.
+    """Run one validated search request and return the API response.
 
     Parameters
     ----------
     request : SearchRequest
-        Fully validated, immutable request inputs for one search call.
+        Fully validated request inputs for one search call.
     executor : SearchExecutor, optional
-        Async source fan-out callable that returns normalized articles and
-        per-source execution reports.
+        Async function that queries sources and returns normalized articles and
+        one report per source.
     use_cache : bool, optional
         When ``True``, read from and write to the provided cache.
     cache : SearchResultCache | None, optional
-        In-memory cache instance. ``None`` performs no cache reads or writes.
+        Short-lived in-memory cache. ``None`` disables cache reads and writes.
 
     Returns
     -------
     SearchResult
-        Normalized article rows and response metadata ready for API/CLI output.
+        Normalized articles and search details ready for API or CLI output.
     """
-    # Return the cached payload early so repeated requests avoid provider calls.
+    # Return cached data early so repeated requests avoid source calls.
     if use_cache and cache is not None:
         cached_result = cache.get(request)
         if cached_result is not None:
@@ -89,7 +89,7 @@ async def run_search(
         requested_sources = list(request.source_names)
     else:
         # When callers do not pin sources, report only currently available ones
-        # so metadata reflects the fan-out set users actually queried.
+        # so the search details reflect the sources the user actually queried.
         requested_sources = [
             report.name for report in source_reports if report.available
         ]
@@ -108,7 +108,7 @@ async def run_search(
 
     if use_cache and cache is not None:
         # Store the fully assembled result so future identical requests can skip
-        # source fan-out and downstream filtering work.
+        # source requests and later local filtering work.
         cache.set(request, result)
 
     return result
@@ -123,16 +123,16 @@ def _build_result_meta(
     duplicates_removed: int,
     returned_count: int,
 ) -> dict[str, object]:
-    """Build the metadata object returned in the API search response.
+    """Build the search details returned with the API response.
 
     Parameters
     ----------
     request : SearchRequest
         Validated request used for this search run.
     source_reports : Sequence[SourceQueryReport]
-        Per-source fan-out execution reports.
+        One report for each source request.
     requested_sources : list[str]
-        Resolved source names displayed in API metadata.
+        Source names displayed in the API response.
     total_before_deduplication : int
         Article count after local filtering and before deduplication.
     duplicates_removed : int
@@ -143,7 +143,7 @@ def _build_result_meta(
     Returns
     -------
     dict[str, object]
-        JSON-serializable metadata dictionary for the response payload.
+        JSON-ready dictionary for the response.
     """
     source_report_rows = [report.to_dict() for report in source_reports]
     # A single source with an available next page means the merged result can

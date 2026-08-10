@@ -1,7 +1,7 @@
-"""Pydantic response models for public FastAPI endpoints.
+"""Pydantic models for responses from the public FastAPI endpoints.
 
-These schemas define the serialized contract consumed by the browser frontend
-and CLI clients when they call config, source-status, and search endpoints.
+These models define the data returned to the browser and CLI when they call the
+configuration, source-status, and search endpoints.
 """
 
 from __future__ import annotations
@@ -10,14 +10,14 @@ from pydantic import BaseModel, Field
 
 
 class FrontendConfigResponse(BaseModel):
-    """Frontend defaults returned by ``GET /api/config``."""
+    """Browser defaults returned by ``GET /api/config``."""
 
     default_english_only: bool
     default_sources: list[str]
 
 
 class SourceStatusResponse(BaseModel):
-    """Source availability metadata returned by ``GET /api/sources``."""
+    """Source descriptions and availability returned by ``GET /api/sources``."""
 
     name: str
     display_name: str
@@ -26,7 +26,7 @@ class SourceStatusResponse(BaseModel):
 
 
 class SearchArticleResponse(BaseModel):
-    """Normalized search result row."""
+    """One article in the common search format."""
 
     title: str
     url: str
@@ -43,7 +43,7 @@ class SearchArticleResponse(BaseModel):
 
 
 class SourceQueryReportResponse(BaseModel):
-    """Execution report for one upstream provider."""
+    """Result summary for one source."""
 
     name: str
     display_name: str
@@ -55,7 +55,7 @@ class SourceQueryReportResponse(BaseModel):
 
 
 class SearchMetaResponse(BaseModel):
-    """Top-level metadata attached to every search response."""
+    """Search details attached to every search response."""
 
     query: str
     start: str
@@ -86,7 +86,7 @@ class SearchMetaResponse(BaseModel):
 
 
 class SearchResponse(BaseModel):
-    """Complete payload returned by ``GET /api/search``."""
+    """Complete response returned by ``GET /api/search``."""
 
     results: list[SearchArticleResponse] = Field(default_factory=list)
     meta: SearchMetaResponse

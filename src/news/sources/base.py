@@ -1,7 +1,7 @@
-"""Shared data models and adapter interfaces for source integrations.
+"""Shared data models and interfaces for source adapters.
 
-Every provider adapter converts upstream responses into the ``Article`` schema
-so downstream filtering, deduplication, and export code stay source-agnostic.
+Each adapter converts its source response into the common ``Article`` format so
+filters, duplicate removal, and exports do not need source-specific code.
 """
 
 from __future__ import annotations
@@ -13,7 +13,7 @@ from typing import Any
 
 @dataclass(frozen=True, slots=True)
 class Article:
-    """Normalized article or event record."""
+    """Article or event record in the common format."""
 
     title: str
     url: str
@@ -30,17 +30,17 @@ class Article:
 
     @property
     def effective_sources(self) -> tuple[str, ...]:
-        """Return which providers this record represents.
+        """Return the sources represented by this record.
 
         ``matched_sources`` stays empty until deduplication merges a record, so
-        an unmerged article reports the single provider that supplied it. Every
-        caller that needs provenance must go through this property so the
-        empty-tuple convention is interpreted in exactly one place.
+        an unmerged article reports the one source that supplied it. Keeping
+        this rule here prevents callers from interpreting the empty tuple
+        differently.
         """
         return self.matched_sources or (self.source,)
 
     def to_dict(self) -> dict[str, Any]:
-        """Serialize to a JSON-friendly ``dict``."""
+        """Convert to a JSON-friendly dictionary."""
         data = asdict(self)
         data["matched_sources"] = list(self.effective_sources)
         return data
@@ -48,7 +48,7 @@ class Article:
 
 @dataclass(frozen=True, slots=True)
 class SourceSearchOptions:
-    """Normalized provider-facing search options."""
+    """Search options in the format source adapters expect."""
 
     query: str
     start_date: str
@@ -66,14 +66,14 @@ class SourceSearchOptions:
 
 @dataclass(frozen=True, slots=True)
 class SourcePageResult:
-    """One provider page of results plus pagination state."""
+    """One source page of results and its pagination state."""
 
     articles: list[Article]
     has_more: bool
 
 
 class BaseSource(abc.ABC):
-    """Interface every source adapter must implement."""
+    """Base interface required of every source adapter."""
 
     name: str
     display_name: str
@@ -84,10 +84,10 @@ class BaseSource(abc.ABC):
         self,
         options: SourceSearchOptions,
     ) -> SourcePageResult:
-        """Search this source with normalized provider options."""
+        """Search this source with common search options."""
         ...
 
     @abc.abstractmethod
     def is_available(self) -> bool:
-        """Return ``True`` if the required credentials / config exist."""
+        """Return ``True`` when the required credentials or settings exist."""
         ...

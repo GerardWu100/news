@@ -1,7 +1,7 @@
 # Project Structure
 
-This file records the implemented repository structure. Proposed changes belong
-in `docs/plans/PROJECT_REFACTOR_PLAN.md`.
+This file records the repository as it exists. Proposed changes belong in
+`docs/plans/PROJECT_REFACTOR_PLAN.md`.
 
 ## Directory Tree
 
@@ -138,8 +138,8 @@ readability.
 | `src/news/api/` | Hypertext Transfer Protocol (HTTP) routes, request parsing, and response models |
 | `src/news/cli/` | Command parsing, fetch modes, terminal output, and exports |
 | `src/news/exports/` | CSV, JSON, and SQLite serialization |
-| `src/news/search/` | Validated search behavior, cache, filters, deduplication, and metadata |
-| `src/news/sources/` | Provider access, ACLED OAuth bootstrap, retry/cooldown behavior, registry, and concurrent fan-out |
+| `src/news/search/` | Validated search behavior, cache, filters, duplicate removal, and search details |
+| `src/news/sources/` | Source access, ACLED OAuth setup, retries and pauses, registry, and parallel requests |
 | `src/news/web/` | Typed configuration validation, package defaults, path lookup, and installed browser assets |
 | `.agents/skills/summarize-news-cli/` | Workspace-local AI-agent retrieval, coverage audit, and summary procedure |
 | `blog/` | Local-only article source about the deployment and agent workflow |
@@ -154,7 +154,7 @@ readability.
 
 - `config.toml`: documented browser and cache settings.
 - `pyproject.toml`: dependencies, package discovery, and executable commands.
-- `README.md`: setup, canonical commands, and documentation links.
+- `README.md`: setup, normal commands, and documentation links.
 - `.env.example`: secret-free provider credential template.
 - `Dockerfile`, `docker-compose.yml`, `docker-entrypoint.sh`, and
   `.dockerignore`: self-hosted deployment boundary.

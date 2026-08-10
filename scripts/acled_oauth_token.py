@@ -1,8 +1,8 @@
-"""Request an ACLED OAuth token and save it to the local dotenv file.
+"""Request an ACLED OAuth token and save it to the local `.env` file.
 
-Reusable request, parsing, and persistence behavior lives in
-``news.sources.acled_oauth``. This wrapper owns local input loading and
-terminal-facing troubleshooting messages.
+The reusable request, parsing, and save logic lives in
+``news.sources.acled_oauth``. This wrapper loads local settings and prints
+messages for the terminal.
 """
 
 from __future__ import annotations
@@ -23,7 +23,7 @@ ENV_PATH = PROJECT_ROOT / ".env"
 
 
 def _decode_http_error_body(error: HTTPError) -> str:
-    """Best-effort decode an HTTP error response for terminal diagnosis."""
+    """Decode an HTTP error response when possible for a useful error message."""
     try:
         return error.read().decode("utf-8", errors="replace").strip()
     except (AttributeError, OSError):
@@ -31,7 +31,7 @@ def _decode_http_error_body(error: HTTPError) -> str:
 
 
 def _print_acled_auth_hint(status_code: int, error_body: str) -> None:
-    """Print a concise ACLED-specific hint for known HTTP status codes."""
+    """Print a short ACLED hint for known HTTP status codes."""
     hints = {
         400: "Check the ACLED username and password.",
         401: "Check whether the account or token is authorized.",
@@ -45,7 +45,7 @@ def _print_acled_auth_hint(status_code: int, error_body: str) -> None:
 
 
 def main() -> int:
-    """Load local inputs, request a token, and report the outcome."""
+    """Load local settings, request a token, and report the result."""
     load_dotenv(ENV_PATH)
     try:
         config = load_oauth_config()

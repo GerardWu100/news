@@ -1,4 +1,4 @@
-"""Top-level command-line workflow orchestration."""
+"""Coordinate the top-level ``news-search`` command."""
 
 from __future__ import annotations
 
@@ -21,7 +21,7 @@ from .parser import build_arg_parser
 
 def main(argv: list[str] | None = None) -> int:
     """Run the CLI."""
-    # Load the operator's default remote endpoint before parser construction;
+    # Load the operator’s default remote endpoint before building the parser;
     # explicit shell environment variables still take precedence.
     load_dotenv(env_path())
     parser = build_arg_parser()
@@ -61,14 +61,14 @@ def run_cli(args: argparse.Namespace) -> None:
 
 
 def collect_results(args: argparse.Namespace) -> dict[str, Any]:
-    """Fetch search results from the API, direct backend, or paged aggregate."""
+    """Fetch results from the API, direct search code, or several pages."""
     if args.all_pages:
         return collect_all_pages(args)
     return fetch_page(args, page=args.page)
 
 
 def collect_all_pages(args: argparse.Namespace) -> dict[str, Any]:
-    """Iterate through pages and combine them into one CLI payload.
+    """Read several pages and combine them into one CLI response.
 
     The loop stops when the backend says no more pages are available, when an
     empty page is returned, or when the ``--max-pages`` safety limit is hit.
@@ -99,7 +99,7 @@ def collect_all_pages(args: argparse.Namespace) -> dict[str, Any]:
     else:
         raise RuntimeError(f"Reached the --max-pages safety limit ({args.max_pages}).")
 
-    # A positive max-pages limit guarantees at least one fetched page.
+    # A positive max-pages limit guarantees that page_meta was set.
     combined_meta = dict(page_meta)
     combined_meta["page"] = args.page
     combined_meta["returned"] = len(combined_results)

@@ -1,8 +1,8 @@
 /**
- * API client helpers for frontend search workflows.
+ * Small helpers for calling the search API from the browser.
  *
- * All calls return parsed JSON and raise `Error` with a user-friendly
- * backend message when the response is not successful.
+ * Each call returns parsed JSON. Failed responses become an `Error` with the
+ * message supplied by the server when one is available.
  */
 
 const API_ROOT = "";

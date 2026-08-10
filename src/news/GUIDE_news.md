@@ -2,29 +2,28 @@
 
 ## Purpose
 
-The `news` package is the product implementation for historical multi-source
-news retrieval.
+The `news` package implements historical news retrieval from several sources.
 
 ## Subpackages
 
 - `api/`: FastAPI app, route models, and query parameter parsing.
-- `search/`: validation, shared boundary parsing, cache, filtering, deduplication, sorting, and result metadata.
-- `sources/`: source registry, fan-out, retry behavior, provider adapters, and
-  reusable ACLED OAuth bootstrap behavior.
-- `exports/`: CSV, JSON, and SQLite serialization.
-- `cli/`: command-line parser, fetch paths, table/JSON/JSONL output rendering,
-  and workflow orchestration.
-- `web/`: installed static browser assets, packaged defaults, external
-  configuration-path helpers, and immutable validated settings.
+- `search/`: validation, shared date handling, cache, filters, duplicate
+  removal, sorting, and search details.
+- `sources/`: source registry, parallel requests, retries, source adapters, and
+  reusable ACLED OAuth setup.
+- `exports/`: CSV, JSON, and SQLite writers.
+- `cli/`: command parser, fetch paths, table/JSON/JSONL output, and command flow.
+- `web/`: installed browser files, packaged defaults, settings-path helpers,
+  and validated settings.
 
 ## Runtime Flow
 
 Browser and CLI inputs become validated search requests. The search service
-queries selected providers, applies local filters and optional deduplication,
-sorts the final page, and returns normalized article rows plus metadata.
+queries selected sources, applies local filters and optional duplicate removal,
+sorts the final page, and returns normalized articles plus search details.
 The browser displays the inclusive date boundary and can download the visible
-page. The CLI emits full metadata in JSON or streams compact article-only JSONL
-for downstream model pipelines.
+page. The CLI emits full search details in JSON or streams compact article-only
+JSONL for later model work.
 The API application owns the process-local cache and passes it into the search
 service; low-level search modules do not read configuration files.
 
@@ -49,8 +48,8 @@ against a local process, Docker Compose service, or protected remote server.
 
 - `news.search` exports validated request/result types, the executor type, the
   request builder, search runner, and deduplication entry points.
-- `news.sources` exports shared provider models and fan-out entry points, not
-  individual adapters.
+- `news.sources` exports shared source models and parallel-search entry points,
+  not individual adapters.
 - `news.exports` exports CSV, JSON, and SQLite format functions.
 - Root, API, CLI, and web package initializers intentionally export nothing;
   callers use explicit module paths for those boundaries.

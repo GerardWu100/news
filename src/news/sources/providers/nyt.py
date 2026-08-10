@@ -25,7 +25,7 @@ NYT_SORT_BY_PROVIDER = {
 
 
 class NewYorkTimesSource(BaseSource):
-    """Adapter for the New York Times Article Search API."""
+    """Read articles from the New York Times Article Search API."""
 
     name = "nyt"
     display_name = "The New York Times"
@@ -34,18 +34,18 @@ class NewYorkTimesSource(BaseSource):
     _BASE_URL = "https://api.nytimes.com/svc/search/v2/articlesearch.json"
 
     def __init__(self) -> None:
-        """Initialize transient rate-limit state for this adapter instance."""
+        """Initialize the temporary rate-limit state for this adapter."""
         self._cooldown = CooldownWindow()
 
     def is_available(self) -> bool:
-        """Return ``True`` when ``NYT_API_KEY`` exists in the environment."""
+        """Return ``True`` when ``NYT_API_KEY`` is set."""
         return bool(os.getenv("NYT_API_KEY"))
 
     async def search(
         self,
         options: SourceSearchOptions,
     ) -> SourcePageResult:
-        """Query NYT and normalize the returned documents."""
+        """Read NYT results and convert them to article records."""
         raise_if_cooling(self._cooldown, "NYT")
         api_key = os.getenv("NYT_API_KEY", "")
         filter_query = _build_filter_query(options)
@@ -92,7 +92,7 @@ class NewYorkTimesSource(BaseSource):
 
     @staticmethod
     def _to_article(raw: dict) -> Article:
-        """Convert one NYT document into the shared ``Article`` schema."""
+        """Convert one NYT document to the common ``Article`` format."""
         url = raw.get("web_url", "")
         headline = raw.get("headline") or {}
         byline = raw.get("byline") or {}

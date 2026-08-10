@@ -1,4 +1,4 @@
-"""Output formatting and export helpers for the command line."""
+"""Format and export search results for the command line."""
 
 from __future__ import annotations
 
@@ -20,9 +20,9 @@ def format_table(articles: list[dict[str, Any]], meta: dict[str, Any]) -> str:
     Parameters
     ----------
     articles : list[dict[str, Any]]
-        Normalized article dictionaries from the API or direct backend path.
+        Normalized article dictionaries from the API or direct search path.
     meta : dict[str, Any]
-        Search metadata returned by the package search pipeline.
+        Search details returned by the package search process.
 
     Returns
     -------
@@ -37,8 +37,8 @@ def format_table(articles: list[dict[str, Any]], meta: dict[str, Any]) -> str:
     duplicates_removed = meta.get("duplicates_removed", 0)
     page = meta.get("page", 1)
 
-    # Keep the summary lines separate from row rendering so callers can still
-    # see the request context when a page has no articles.
+    # Keep the summary separate from the rows so an empty page still shows the
+    # request context.
     lines = [
         f'News Search: "{query}" | {start_date} to {end_date} | Sources: {sources}',
         (
@@ -100,8 +100,8 @@ def write_export(
 ) -> None:
     """Write search results to disk in the requested format.
 
-    This keeps API passthrough export behavior for single-page CSV/JSON calls,
-    but falls back to local serialization for direct mode or multi-page exports.
+    Single-page CSV/JSON requests can use the API’s download route. Direct and
+    multi-page requests are written locally.
     """
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -117,7 +117,7 @@ def write_local_export(
     articles: list[dict[str, Any]],
     output_path: Path,
 ) -> None:
-    """Serialize search results locally without calling the HTTP export route."""
+    """Write search results locally without calling the HTTP export route."""
     if args.export == "csv":
         output_path.write_text(
             format_csv(articles, include_content=args.include_content),
@@ -148,7 +148,7 @@ def should_download_api_export(
     args: argparse.Namespace,
     meta: dict[str, Any],
 ) -> bool:
-    """Return ``True`` when CLI export can stream directly from the API."""
+    """Return ``True`` when the CLI can use the API’s download route."""
     if args.direct:
         return False
     if args.all_pages:

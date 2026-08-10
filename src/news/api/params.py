@@ -1,4 +1,4 @@
-"""HTTP query parameter parsing for news search routes."""
+"""Read HTTP query parameters for the news search routes."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ from news.search.validation import split_csv_values
 
 
 class SearchQueryParams:
-    """Dependency object for the public search query parameters."""
+    """Container for the public search query parameters."""
 
     def __init__(
         self,
@@ -58,7 +58,7 @@ class SearchQueryParams:
         ),
         provider_sort: str = Query(
             default="default",
-            description="Upstream provider ranking mode where supported",
+            description="Source ranking mode where supported",
         ),
         section: str = Query(
             default="",
@@ -83,7 +83,7 @@ class SearchQueryParams:
         page: int = Query(
             default=1,
             ge=1,
-            description="1-based provider page number",
+            description="1-based source page number",
         ),
     ) -> None:
         self.q = q
@@ -107,7 +107,7 @@ class SearchQueryParams:
         self.page = page
 
     def to_search_request(self) -> SearchRequest:
-        """Convert query parameters into the validated search request."""
+        """Turn query parameters into a validated search request."""
         return build_search_request(
             query=self.q,
             start_date=self.start,

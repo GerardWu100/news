@@ -1,4 +1,4 @@
-"""Adapter for the ACLED conflict event feed endpoint."""
+"""Adapter for the ACLED conflict-event feed."""
 
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ ACLED_PAGE_SIZE = 50
 
 
 class AcledSource(BaseSource):
-    """Adapter for the ACLED conflict-event API."""
+    """Read conflict events from the ACLED API."""
 
     name = "acled"
     display_name = "ACLED"
@@ -23,14 +23,14 @@ class AcledSource(BaseSource):
     _BASE_URL = "https://acleddata.com/api/acled/read"
 
     def is_available(self) -> bool:
-        """Available when ``ACLED_BEARER_TOKEN`` is set in the environment."""
+        """Return ``True`` when ``ACLED_BEARER_TOKEN`` is set."""
         return bool(os.getenv("ACLED_BEARER_TOKEN"))
 
     async def search(
         self,
         options: SourceSearchOptions,
     ) -> SourcePageResult:
-        """Query one ACLED page of event records."""
+        """Read one page of ACLED event records."""
         if options.page > 1:
             return SourcePageResult(articles=[], has_more=False)
 
@@ -61,7 +61,7 @@ class AcledSource(BaseSource):
 
     @staticmethod
     def _to_article(raw: dict) -> Article:
-        """Convert one ACLED event into the shared ``Article`` schema."""
+        """Convert one ACLED event to the common ``Article`` format."""
         event_type = raw.get("event_type", "")
         notes = raw.get("notes", "")
         title = f"[{event_type}] {notes}" if event_type else notes
@@ -69,9 +69,8 @@ class AcledSource(BaseSource):
         return Article(
             title=title,
             url=raw.get("source_url", ""),
-            # ACLED returns a bare event date today, but every adapter is
-            # required to emit YYYY-MM-DD; trimming here keeps that guarantee
-            # independent of upstream formatting changes.
+            # Store only YYYY-MM-DD even if ACLED changes the rest of its date
+            # formatting.
             date=iso_date_prefix(raw.get("event_date", "")),
             source="acled",
             domain=raw.get("source", ""),

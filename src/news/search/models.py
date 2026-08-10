@@ -1,7 +1,7 @@
-"""Core dataclasses for validated requests and search responses.
+"""Core data classes for validated requests and search responses.
 
-The service layer uses immutable request objects as cache keys and returns a
-structured result payload that can be serialized directly by API routes.
+The search service uses immutable request objects as cache keys and returns a
+structured result that API routes can convert directly to JSON.
 """
 
 from __future__ import annotations
@@ -12,7 +12,7 @@ from typing import Any
 
 @dataclass(frozen=True, slots=True)
 class SearchRequest:
-    """Validated inputs for one search request.
+    """Cleaned and validated inputs for one search request.
 
     Attributes
     ----------
@@ -41,7 +41,7 @@ class SearchRequest:
     match_mode : str
         Local term matching mode (``provider``, ``all_terms``, ``any_term``).
     provider_sort : str
-        Provider-facing ranking mode.
+        Source-facing ranking mode.
     section_filters : tuple[str, ...]
         Provider-specific section filter values.
     news_desk_filters : tuple[str, ...]
@@ -53,7 +53,7 @@ class SearchRequest:
     sort_order : str
         Final merged sort order (``date_desc`` or ``date_asc``).
     page : int
-        1-based provider page requested by the client.
+        1-based source page requested by the client.
     """
 
     query: str
@@ -79,21 +79,21 @@ class SearchRequest:
 
 @dataclass(frozen=True, slots=True)
 class SearchResult:
-    """Search response payload before JSON serialization.
+    """Search response before JSON conversion.
 
     Attributes
     ----------
     articles : list[dict]
-        Normalized article records ready for JSON serialization.
+        Normalized article records ready for JSON conversion.
     meta : dict
-        Request and execution metadata returned alongside ``articles``.
+        Request and execution details returned alongside ``articles``.
     """
 
     articles: list[dict[str, Any]]
     meta: dict[str, Any]
 
     def to_payload(self) -> dict[str, Any]:
-        """Return the JSON-ready payload used by the API and CLI."""
+        """Return the JSON-ready data used by the API and CLI."""
         return {
             "results": self.articles,
             "meta": self.meta,

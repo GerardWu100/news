@@ -2,7 +2,7 @@
   "components": {
     "schemas": {
       "FrontendConfigResponse": {
-        "description": "Frontend defaults returned by ``GET /api/config``.",
+        "description": "Browser defaults returned by ``GET /api/config``.",
         "properties": {
           "default_english_only": {
             "title": "Default English Only",
@@ -37,7 +37,7 @@
         "type": "object"
       },
       "SearchArticleResponse": {
-        "description": "Normalized search result row.",
+        "description": "One article in the common search format.",
         "properties": {
           "author": {
             "default": "",
@@ -108,7 +108,7 @@
         "type": "object"
       },
       "SearchMetaResponse": {
-        "description": "Top-level metadata attached to every search response.",
+        "description": "Search details attached to every search response.",
         "properties": {
           "deduplicate": {
             "title": "Deduplicate",
@@ -263,7 +263,7 @@
         "type": "object"
       },
       "SearchResponse": {
-        "description": "Complete payload returned by ``GET /api/search``.",
+        "description": "Complete response returned by ``GET /api/search``.",
         "properties": {
           "meta": {
             "$ref": "#/components/schemas/SearchMetaResponse"
@@ -283,7 +283,7 @@
         "type": "object"
       },
       "SourceQueryReportResponse": {
-        "description": "Execution report for one upstream provider.",
+        "description": "Result summary for one source.",
         "properties": {
           "available": {
             "title": "Available",
@@ -327,7 +327,7 @@
         "type": "object"
       },
       "SourceStatusResponse": {
-        "description": "Source availability metadata returned by ``GET /api/sources``.",
+        "description": "Source descriptions and availability returned by ``GET /api/sources``.",
         "properties": {
           "available": {
             "title": "Available",
@@ -423,7 +423,7 @@
     },
     "/api/config": {
       "get": {
-        "description": "Return validated frontend configuration values.",
+        "description": "Return the validated browser settings.",
         "operationId": "config_api_config_get",
         "responses": {
           "200": {
@@ -442,7 +442,7 @@
     },
     "/api/export/csv": {
       "get": {
-        "description": "Export the current provider page as comma-separated values (CSV).",
+        "description": "Download the current source page as comma-separated values (CSV).",
         "operationId": "export_csv_api_export_csv_get",
         "parameters": [
           {
@@ -587,13 +587,13 @@
             }
           },
           {
-            "description": "Upstream provider ranking mode where supported",
+            "description": "Source ranking mode where supported",
             "in": "query",
             "name": "provider_sort",
             "required": false,
             "schema": {
               "default": "default",
-              "description": "Upstream provider ranking mode where supported",
+              "description": "Source ranking mode where supported",
               "title": "Provider Sort",
               "type": "string"
             }
@@ -659,13 +659,13 @@
             }
           },
           {
-            "description": "1-based provider page number",
+            "description": "1-based source page number",
             "in": "query",
             "name": "page",
             "required": false,
             "schema": {
               "default": 1,
-              "description": "1-based provider page number",
+              "description": "1-based source page number",
               "minimum": 1,
               "title": "Page",
               "type": "integer"
@@ -697,7 +697,7 @@
     },
     "/api/export/json": {
       "get": {
-        "description": "Export the current provider page as JavaScript Object Notation.",
+        "description": "Download the current source page as JavaScript Object Notation (JSON).",
         "operationId": "export_json_api_export_json_get",
         "parameters": [
           {
@@ -842,13 +842,13 @@
             }
           },
           {
-            "description": "Upstream provider ranking mode where supported",
+            "description": "Source ranking mode where supported",
             "in": "query",
             "name": "provider_sort",
             "required": false,
             "schema": {
               "default": "default",
-              "description": "Upstream provider ranking mode where supported",
+              "description": "Source ranking mode where supported",
               "title": "Provider Sort",
               "type": "string"
             }
@@ -914,13 +914,13 @@
             }
           },
           {
-            "description": "1-based provider page number",
+            "description": "1-based source page number",
             "in": "query",
             "name": "page",
             "required": false,
             "schema": {
               "default": 1,
-              "description": "1-based provider page number",
+              "description": "1-based source page number",
               "minimum": 1,
               "title": "Page",
               "type": "integer"
@@ -952,7 +952,7 @@
     },
     "/api/search": {
       "get": {
-        "description": "Search providers and return the merged article page.",
+        "description": "Search the selected sources and return one merged page.",
         "operationId": "search_api_search_get",
         "parameters": [
           {
@@ -1097,13 +1097,13 @@
             }
           },
           {
-            "description": "Upstream provider ranking mode where supported",
+            "description": "Source ranking mode where supported",
             "in": "query",
             "name": "provider_sort",
             "required": false,
             "schema": {
               "default": "default",
-              "description": "Upstream provider ranking mode where supported",
+              "description": "Source ranking mode where supported",
               "title": "Provider Sort",
               "type": "string"
             }
@@ -1169,13 +1169,13 @@
             }
           },
           {
-            "description": "1-based provider page number",
+            "description": "1-based source page number",
             "in": "query",
             "name": "page",
             "required": false,
             "schema": {
               "default": 1,
-              "description": "1-based provider page number",
+              "description": "1-based source page number",
               "minimum": 1,
               "title": "Page",
               "type": "integer"
@@ -1209,7 +1209,7 @@
     },
     "/api/sources": {
       "get": {
-        "description": "Return source metadata and availability.",
+        "description": "Return source descriptions and availability.",
         "operationId": "sources_api_sources_get",
         "responses": {
           "200": {

@@ -1,4 +1,4 @@
-"""Tests for search orchestration, provider options, and result metadata."""
+"""Tests for search coordination, source options, and search details."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ from news.sources.base import Article, SourceSearchOptions
 
 
 class RunSearchTests(unittest.IsolatedAsyncioTestCase):
-    """Check end-to-end behavior of the pure search pipeline."""
+    """Check the end-to-end behavior of the search process."""
 
     async def test_run_search_builds_meta_and_applies_filters(self) -> None:
         """Language filtering and deduplication should be reflected in meta."""
@@ -94,7 +94,7 @@ class RunSearchTests(unittest.IsolatedAsyncioTestCase):
         )
 
     async def test_run_search_passes_provider_options_to_executor(self) -> None:
-        """Provider-aware filters should reach the source fan-out layer."""
+        """Source-specific filters should reach the source request layer."""
         request = build_search_request(
             query="inflation",
             start_date="2026-02-01",
@@ -154,7 +154,7 @@ class RunSearchTests(unittest.IsolatedAsyncioTestCase):
             _options: SourceSearchOptions,
             _source_names: Sequence[str] | None,
         ) -> tuple[list[Article], list[SourceQueryReport]]:
-            """Return one provider page that still needs local post-filtering."""
+            """Return one source page that still needs local filtering."""
             reports = [
                 SourceQueryReport(
                     name="gdelt",

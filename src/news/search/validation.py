@@ -1,7 +1,7 @@
-"""Validation and normalization for incoming search parameters.
+"""Validate and clean incoming search parameters.
 
-This module enforces API constraints, canonicalizes free-form query options,
-and returns immutable ``SearchRequest`` objects used by the service layer.
+This module enforces API constraints, cleans free-form query options, and
+returns immutable ``SearchRequest`` objects used by the search service.
 """
 
 from __future__ import annotations
@@ -90,15 +90,15 @@ def build_search_request(
     sort_order : str, optional
         Final merged sort order.
     page : int, optional
-        1-based provider page index.
+        1-based source page index.
 
     Returns
     -------
     SearchRequest
-        Immutable normalized request object used by the search service.
+        Cleaned request object used by the search service.
     """
-    # Normalize the free-form query first so empty or whitespace-only inputs
-    # fail before any downstream parsing work begins.
+    # Clean the query first so an empty value fails before the other fields are
+    # parsed.
     cleaned_query = query.strip()
     if not cleaned_query:
         raise SearchValidationError("Query cannot be empty")
@@ -116,8 +116,7 @@ def build_search_request(
             "Split larger backfills into smaller windows."
         )
 
-    # Canonicalize enum-like parameters once so downstream layers can treat
-    # them as trusted values.
+    # Clean choice-like parameters once so later code can treat them as valid.
     normalized_search_scope = _validate_choice(
         search_scope.strip().lower() or "all",
         allowed_values=ALLOWED_SEARCH_SCOPES,
@@ -143,8 +142,8 @@ def build_search_request(
     if page < 1:
         raise SearchValidationError("Page must be at least 1")
 
-    # Build one immutable request object that downstream layers can safely use
-    # for cache keys and payload metadata without additional normalization.
+    # Build one immutable request object for cache keys and response details;
+    # later code does not need to clean these values again.
     return SearchRequest(
         query=cleaned_query,
         start_date=parsed_start.isoformat(),
@@ -175,8 +174,8 @@ def split_csv_values(raw_value: str) -> tuple[str, ...] | None:
     input still returns an explicit empty tuple so boundary callers can
     distinguish "no source names were provided" from "use every source."
     """
-    # Preserve the historical difference between empty input and delimiter-only
-    # input so the API and direct CLI paths can apply their own defaulting.
+    # Keep the difference between empty input and delimiter-only input so the
+    # API and direct CLI paths can choose their own defaults.
     if not raw_value.strip():
         return None
 
@@ -212,7 +211,7 @@ def _normalize_source_names(
         if not cleaned_name or cleaned_name in seen:
             continue
 
-        # Fail fast with an explicit allowed list so caller typos are easy to fix.
+        # Show the allowed names immediately so a typo is easy to fix.
         if cleaned_name not in known_sources:
             allowed = ", ".join(sorted(known_sources))
             raise SearchValidationError(
@@ -241,8 +240,8 @@ def _parse_list_field(raw_value: str, lowercase: bool = True) -> tuple[str, ...]
     """
     terms: list[str] = []
 
-    # Support both comma-separated and newline-separated input so API and CLI
-    # callers can provide multi-value filters in a predictable way.
+    # Accept both commas and newlines so API and CLI callers can provide lists
+    # in the same way.
     for raw_line in raw_value.splitlines():
         for raw_term in raw_line.split(","):
             cleaned_term = raw_term.strip()
@@ -255,7 +254,7 @@ def _parse_list_field(raw_value: str, lowercase: bool = True) -> tuple[str, ...]
 
 
 def _normalize_newsapi_search_in(raw_value: str) -> str:
-    """Validate and canonicalize NewsAPI ``searchIn`` values.
+    """Validate and put NewsAPI ``searchIn`` values in a stable order.
 
     Parameters
     ----------
@@ -271,8 +270,8 @@ def _normalize_newsapi_search_in(raw_value: str) -> str:
     if not cleaned or cleaned == "all":
         return "all"
 
-    # Parse first, then validate, so callers get one clear error path for both
-    # unknown fields and blank comma-only strings.
+    # Parse first, then validate, so blank and unknown fields take one clear
+    # error path.
     fields = [field.strip() for field in cleaned.split(",") if field.strip()]
     has_unknown_field = any(
         field not in ALLOWED_NEWSAPI_SEARCH_IN_FIELDS for field in fields
@@ -283,8 +282,8 @@ def _normalize_newsapi_search_in(raw_value: str) -> str:
             f"Invalid newsapi_search_in. Allowed values: {allowed}"
         )
 
-    # Preserve NewsAPI's supported field order regardless of caller input order
-    # so downstream comparisons and caching remain stable.
+    # Use NewsAPI's field order even when the caller lists fields differently so
+    # comparisons and caching remain stable.
     ordered_fields = [
         field for field in NEWSAPI_SEARCH_IN_FIELD_ORDER if field in fields
     ]

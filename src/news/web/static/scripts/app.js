@@ -1,8 +1,8 @@
 /**
- * Browser application controller for search and pagination flows.
+ * Coordinates browser searches and page navigation.
  *
- * This module wires DOM events to the API client, tracks request lifecycle
- * state, and delegates all UI updates to rendering helpers.
+ * This module connects page events to the API client, tracks active requests,
+ * and lets display helpers update the page.
  */
 
 import { fetchConfig, fetchSearch, fetchSources } from "./api.js";
@@ -41,7 +41,7 @@ const EMPTY_PAGE_STATE = {
     isLoading: false,
 };
 
-// Must stay in step with the narrow-layout @media breakpoint in styles.css.
+// Keep this breakpoint in step with the narrow-layout rule in styles.css.
 const NARROW_LAYOUT_MEDIA_QUERY = window.matchMedia("(max-width: 820px)");
 
 const searchFormElement = document.getElementById("search-form");
@@ -67,9 +67,8 @@ void initializePage();
 /**
  * Focus the query field when the user presses "/" outside a text field.
  *
- * Research tools commonly bind "/" to search. The handler ignores the key
- * while the user is already typing in a field or the article dialog is open so
- * it never swallows a literal slash.
+ * The handler ignores the key while the user is typing in a field or viewing
+ * an article, so a literal slash is never swallowed.
  */
 function onGlobalKeydown(event) {
     if (event.key !== "/" || event.ctrlKey || event.metaKey || event.altKey) {
@@ -173,9 +172,9 @@ async function onSearchSubmit(event) {
 
 
 /**
- * On narrow screens the search form is tall enough to hide the results, so
- * bring the results region into view once a fresh search starts. Wide layouts
- * already show both columns and are left untouched.
+ * On narrow screens the form can push the results below the fold, so move the
+ * results into view when a new search starts. Wide layouts already show both
+ * areas and are left alone.
  *
  * The scroll style is deliberately left unset so it inherits the stylesheet's
  * `scroll-behavior`, which the `prefers-reduced-motion` block already turns off
@@ -237,7 +236,7 @@ async function executeSearch(requestedPage = state.currentPage) {
         setMeta(payload.meta);
 
         if (payload.results.length === 0) {
-            renderEmptyState("No results matched this provider page. Try broadening the date range, adding sources, or relaxing local filters.");
+            renderEmptyState("No results matched this page. Try a wider date range, more sources, or fewer filters.");
         } else {
             renderResults(payload.results, requestedPage);
         }
@@ -267,8 +266,8 @@ async function executeSearch(requestedPage = state.currentPage) {
         renderError(error.message);
         renderPagination({ ...EMPTY_PAGE_STATE, currentPage: state.currentPage });
     } finally {
-        // Only the request that still owns the abort controller may release the
-        // shared loading UI; a superseded request must leave it to its successor.
+        // Only the active request may clear the loading state. An older request
+        // must leave that state to the newer request that replaced it.
         if (state.currentAbortController === abortController) {
             state.isLoading = false;
             state.currentAbortController = null;

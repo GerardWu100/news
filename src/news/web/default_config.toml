@@ -1,14 +1,14 @@
 [frontend]
-# Show all languages when no operator configuration is present.
+# Show every language when no operator settings are present.
 default_english_only = false
 
-# Start with no preselected credential-dependent providers.
+# Start with no preselected sources that need credentials.
 # Allowed values: acled, gdelt, guardian, mediacloud, newsapi, nyt.
 default_sources = []
 
 [cache]
-# Keep an in-memory search result for this many seconds.
+# Keep each search result in memory for this many seconds.
 ttl_seconds = 300
 
-# Store at most this many in-memory search results.
+# Store no more than this many search results in memory.
 max_entries = 100

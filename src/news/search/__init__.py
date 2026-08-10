@@ -1,4 +1,4 @@
-"""Public import surface for the backend search pipeline package."""
+"""Public imports for the backend search package."""
 
 from .deduplication import canonicalize_url, deduplicate_articles
 from .models import SearchRequest, SearchResult

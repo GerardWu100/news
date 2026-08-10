@@ -1,8 +1,8 @@
 /**
- * Rendering helpers for the browser search interface.
+ * Helpers that update parts of the browser search page.
  *
- * Each function updates one UI region so controller logic can stay focused on
- * request orchestration and state transitions.
+ * Each function owns one page area, so the controller can focus on requests
+ * and search state.
  */
 
 const RESULTS_CONTAINER_ID = "results";
@@ -14,30 +14,29 @@ const A11Y_STATUS_ID = "a11y-status";
 const SEARCH_BUTTON_ID = "search-btn";
 
 /**
- * Announce a concise status message to assistive technology.
+ * Announce a short status message to screen readers.
  *
- * The visible results region swaps large chunks of markup, which screen
- * readers do not reliably narrate. This writes a short sentence to a dedicated
- * polite live region so search progress and outcomes are spoken.
+ * Replacing the results area does not reliably produce an announcement. This
+ * writes a short sentence to a dedicated live region instead.
  *
- * Every function below that replaces the results region announces its own
- * outcome, so a caller cannot render a state that goes unspoken.
+ * Functions that replace the results area announce their own outcome, so each
+ * visible state also has an audible description.
  *
  * Parameters
  * ----------
  * message : string
- *     Human-readable status such as "12 results found" or "Search failed".
+ *     Status such as "12 results found" or "Search failed".
  */
 function announce(message) {
     document.getElementById(A11Y_STATUS_ID).textContent = message;
 }
 
 /**
- * Reflect an in-flight request on the search button and the results region.
+ * Show that a request is running on the search button and results area.
  *
- * Disabling the button prevents overlapping submissions and gives a "working"
- * cue that the spinner alone does not, because the button sits far above the
- * results. ``aria-busy`` tells assistive technology the region is mid-update.
+ * Disabling the button prevents overlapping submissions and makes the state
+ * clear even though the button is far above the results. ``aria-busy`` tells
+ * assistive technology that the region is being updated.
  *
  * Parameters
  * ----------
@@ -105,29 +104,29 @@ export function renderSources(sources, defaultSources = []) {
 export function renderMeta(meta, queryDurationSeconds) {
     const metaBar = document.getElementById(META_BAR_ID);
     metaBar.innerHTML = `
-        <span class="meta-primary">Provider page ${meta.page} for "<strong>${escapeHtml(meta.query)}</strong>"</span>
-        <span class="meta-secondary">${meta.returned} visible results, ${meta.total_before_deduplication} raw rows, ${meta.duplicates_removed} duplicates removed, ${queryDurationSeconds}s</span>
+        <span class="meta-primary">Source page ${meta.page} for "<strong>${escapeHtml(meta.query)}</strong>"</span>
+        <span class="meta-secondary">${meta.returned} results, ${meta.total_before_deduplication} before duplicate removal, ${meta.duplicates_removed} duplicates removed, ${queryDurationSeconds}s</span>
     `;
 }
 
 /**
- * Show the point-in-time boundary used for the completed search.
+ * Show the date cutoff used for the completed search.
  *
- * The banner makes the temporal research contract visible beside the results,
- * where it is harder to forget during discretionary market practice.
+ * The banner keeps the date cutoff visible beside the results, where it is
+ * harder to forget during historical research.
  */
 export function renderResearchWindow(meta) {
     const banner = document.getElementById(WINDOW_BANNER_ID);
     banner.innerHTML = `
-        <span>Information set</span>
+        <span>Date cutoff</span>
         <strong>${escapeHtml(meta.start)} through ${escapeHtml(meta.end)}</strong>
-        <small>Inclusive provider publication dates; later coverage is outside this view.</small>
+        <small>Inclusive source publication dates; later coverage is outside this view.</small>
     `;
     banner.hidden = false;
 }
 
 /**
- * Point export controls at the exact active page and reveal the action group.
+ * Point the download controls at the visible page and show them.
  */
 export function renderResultActions(jsonUrl, csvUrl) {
     document.getElementById("json-export-link").href = jsonUrl;
@@ -168,10 +167,10 @@ export function renderSpinner() {
     document.getElementById(RESULTS_CONTAINER_ID).innerHTML = `
         <div class="spinner">
             <div class="spinner-icon"></div>
-            <div>Searching the archives...</div>
+            <div>Searching the news archives...</div>
         </div>
     `;
-    announce("Searching the archives...");
+    announce("Searching the news archives...");
 }
 
 
@@ -206,7 +205,7 @@ export function renderPagination({
     previousButton.disabled = isLoading || !hasPrevious;
     nextButton.disabled = isLoading || !hasMore;
     label.textContent = `Page ${currentPage}`;
-    nextButton.textContent = isLoading ? "Loading..." : "Next Page";
+    nextButton.textContent = isLoading ? "Loading..." : "Next page";
 }
 
 
@@ -261,7 +260,7 @@ function renderSourceBadges(result) {
 
 
 function createArticleDialogContent(result) {
-    const bodyText = result.content || result.summary || "No provider text available for this record.";
+    const bodyText = result.content || result.summary || "No source text is available for this article.";
     const safeUrl = buildSafeArticleUrl(result.url);
     return `
         <div class="article-dialog-header">
@@ -276,7 +275,7 @@ function createArticleDialogContent(result) {
         </div>
         ${result.summary ? `<p class="article-dialog-summary">${escapeHtml(result.summary)}</p>` : ""}
         <div class="article-dialog-text">${escapeHtml(bodyText)}</div>
-        ${safeUrl ? `<a class="article-dialog-link" href="${escapeAttribute(safeUrl)}" target="_blank" rel="noopener">Open original article</a>` : ""}
+        ${safeUrl ? `<a class="article-dialog-link" href="${escapeAttribute(safeUrl)}" target="_blank" rel="noopener">Open source article</a>` : ""}
     `;
 }
 
@@ -308,7 +307,7 @@ function getReportMessage(report) {
         return "Unavailable";
     }
     if (report.has_more) {
-        return `${report.returned} fetched, more available`;
+        return `${report.returned} found, more available`;
     }
-    return `${report.returned} fetched`;
+    return `${report.returned} found`;
 }

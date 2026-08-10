@@ -13,16 +13,16 @@ def build_search_result(
     query: str | None = None,
     include_source_report: bool = True,
 ) -> SearchResult:
-    """Build one schema-complete result with deterministic metadata.
+    """Build one complete result with deterministic search details.
 
     Parameters
     ----------
     title : str
         Article title placed in the result row.
     query : str | None, optional
-        Metadata query. ``None`` reuses the title.
+        Search query. ``None`` reuses the title.
     include_source_report : bool, optional
-        Whether metadata includes a successful Guardian execution report.
+        Whether the details include a successful Guardian source report.
 
     Returns
     -------
@@ -95,7 +95,7 @@ def build_search_result(
 def build_provider_response(
     title: str = "Fed holds rates steady",
 ) -> tuple[list[Article], list[SourceQueryReport]]:
-    """Build one normalized provider page and its execution report.
+    """Build one normalized source page and its request report.
 
     Parameters
     ----------

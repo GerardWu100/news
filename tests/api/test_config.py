@@ -1,4 +1,4 @@
-"""Validation tests for immutable application settings."""
+"""Validation tests for application settings."""
 
 from __future__ import annotations
 

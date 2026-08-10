@@ -199,8 +199,8 @@ button:disabled {
     position: relative;
 }
 
-/* Keyboard-shortcut affordance pinned to the query label row. Hidden on
-   narrow screens and while typing so it never competes with the input value. */
+/* Show the keyboard shortcut beside the query label. Hide it on narrow screens
+   and while typing so it never competes with the entered text. */
 .field-hint {
     position: absolute;
     top: 0;
@@ -219,8 +219,8 @@ button:disabled {
     opacity: 0;
 }
 
-/* Screen-reader-only content: removed visually but kept in the accessibility
-   tree so status updates are announced without altering the layout. */
+/* Keep status text available to screen readers without showing it or changing
+   the layout. */
 .visually-hidden {
     position: absolute;
     width: 1px;

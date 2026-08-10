@@ -1,8 +1,8 @@
-"""Helpers that serialize normalized search results into export formats.
+"""Write normalized search results in export formats.
 
-The backend exposes CSV and JSON downloads through HTTP routes and a SQLite
-append workflow for CLI research archives. All writers expect the shared
-article dictionaries produced by the search pipeline.
+The backend exposes CSV and JSON downloads through HTTP routes. The CLI can
+also append results to SQLite. All writers use the common article dictionaries
+created by the search process.
 """
 
 from __future__ import annotations
@@ -98,7 +98,7 @@ def format_csv(
     *,
     include_content: bool = False,
 ) -> str:
-    """Format normalized article rows as CSV text."""
+    """Convert normalized article rows to CSV text."""
     columns = _CSV_COLUMNS_WITH_CONTENT if include_content else _CSV_COLUMNS
     output = io.StringIO()
     writer = csv.DictWriter(output, fieldnames=columns, extrasaction="ignore")
@@ -115,7 +115,7 @@ def format_csv(
 
 
 def format_json(articles: list[dict[str, Any]]) -> str:
-    """Format normalized article rows as pretty-printed JSON."""
+    """Convert normalized article rows to readable JSON."""
     return json.dumps(articles, indent=2, ensure_ascii=False)
 
 
@@ -129,11 +129,11 @@ def write_sqlite(
     Parameters
     ----------
     articles : list[dict[str, Any]]
-        Normalized article dictionaries from the search pipeline.
+        Normalized article dictionaries from the search process.
     db_path : str
         Destination SQLite database path.
     query : str
-        Research query stored with each row for provenance.
+        Search query stored with each row for later reference.
 
     Returns
     -------
@@ -150,8 +150,8 @@ def write_sqlite(
         inserted = 0
 
         for article in articles:
-            # Keep SQL text and row shaping separate so the export schema is
-            # easy to compare with the values written for each article.
+            # Keep the SQL statement and row values separate so the table
+            # columns are easy to compare with the values written.
             cursor = connection.execute(
                 _SQLITE_INSERT_ARTICLE,
                 _sqlite_article_values(article, query=query, fetched_at=fetched_at),
@@ -192,7 +192,7 @@ def _sqlite_article_values(
 
 
 def _serialize_matched_sources(value: object) -> str:
-    """Serialize provider lists into a stable JSON string."""
+    """Convert source lists into a stable JSON string."""
     if isinstance(value, Sequence) and not isinstance(value, (str, bytes, bytearray)):
         return json.dumps(list(value))
     return str(value)

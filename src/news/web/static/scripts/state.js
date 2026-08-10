@@ -1,8 +1,8 @@
 /**
- * Shared in-memory state for the browser search workflow.
+ * Shared state for the browser search page.
  *
- * The state object is intentionally small and mutable because this frontend is
- * module-based vanilla JavaScript rather than a component framework.
+ * It stays small and mutable because the frontend uses browser JavaScript
+ * modules instead of a component framework.
  */
 
 export const state = {

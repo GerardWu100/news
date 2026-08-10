@@ -46,8 +46,8 @@ def deduplicate_articles(articles: Sequence[Article]) -> list[Article]:
     url_groups: dict[str, list[Article]] = {}
     articles_without_url: list[Article] = []
 
-    # First pass: group by canonical URL because exact-link duplicates are the
-    # most reliable match across providers.
+    # First group identical canonical URLs. An exact link is the strongest sign
+    # that two records describe the same article.
     for article in articles:
         canonical_url = canonicalize_url(article.url)
         if canonical_url:
@@ -55,8 +55,8 @@ def deduplicate_articles(articles: Sequence[Article]) -> list[Article]:
             continue
         articles_without_url.append(article)
 
-    # Second pass: merge URL groups, then run a weaker syndicated-title pass
-    # for rows where URL matching is unavailable or inconsistent.
+    # Then merge URL groups and use a weaker same-headline check when URL
+    # matching is unavailable or inconsistent.
     merged_url_articles = [
         _merge_duplicate_group(group) for group in url_groups.values()
     ]
@@ -128,14 +128,13 @@ def is_syndication_candidate(normalized_title: str) -> bool:
 
 
 def _merge_duplicate_group(group: Sequence[Article]) -> Article:
-    """Keep the richest article representation and attach duplicate metadata."""
+    """Keep the fullest article record and record its duplicate count."""
     # Use a quality score so we preserve the record with the most useful
     # context fields before overlaying the longest text snippets.
     best_article = max(group, key=_article_quality_key)
-    # Deduplication runs in two passes (URL, then syndicated title), so a group
-    # can contain articles that an earlier pass already merged. Union each
-    # member's recorded provenance and sum their counts so both totals cover
-    # every original record, not just this group's direct members.
+    # The two matching passes can merge records that were already merged in the
+    # first pass. Keep every source name and add the counts so the result still
+    # represents every original record.
     matched_sources = tuple(
         sorted(
             {

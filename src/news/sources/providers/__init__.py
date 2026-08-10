@@ -1,1 +1,1 @@
-"""Provider-specific source adapters."""
+"""Source-specific adapters."""

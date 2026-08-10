@@ -1,4 +1,4 @@
-"""Timeout and retry helpers shared by outbound provider adapters."""
+"""Timeout and retry helpers shared by source adapters."""
 
 from __future__ import annotations
 
@@ -36,32 +36,32 @@ async def get_with_retry(
     cooldown_check: Callable[[], None] | None = None,
     **kwargs: object,
 ) -> httpx.Response:
-    """Issue a GET request with retries for transient failures.
+    """Issue a GET request and retry temporary failures.
 
     Parameters
     ----------
     client : httpx.AsyncClient
-        Preconfigured async HTTP client used for the outbound call.
+        Configured async HTTP client used for the request.
     url : str
-        Full endpoint URL to request.
+        Full endpoint URL.
     retries : int, optional
-        Non-negative number of retry attempts after the first call.
+        Non-negative number of retries after the first call.
     base_delay_seconds : float, optional
-        Base delay for exponential backoff between retries.
+        Starting delay between retries. Each delay doubles.
     cooldown_check : Callable[[], None] | None, optional
-        Optional callback that raises when the adapter is in a local cooldown
-        window after a recent rate limit response.
+        Optional callback that raises while the adapter is in its local pause
+        after a recent rate-limit response.
     **kwargs : object
-        Extra ``httpx.AsyncClient.get`` keyword arguments (for example
-        ``params`` or ``headers``).
+        Extra ``httpx.AsyncClient.get`` keyword arguments, such as ``params``
+        or ``headers``.
 
     Returns
     -------
     httpx.Response
-        Successful response with ``raise_for_status`` already enforced.
+        Successful response after ``raise_for_status`` has passed.
     """
     for attempt in range(retries + 1):
-        # Let adapters enforce local cooldown windows before each outbound call.
+        # Let adapters enforce their local pause before each request.
         if cooldown_check is not None:
             cooldown_check()
 
@@ -70,18 +70,18 @@ async def get_with_retry(
             response.raise_for_status()
             return response
         except httpx.HTTPStatusError as exc:
-            # Retry only server-side failures; client-side failures should
-            # surface immediately because they are usually request bugs.
+            # Retry only server failures. Client errors usually describe a bad
+            # request and should be reported immediately.
             if not _is_retryable_http_status(exc.response.status_code):
                 raise
             if attempt == retries:
                 raise
         except (httpx.TimeoutException, httpx.ConnectError):
-            # Transient network failures are retryable until the final attempt.
+            # Temporary network failures are retryable until the last attempt.
             if attempt == retries:
                 raise
 
-        # Exponential backoff: base, 2x base, 4x base, ...
+        # Double the delay after each failed attempt: base, 2x, 4x, ...
         await asyncio.sleep(base_delay_seconds * (2**attempt))
 
 

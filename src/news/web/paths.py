@@ -1,8 +1,8 @@
-"""Resolve operator-owned files and installed package resources.
+"""Find operator-owned files and installed package resources.
 
-Static browser assets ship inside :mod:`news.web`. Configuration and dotenv
-files remain operator-owned and are resolved relative to the process working
-directory, so an installed wheel never depends on a source checkout.
+Browser files ship inside :mod:`news.web`. Settings and `.env` files remain
+operator-owned and are found from the process working directory, so an
+installed wheel never needs a source checkout.
 """
 
 from __future__ import annotations
@@ -28,7 +28,7 @@ def env_path() -> Path:
 
 
 def config_path(explicit_path: Path | str | None = None) -> Path | None:
-    """Resolve the optional external configuration path.
+    """Find the optional external settings file.
 
     Resolution order is an explicit caller path, the ``NEWS_CONFIG``
     environment variable, then ``config.toml`` in the current working
@@ -37,12 +37,12 @@ def config_path(explicit_path: Path | str | None = None) -> Path | None:
     Parameters
     ----------
     explicit_path : Path | str | None, optional
-        Configuration path supplied by a command-line or application caller.
+        Settings path supplied by a command-line or application caller.
 
     Returns
     -------
     Path | None
-        Absolute external configuration path, or ``None`` when no external
+        Absolute external settings path, or ``None`` when no external
         file was selected.
     """
     if explicit_path is not None:
@@ -59,7 +59,7 @@ def config_path(explicit_path: Path | str | None = None) -> Path | None:
 
 
 def static_dir() -> Path:
-    """Return the installed static-asset directory.
+    """Return the installed browser-asset directory.
 
     Returns
     -------

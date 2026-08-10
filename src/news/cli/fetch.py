@@ -1,4 +1,4 @@
-"""Search payload fetching helpers for the command line."""
+"""Fetch search responses for the command line."""
 
 from __future__ import annotations
 
@@ -16,14 +16,14 @@ from .parser import build_api_params
 
 
 def fetch_page(args: argparse.Namespace, *, page: int) -> dict[str, Any]:
-    """Fetch one page through the API or by calling the package directly."""
+    """Fetch one page through the API or directly through the package."""
     if args.direct:
         return asyncio.run(fetch_direct_page(args, page=page))
     return fetch_api_page(args, page=page)
 
 
 def fetch_api_page(args: argparse.Namespace, page: int) -> dict[str, Any]:
-    """Fetch one provider page through the running HTTP API."""
+    """Fetch one source page through the running HTTP API."""
     with httpx.Client(timeout=30.0, follow_redirects=True) as client:
         response = client.get(
             f"{args.server.rstrip('/')}/api/search",
@@ -38,18 +38,17 @@ async def fetch_direct_page(
     *,
     page: int,
 ) -> dict[str, Any]:
-    """Fetch one provider page by calling the package pipeline directly.
+    """Fetch one source page by calling the package directly.
 
-    The direct path loads ``.env`` from the current working directory and
-    bypasses HTTP while preserving the same validation and search
-    orchestration used by the FastAPI app.
+    The direct path loads ``.env`` from the current working directory and skips
+    HTTP while using the same validation and search process as the FastAPI app.
     """
     load_dotenv(env_path())
 
     from news.search import build_search_request, run_search
 
-    # Direct mode should parse source lists the same way as the HTTP boundary so
-    # CLI and server requests normalize source selection identically.
+    # Direct mode parses source lists the same way as the HTTP route so CLI and
+    # server requests choose sources identically.
     request = build_search_request(
         query=args.query,
         start_date=args.start,

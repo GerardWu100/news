@@ -1,7 +1,7 @@
 """NewsAPI Everything source adapter.
 
-This adapter calls ``/v2/everything`` and normalizes returned records into the
-shared ``Article`` schema used by downstream filters and exports.
+This adapter calls ``/v2/everything`` and converts returned records to the
+common ``Article`` format used by filters and exports.
 """
 
 from __future__ import annotations
@@ -26,7 +26,7 @@ NEWSAPI_SORT_BY_PROVIDER = {
 
 
 class NewsApiSource(BaseSource):
-    """Adapter for the NewsAPI Everything endpoint."""
+    """Read articles from the NewsAPI Everything endpoint."""
 
     name = "newsapi"
     display_name = "NewsAPI"
@@ -35,11 +35,11 @@ class NewsApiSource(BaseSource):
     _BASE_URL = "https://newsapi.org/v2/everything"
 
     def is_available(self) -> bool:
-        """Return ``True`` when ``NEWSAPI_API_KEY`` exists in the environment."""
+        """Return ``True`` when ``NEWSAPI_API_KEY`` is set."""
         return bool(os.getenv("NEWSAPI_API_KEY"))
 
     async def search(self, options: SourceSearchOptions) -> SourcePageResult:
-        """Query NewsAPI and normalize the returned article records."""
+        """Read NewsAPI results and convert them to article records."""
         api_key = os.getenv("NEWSAPI_API_KEY", "")
         async with httpx.AsyncClient(timeout=build_timeout()) as client:
             response = await get_with_retry(
@@ -61,7 +61,7 @@ class NewsApiSource(BaseSource):
 
 
 def _build_params(options: SourceSearchOptions) -> dict[str, str]:
-    """Build one NewsAPI request from normalized search options."""
+    """Build one NewsAPI request from common search options."""
     params = {
         "q": options.query,
         "from": options.start_date,
@@ -87,7 +87,7 @@ def _build_params(options: SourceSearchOptions) -> dict[str, str]:
 
 
 def _to_article(raw: dict, requested_language: str) -> Article:
-    """Convert one NewsAPI article object into the unified ``Article`` schema."""
+    """Convert one NewsAPI article to the common ``Article`` format."""
     url = raw.get("url", "")
     source = raw.get("source") or {}
     return Article(
@@ -105,5 +105,5 @@ def _to_article(raw: dict, requested_language: str) -> Article:
 
 
 def _clean_content(raw_content: str) -> str:
-    """Drop NewsAPI truncation markers from the returned content field."""
+    """Remove NewsAPI truncation markers from the content field."""
     return re.sub(r"\s*\[\+\d+\s+chars\]\s*$", "", raw_content).strip()

@@ -1,15 +1,15 @@
 FROM python:3.13-slim
 
-# Copy the uv package manager from its official image.
+# Copy uv, the Python package manager, from its official image.
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
 WORKDIR /app
 
-# The project-local environment contains both the server and CLI entry points.
+# The project environment contains both the server and CLI commands.
 ENV PATH="/app/.venv/bin:$PATH" \
     PYTHONUNBUFFERED=1
 
-# Dependency installation stays cached until project metadata changes.
+# Keep dependency installation cached until the project metadata changes.
 COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-dev --no-install-project
 

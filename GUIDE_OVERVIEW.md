@@ -1,58 +1,52 @@
 # GUIDE_OVERVIEW
 
-## Summary and Purpose
+## Purpose
 
-This project is a historical multi-source news retrieval system. Its job is to
-search several upstream providers over a date window, normalize the returned
-records into one shared schema, optionally collapse duplicates, and expose the
-results through:
+This project searches several news sources over a chosen date range, turns their
+records into one common article format, optionally removes repeated articles,
+and makes the results available through a browser, a JSON API, and a CLI.
 
-- a browser UI,
-- a JSON API,
-- and a CLI with export support.
+The product focuses on retrieval. It does not rank articles with a proprietary
+relevance model, fetch full article pages, calculate market statistics, or run
+backtests. Its job is to provide a clear, source-aware set of articles that a
+person or a later research process can inspect.
 
-The product is retrieval-first. It does not rank by proprietary relevance
-models, crawl article bodies, or compute page-level analytics. The value is a
-clean, provider-aware search and export workflow for research.
+The browser is for historical exploration. It shows the inclusive end date next
+to each completed search so the information boundary stays visible. The CLI is
+for repeatable machine use and can return a table, JSON, or JSONL. Neither
+interface creates a trading signal.
 
-The browser emphasizes human point-in-time exploration: its inclusive end date
-is shown as an information boundary beside every completed result set. The CLI
-emphasizes reproducible machine use with table, JSON, and JSONL output. Neither
-interface performs signal generation or backtesting; exports feed those
-downstream workflows.
-
-## Project Structure
+## Project structure
 
 ```text
 .
-├── .agents/skills/ -- Workspace-only agent retrieval and summary workflow.
-├── blog/           -- Local-only article source.
-├── Dockerfile      -- Reproducible Python 3.13 application image.
-├── docker-compose.yml -- Persistent self-hosted server and optional CLI client.
-├── src/news/       -- Installable API, CLI, search, source, export, and web package.
-├── scripts/        -- Thin credential and OpenAPI generation commands.
-├── tests/          -- Offline tests organized by production responsibility.
-└── docs/           -- Completed plans, exact reference material, and user docs.
+├── .agents/skills/ -- Workspace-only agent retrieval and summary instructions.
+├── blog/           -- Local article source.
+├── Dockerfile      -- Python 3.13 application image.
+├── docker-compose.yml -- Self-hosted server and optional CLI client.
+├── src/news/       -- Installable API, CLI, search, source, export, and browser package.
+├── scripts/        -- Credential and OpenAPI generation commands.
+├── tests/          -- Offline tests grouped by production responsibility.
+└── docs/           -- Plans, reference material, and user documentation.
 ```
 
-The exact implemented tree is maintained in
-`docs/reference/PROJECT_STRUCTURE.md`.
+The exact tree is maintained in `docs/reference/PROJECT_STRUCTURE.md`.
 
-## Inputs and Outputs
+## Inputs and outputs
 
 ### Inputs
 
 - A query string.
 - Inclusive start and end dates in `YYYY-MM-DD`.
 - Optional source selection.
-- Optional language, deduplication, exact-phrase, exclude-term, and
-  include/exclude-domain filters.
-- Optional provider ranking mode and provider-specific section filters.
+- Optional language, duplicate-removal, exact-phrase, excluded-term, and
+  included/excluded-domain filters.
+- Optional source ranking and source-specific section filters.
 - Provider credentials from an optional `.env` in the process working
   directory, created from `.env.example`.
-- Frontend and cache settings from an explicit server option, `NEWS_CONFIG`,
+- Browser and cache settings from an explicit server option, `NEWS_CONFIG`, a
   current-directory `config.toml`, or packaged defaults, in that order.
-- An optional local or remote server base URL from `--server` or
+- An optional local or remote server address from `--server` or
   `NEWS_SERVER_URL`.
 
 ### Outputs
@@ -60,80 +54,80 @@ The exact implemented tree is maintained in
 - A normalized article list with fields such as title, URL, date, source,
   domain, language, summary, content, section, author, matched sources, and
   duplicate count.
-- Search metadata describing the current provider page, duplicate-removal
-  counts, pagination state, and per-source execution reports.
-- CSV, JSON, or SQLite exports for downstream workflows.
-- Browser downloads for the exact visible provider page and CLI JSONL with one
+- Search details for the current source page, duplicate-removal counts,
+  page-navigation state, and one status report per source.
+- CSV, JSON, or SQLite files for later work.
+- Browser downloads for the exact visible source page and CLI JSONL with one
   normalized article per line.
 
-## Architecture and Data Flow
+## Architecture and data flow
 
-1. The `news-server` command loads credentials, parses bind options, and asks
-   the application factory to construct the FastAPI app.
-2. Startup merges the selected operator configuration over packaged defaults,
-   validates it, and constructs the process-local cache.
-3. The browser or CLI submits a validated request.
-4. The search package checks whether the same request is already available in a short
-   in-memory cache.
-5. If not cached, requested providers are queried concurrently.
-6. Each provider response is normalized into the common article schema.
-7. Local filtering applies shared rules such as language, exact-phrase,
-   exclude-term, and domain filtering.
-8. Optional deduplication collapses canonical-URL matches first, then obvious
-   same-day syndicated headline matches.
-9. The final provider page is sorted and returned through the API.
-10. The browser renders the page with its active date boundary and exact-page
-    download links. The CLI can print table, JSON, or JSONL and export files.
+1. The `news-server` command loads credentials, reads bind options, and asks
+   the application factory to build the FastAPI app.
+2. Startup combines the selected operator settings with the packaged defaults,
+   validates them, and creates a process-local cache.
+3. The browser or CLI sends one validated search request.
+4. The search package checks whether the same request is already in its short-
+   lived memory cache.
+5. If it is not cached, the selected sources are queried in parallel.
+6. Each source response is converted to the common article format.
+7. Local filters apply the same language, phrase, term, and domain rules to all
+   sources.
+8. Optional duplicate removal first groups identical canonical URLs, then
+   obvious same-day copies with the same headline.
+9. The final source page is sorted and returned through the API.
+10. The browser displays the active date boundary and download links. The CLI
+    can print a table, JSON, or JSONL and write export files.
 
-In Docker, the server binds to all container interfaces on port 8000 while
-Compose publishes it only to host loopback on port 50023. Both the optional
-Docker CLI service and authenticated reverse proxies on the external `single`
-network can reach the container without widening the host bind.
+In Docker, the server listens on all container interfaces on port 8000, while
+Compose publishes it only on host loopback at port 50023. The optional Docker
+CLI service and an authenticated reverse proxy on the external `single` network
+can reach the container without widening the host port.
 
-## Reliability and Operational Behavior
+## Reliability and operations
 
-- Transient connection errors, read timeouts, and HTTP 5xx responses are
-  retried with exponential backoff.
-- Known rate-limited providers keep a local cooldown window after HTTP 429 so
-  repeated requests fail fast instead of hammering the upstream API.
-- Every outbound request uses explicit connect and read timeouts.
-- Source failures are isolated. One provider can fail while the rest still
-  return usable results.
-- Invalid dates, unknown source names, and oversized date ranges are rejected
-  before any outbound network work starts.
-- Malformed or misspelled configuration and invalid cache limits are rejected
-  before the server accepts requests.
+- Temporary connection errors, read timeouts, and HTTP 5xx responses are
+  retried with increasing delays.
+- A source that returns HTTP 429 keeps a short local cooldown so repeated
+  requests fail quickly instead of sending more requests immediately.
+- Every outbound request has explicit connection and read timeouts.
+- A source failure is isolated; other sources can still return results.
+- Invalid dates, unknown source names, and overly long date ranges are rejected
+  before any network request begins.
+- Bad configuration and invalid cache limits are rejected before the server
+  accepts requests.
 
-## Product Boundaries and Assumptions
+## Boundaries and assumptions
 
-- Pagination is provider-page based, not a globally merged sliding window.
-- Cache entries are process-local and intentionally short-lived.
-- Direct CLI mode bypasses the cache so ad hoc pulls stay fresh.
+- Pages follow the source’s own pagination. They are not one globally merged
+  sliding window.
+- Cache entries live in one process and expire quickly.
+- Direct CLI mode skips the cache so an ad hoc request gets fresh results.
 - Publication-date filtering reduces look-ahead risk but does not prove when an
-  article first became tradable information. Provider timestamps, revisions,
-  missing archives, and downstream model knowledge remain research limitations.
-- Deduplication is conservative and deterministic; it does not perform fuzzy
-  semantic matching.
-- Providers expose asymmetric upstream filters, so some advanced options apply
-  only to some sources.
-- Missing credentials do not crash the app; unavailable providers are surfaced
-  in source status and source reports.
-- Browser assets and baseline configuration ship in the wheel, so runtime
-  resources do not depend on a repository checkout.
-- Application construction accepts injected cache, provider executor, and
-  source-status dependencies, which keeps route tests isolated and offline.
-- Public HTTP routes and response models are captured in a generated,
-  contract-tested OpenAPI schema.
-- The Docker health check probes the configuration route. Persistent
-  configuration is copied from repository defaults only on first boot.
+  article first became tradable information. Source timestamps, revisions,
+  missing archives, and later model knowledge remain limitations.
+- Duplicate removal is conservative and deterministic. It does not compare
+  article meaning.
+- Sources support different filters, so some advanced options apply only to
+  some sources.
+- Missing credentials do not crash the app; unavailable sources appear in the
+  source status and search reports.
+- Browser assets and baseline settings ship in the wheel, so runtime files do
+  not depend on a repository checkout.
+- The application factory accepts a cache, source executor, and source-status
+  function. Tests can therefore use offline fakes without changing module
+  globals.
+- Public HTTP routes and response models are recorded in a generated OpenAPI
+  schema and checked by tests.
+- The Docker health check requests the configuration route. Persistent
+  configuration is copied from the repository defaults only on first boot.
 
-## User Overrides
+## Local conventions
 
-- Use `uv` workflows.
+- Use `uv` for Python commands and dependency management.
 - Keep the frontend dependency-light.
 - Store provider credentials in the root `.env`.
 - Keep project docs in sync after code changes.
-- Treat the project as a retrieval tool rather than an analytics surface.
-- Keep unauthenticated Docker ports private; remote agents use a VPN or
-  authenticated TLS reverse proxy and configure the CLI with
-  `NEWS_SERVER_URL`.
+- Treat this project as a retrieval tool, not an analytics system.
+- Keep unauthenticated Docker ports private; use a VPN or authenticated TLS
+  reverse proxy for remote agents and set `NEWS_SERVER_URL`.

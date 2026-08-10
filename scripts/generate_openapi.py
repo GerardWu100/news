@@ -1,4 +1,4 @@
-"""Generate the checked-in OpenAPI contract from the application routes."""
+"""Generate the checked-in OpenAPI definition from the application routes."""
 
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ DEFAULT_OUTPUT_PATH = PROJECT_ROOT / "docs" / "reference" / "openapi.json"
 def build_parser() -> argparse.ArgumentParser:
     """Build command arguments for OpenAPI generation."""
     parser = argparse.ArgumentParser(
-        description="Generate the news API OpenAPI contract.",
+        description="Generate the news API OpenAPI definition.",
     )
     parser.add_argument(
         "--output",
@@ -37,7 +37,7 @@ def main(argv: list[str] | None = None) -> int:
     Returns
     -------
     int
-        Zero after the contract is written successfully.
+        Zero after the definition is written successfully.
     """
     args = build_parser().parse_args(argv)
     output_path = args.output.expanduser().resolve()
@@ -48,7 +48,7 @@ def main(argv: list[str] | None = None) -> int:
         json.dumps(schema, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
     )
-    print(f"Wrote OpenAPI contract to {output_path}")
+    print(f"Wrote OpenAPI definition to {output_path}")
     return 0
 
 

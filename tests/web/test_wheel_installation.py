@@ -72,7 +72,7 @@ class WheelInstallationTests(unittest.TestCase):
                 "client = TestClient(app)\n"
                 "response = client.get('/')\n"
                 "assert response.status_code == 200, response.text\n"
-                "assert 'Point-in-Time News' in response.text\n"
+                "assert 'Historical News' in response.text\n"
                 "favicon = client.get('/static/favicon.svg')\n"
                 "assert favicon.status_code == 200, favicon.text\n"
                 "assert favicon.headers['content-type'].startswith('image/svg+xml')\n"

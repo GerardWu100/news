@@ -1,6 +1,6 @@
 ---
 title: "A News Research Service for Both Humans and AI Agents"
-description: "How a small Docker deployment turns a point-in-time news search tool into a reusable browser and command-line service."
+description: "How a small Docker deployment turns a historical news search tool into a reusable browser and command-line service."
 date: 2026-07-29
 categories:
   - Software
@@ -9,42 +9,40 @@ categories:
 
 # A News Research Service for Both Humans and AI Agents
 
-News research has an awkward interface problem. A person wants a browser:
-visible dates, source controls, readable headlines, and links worth opening.
-An artificial intelligence (AI) agent wants almost the opposite: a stable
-command, structured output, explicit metadata, and no hidden state.
+News research has an awkward interface problem. A person wants a browser with
+visible dates, source controls, readable headlines, and links worth opening. An
+artificial intelligence (AI) agent wants almost the opposite: a stable command,
+structured output, clear search details, and no hidden state.
 
-The useful design is not to choose between them. It is to put one retrieval
-engine behind three thin interfaces:
+The useful design is to put one search engine behind three small interfaces:
 
 ```mermaid
 flowchart LR
-    P[News providers] --> S[Normalized search service]
+    P[News sources] --> S[Common search service]
     S --> B[Browser for human research]
     S --> C[CLI for AI agents]
     S --> A[HTTP API for applications]
 ```
 
 The browser and command-line interface (CLI) then share the same validation,
-provider adapters, filtering, deduplication, and date boundary. That common
-core matters more than the interface. It means a result inspected by a person
-and a result summarized by an agent were produced under the same rules.
+source adapters, filtering, duplicate removal, and date cutoff. That common
+core matters more than the interface: a result inspected by a person and a
+result summarized by an agent were produced under the same rules.
 
 ## The date is part of the result
 
 For historical research, the end date is not a cosmetic filter. It is the
-information boundary: the latest publication date the retrieval is allowed to
-include.
+cutoff: the latest publication date the search is allowed to include.
 
 That restriction helps reduce **look-ahead bias**, which occurs when a
 historical decision uses information that was not available at the time. It
-does not eliminate the problem. Providers can revise articles, archives can be
+does not eliminate the problem. Sources can revise articles, archives can be
 incomplete, timestamps may not match the moment information became tradable,
 and a large language model (LLM) may know later events from training.
 
 The practical rule is simple: every summary should repeat its query, inclusive
-date window, provider coverage, result count, and provider failures. A polished
-paragraph without that retrieval context is less useful than it looks.
+date window, source coverage, result count, and source failures. A polished
+paragraph without that search context is less useful than it looks.
 
 ## Why Docker helps
 
@@ -52,7 +50,7 @@ The application already runs as an installable Python package. Docker adds an
 operational boundary around it:
 
 - Python 3.13 and dependencies are fixed by the image and `uv.lock`.
-- Provider credentials enter through environment variables rather than the
+- Source credentials enter through environment variables rather than the
   image.
 - A mounted data directory owns the editable `config.toml`.
 - A health check confirms that the configuration endpoint responds.
@@ -69,11 +67,11 @@ reverse proxy can reach the container on that network without publishing the
 application port broadly. Remote access should pass through an authenticated
 Transport Layer Security (TLS) proxy or a private virtual private network
 (VPN). The news application does not implement its own user accounts, and an
-open endpoint could let strangers spend the configured provider quotas.
+open endpoint could let strangers spend the configured source quotas.
 
 ## One CLI, local or remote
 
-The agent-facing contract is the `news-search` command. Locally, its default
+The agent-facing interface is the `news-search` command. Locally, its default
 server is `http://localhost:8000`. For a remote Docker deployment, the same
 command reads `NEWS_SERVER_URL`:
 
@@ -90,10 +88,10 @@ uv run news-search "central bank policy" \
 ```
 
 The output contains two objects. `results` holds normalized articles. `meta`
-holds the query, dates, pagination state, duplicate count, requested providers,
-and a report for each provider. JSON Lines (JSONL), where each line is one JSON
-record, is useful for streaming. Full JSON is better for research summaries
-because it retains the metadata needed to judge coverage.
+holds the query, dates, page state, duplicate count, requested sources, and a
+report for each source. JSON Lines (JSONL), where each line is one JSON record,
+is useful for streaming. Full JSON is better for research summaries because it
+retains the details needed to judge coverage.
 
 The `--max-pages` option is not mere caution. Broad news queries can create
 large, expensive inputs for an LLM. A page limit makes the retrieval budget
@@ -111,13 +109,13 @@ The skill teaches a sequence rather than a writing style:
 
 1. Retrieve JSON through the CLI.
 2. Inspect `meta` before reading the articles.
-3. Check provider errors, missing dates, duplicate removal, and pagination.
+3. Check source errors, missing dates, duplicate removal, and page navigation.
 4. Summarize only claims supported by returned headlines or provider snippets.
 5. Link useful evidence and state the date boundary.
 6. Preserve the raw JSON and exact command for reproducibility.
 
 This ordering prevents a common agent failure: writing a confident narrative
-first and treating retrieval as decoration afterward. Here, coverage determines
+first and treating the search as decoration afterward. Here, coverage determines
 what can responsibly be said.
 
 ## What the service still does not prove

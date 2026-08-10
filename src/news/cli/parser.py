@@ -1,4 +1,4 @@
-"""Argument parsing helpers for the news search command line."""
+"""Argument parsing helpers for the ``news-search`` command."""
 
 from __future__ import annotations
 
@@ -12,25 +12,25 @@ DEFAULT_PROVIDER_SORT = "default"
 OUTPUT_FORMATS = ("table", "json", "jsonl")
 
 CLI_EXAMPLES = """examples:
-  Human-readable search:
+  Readable search for a person:
     news-search "central bank" -s 2025-01-01 -e 2025-01-31
 
   Structured output for a large language model (LLM):
     news-search "central bank" -s 2025-01-01 -e 2025-01-31 \\
       --all-pages --format json
 
-  One JSON article per line for a streaming pipeline:
+  One JSON article per line for a stream:
     news-search "earnings" -s 2025-02-01 -e 2025-02-07 \\
       --sources guardian,nyt --format jsonl
 
 The start and end dates are inclusive publication-date boundaries. Results can
-still be incomplete because each upstream provider has different archive and
-pagination limits.
+still be incomplete because each source has different archive and pagination
+limits.
 """
 
 
 def build_arg_parser() -> argparse.ArgumentParser:
-    """Build the CLI argument parser for search and export workflows."""
+    """Build the argument parser for search and export commands."""
     default_server_url = (
         os.getenv(SERVER_URL_ENVIRONMENT_VARIABLE, "").strip() or DEFAULT_SERVER_URL
     )
@@ -41,7 +41,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
         epilog=CLI_EXAMPLES,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    parser.add_argument("query", help="Keywords or provider-supported query expression")
+    parser.add_argument("query", help="Keywords or source-supported query expression")
     parser.add_argument(
         "-s",
         "--start",
@@ -54,7 +54,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
         "--end",
         required=True,
         metavar="YYYY-MM-DD",
-        help="Inclusive publication end date (the research information boundary)",
+        help="Inclusive publication end date (the research cutoff)",
     )
     parser.add_argument("--sources", default="", help="Comma-separated source names")
     parser.add_argument(
@@ -62,7 +62,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("-l", "--language", default="", help="Language filter")
     parser.add_argument(
-        "--no-dedupe", action="store_true", help="Disable deduplication"
+        "--no-dedupe", action="store_true", help="Keep duplicate articles"
     )
     parser.add_argument("--exact-phrase", default="", help="Require exact phrase")
     parser.add_argument("--exclude", default="", help="Comma-separated exclude terms")
@@ -93,7 +93,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--provider-sort",
         default=DEFAULT_PROVIDER_SORT,
-        help="Provider ranking mode",
+        help="Source ranking mode",
     )
     parser.add_argument("--section", default="", help="Comma-separated section filters")
     parser.add_argument("--news-desk", default="", help="Comma-separated NYT desks")
@@ -105,13 +105,13 @@ def build_arg_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("-p", "--page", type=int, default=1, help="Page number")
     parser.add_argument(
-        "--all-pages", action="store_true", help="Fetch and combine all pages"
+        "--all-pages", action="store_true", help="Fetch and combine every page"
     )
     parser.add_argument(
         "--max-pages",
         type=int,
         default=DEFAULT_EXPORT_MAX_PAGES,
-        help="Safety limit for --all-pages",
+        help="Maximum pages for --all-pages",
     )
     parser.add_argument(
         "--format",
@@ -119,7 +119,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
         choices=OUTPUT_FORMATS,
         default="table",
         help=(
-            "Standard-output format: table for people, json for tools/LLMs, "
+            "Output format: table for people, json for tools/LLMs, "
             "or jsonl for one article per line (default: table)"
         ),
     )
@@ -145,14 +145,14 @@ def build_arg_parser() -> argparse.ArgumentParser:
         "--server",
         default=default_server_url,
         help=(
-            "Base URL for the running API server "
+            "Base URL of the running API server "
             f"(default: ${SERVER_URL_ENVIRONMENT_VARIABLE} or {DEFAULT_SERVER_URL})"
         ),
     )
     parser.add_argument(
         "--direct",
         action="store_true",
-        help="Bypass the server and call the backend pipeline directly",
+        help="Skip the server and call the search code directly",
     )
     parser.add_argument(
         "-q", "--quiet", action="store_true", help="Suppress progress messages"
@@ -164,7 +164,7 @@ def build_api_params(
     args: argparse.Namespace,
     page: int | None = None,
 ) -> dict[str, str]:
-    """Map parsed CLI arguments to the backend API parameter contract."""
+    """Map parsed CLI arguments to the API parameter format."""
     language = "en" if args.english else args.language.strip()
     params: dict[str, str] = {
         "q": args.query,

@@ -1,7 +1,7 @@
 """Local filtering and sorting helpers for normalized provider results.
 
-These filters run after source fan-out, so they apply consistently across all
-providers even when upstream query semantics differ.
+These filters run after source requests finish, so they apply consistently even
+when source search rules differ.
 """
 
 from __future__ import annotations
@@ -33,7 +33,7 @@ def apply_post_filters(
     articles: Sequence[Article],
     request: SearchRequest,
 ) -> list[Article]:
-    """Apply local filters after provider fan-out."""
+    """Apply local filters after source retrieval."""
     # Run filters in a fixed order so each stage narrows the candidate set
     # before the next stage does more expensive text checks.
     filtered = filter_by_language(articles, request.language)
@@ -104,8 +104,7 @@ def filter_by_include_domains(
 
     filtered_articles: list[Article] = []
     for article in articles:
-        # Normalize the domain once per article so the substring checks stay
-        # cheap and easy to trace.
+        # Normalize the domain once per article so the checks stay simple.
         article_domain = article.domain.lower()
         if any(include_domain in article_domain for include_domain in include_domains):
             filtered_articles.append(article)
@@ -123,8 +122,7 @@ def filter_by_exclude_domains(
 
     filtered_articles: list[Article] = []
     for article in articles:
-        # Reuse the lowercased domain so the exclusion check mirrors the include
-        # path and stays easy to inspect in a debugger.
+        # Reuse the lowercased domain so inclusion and exclusion behave alike.
         article_domain = article.domain.lower()
         if all(
             excluded_domain not in article_domain for excluded_domain in exclude_domains
@@ -154,14 +152,14 @@ def filter_by_query_terms(
 
     filtered_articles: list[Article] = []
     for article in articles:
-        # Build one normalized text blob per article so term checks reuse the
-        # same representation regardless of the selected match mode.
+        # Build one normalized text value per article so every match mode sees
+        # the same text.
         searchable_text = build_searchable_text(article, search_scope)
         if match_mode == "all_terms":
             term_match = all(term in searchable_text for term in query_terms)
         else:
             # ``any_term`` is the only other local mode; invalid modes are
-            # rejected before ``SearchRequest`` objects are built.
+            # rejected before a ``SearchRequest`` is built.
             term_match = any(term in searchable_text for term in query_terms)
         if term_match:
             filtered_articles.append(article)
@@ -181,8 +179,7 @@ def filter_by_exact_phrase(
 
     matching_articles: list[Article] = []
     for article in articles:
-        # Phrase matching uses the same normalized text blob as term matching so
-        # both filters see the same field scope.
+        # Phrase and term matching use the same text fields.
         searchable_text = build_searchable_text(article, search_scope)
         if normalized_phrase in searchable_text:
             matching_articles.append(article)
@@ -234,7 +231,7 @@ def build_searchable_text(article: Article, search_scope: str) -> str:
         return normalize_for_match(article.title)
 
     # Keep provider-specific fields in one shared text blob so local matching
-    # works consistently even when adapters expose different metadata richness.
+    # works consistently even when sources return different fields.
     raw_fields = [getattr(article, field_name) for field_name in SEARCHABLE_FIELDS]
     return normalize_for_match(" ".join(raw_fields))
 

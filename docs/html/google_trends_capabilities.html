@@ -156,19 +156,19 @@ free <code>pytrends</code> library:
   </tr>
   <tr>
     <td>Related topics</td>
-    <td class="broken">broken upstream</td>
+    <td class="broken">Google endpoint no longer works</td>
     <td>Returns empty data since a Google backend change</td>
     <td>--</td>
   </tr>
   <tr>
     <td>Trending searches (today)</td>
-    <td class="broken">broken upstream</td>
+    <td class="broken">Google endpoint no longer works</td>
     <td>Endpoint removed by Google (HTTP 404)</td>
     <td>--</td>
   </tr>
   <tr>
     <td>Multirange comparison</td>
-    <td class="broken">broken upstream</td>
+    <td class="broken">Google endpoint no longer works</td>
     <td>Comparing different date ranges in one request fails (HTTP 400)</td>
     <td>--</td>
   </tr>
@@ -279,11 +279,11 @@ deliberately.
   with different windows are not directly comparable without rescaling.</li>
   <li><strong>Sampling noise.</strong> Google computes the index from a sample
   of searches. Fetching the identical request twice can return slightly
-  different values. Serious pipelines fetch several times and average.</li>
-  <li><strong>Not point-in-time.</strong> Today's fetch of 2025 data is not
+  different values. Serious research fetches several times and averages.</li>
+  <li><strong>Not historical as-of data.</strong> Today’s fetch of 2025 data is not
   what you would have seen in 2025. Backtesting on freshly fetched history
   carries revision risk. The honest fix is storing every fetch with its
-  timestamp and building your own point-in-time archive going forward.</li>
+  timestamp and building your own dated archive going forward.</li>
   <li><strong>Rate limiting.</strong> The endpoints are unofficial and
   aggressively rate limited (HTTP 429 after bursts). Bulk collection needs
   spacing, retries, and ideally caching.</li>
@@ -418,7 +418,7 @@ FastAPI routes            news-trends CLI
 <h3>Design decisions worth keeping, and why</h3>
 <ul>
   <li><strong>Trends is its own package, not a news provider.</strong> The
-  article pipeline normalizes records into one schema, filters, and
+  article process converts records into one common format, filters, and
   deduplicates. A 0-100 time series fits none of that, so forcing it into the
   provider registry would corrupt both abstractions.</li>
   <li><strong>The library hides behind one interface.</strong> Routes, CLI,
@@ -430,18 +430,18 @@ FastAPI routes            news-trends CLI
   framework run them in its worker thread pool, keeping the async event loop
   free for article searches.</li>
   <li><strong>The CLI skips the server.</strong> Unlike article search, Trends
-  needs no server-held credentials and no cross-provider orchestration, so
+  needs no server-held credentials and no coordination across sources, so
   <code>news-trends</code> calls the package directly and works without a
   running server.</li>
   <li><strong>Errors map by fault.</strong> Bad inputs (empty keywords, more
-  than five, bad resolution) return HTTP 422; upstream Google failures,
+  than five, bad resolution) return HTTP 422; Google service failures,
   including rate limits, return HTTP 502 with a plain-language message.</li>
   <li><strong>Every result carries <code>fetched_at</code>.</strong> Because
   Google samples and rescales, a stored result is only meaningful together
-  with when it was fetched. Stamping it from day one makes a future
+  with when it was fetched. Recording it from day one makes a future
   point-in-time archive possible.</li>
   <li><strong>Tests stay offline.</strong> Twenty-three tests covered frame
-  conversion, validation, retry rules, route serialization, and CLI rendering
+  conversion, validation, retry rules, route output, and CLI display
   through fake clients and fake DataFrames -- the same policy the project
   applies to news providers, since live Google behavior is not deterministic.</li>
 </ul>

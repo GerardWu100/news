@@ -4,20 +4,20 @@
 
 ## Goal
 
-Turn the working news-search repository into a smaller, installable, and easier
-to extend product without changing its search behavior. The current
-`src/news/` package is a sound foundation; the remaining work is mostly about
-runtime resources, configuration, test organization, and boundary cleanup.
+Turn the working news-search repository into a smaller, installable product
+that is easier to extend without changing its search behavior. The current
+`src/news/` package is a sound foundation; the remaining work is mainly about
+runtime files, settings, test organization, and cleaner boundaries.
 
-This plan uses **refactor** to mean changing code structure without intentionally
-changing externally visible behavior.
+Here, **refactor** means changing code structure without intentionally changing
+what users see.
 
 ## Audit Summary
 
 ### What is already good
 
 - Reusable Python code is under the `src/news/` package.
-- The API, command-line interface, search pipeline, exports, and provider
+- The API, command-line interface, search process, exports, and source
   adapters have distinct subpackages.
 - `pyproject.toml` defines canonical `news-server` and `news-search` commands.
 - The test suite is fast and does not require live provider credentials.
@@ -29,12 +29,12 @@ changing externally visible behavior.
 
 | Priority | Finding | Why it matters | Planned change |
 |---|---|---|---|
-| High | Frontend and configuration paths assume a source checkout | An installed wheel cannot reliably find repository-root files | Package static assets and make configuration lookup explicit |
-| High | `scripts/acled_oauth_token.py` contains reusable OAuth logic | A script should parse inputs and call package code, not own a full workflow | Move OAuth behavior into `src/news/` and leave a thin wrapper |
+| High | Browser and settings paths assume a source checkout | An installed wheel cannot reliably find repository-root files | Package browser files and make settings lookup explicit |
+| High | `scripts/acled_oauth_token.py` contains reusable OAuth logic | A script should read inputs and call package code, not own the whole process | Move OAuth behavior into `src/news/` and leave a small wrapper |
 | Medium | `tests/test_search_service.py` mixes several domains in one large file | Provider, validation, filtering, and orchestration changes collide | Split tests by the production responsibility they protect |
-| Medium | Runtime configuration is returned as untyped dictionaries | Misspelled or invalid values fail late or silently use defaults | Add a typed settings model with validation |
-| Medium | API documentation is manually maintained | Route changes can make the reference stale | Generate or contract-test the OpenAPI schema |
-| Low | Root guides and the detailed structure reference overlap | Duplicate file maps create documentation drift | Keep conceptual guidance in guides and a compact exact tree in the reference |
+| Medium | Runtime settings are returned as untyped dictionaries | Misspelled or invalid values fail late or silently use defaults | Add typed settings with validation |
+| Medium | API documentation is manually maintained | Route changes can make the reference stale | Generate or test the OpenAPI definition |
+| Low | Root guides and the detailed structure reference overlap | Repeated file maps drift apart | Keep guidance in the guides and one exact tree in the reference |
 
 ## Cleanup Completed on 2026-07-26
 

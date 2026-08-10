@@ -16,32 +16,32 @@
         <div class="topline">
             <div class="brand">
                 <span class="brand-mark" aria-hidden="true">N</span>
-                <span>Point-in-Time News</span>
+                <span>Historical News</span>
             </div>
-            <span class="workspace-label">Research workspace</span>
+            <span class="workspace-label">Market research</span>
         </div>
 
         <div class="hero-grid">
             <div class="hero-message">
-                <p class="eyebrow">Historical retrieval for market research</p>
-                <h1>See the story<br>before the outcome.</h1>
+                <p class="eyebrow">News research with a fixed cutoff</p>
+                <h1>Read the news<br>before the outcome.</h1>
                 <p class="hero-copy">
-                    Reconstruct what the news looked like inside a chosen time window.
-                    Explore market narratives without accidentally reading later coverage.
+                    Reconstruct what people could have read inside a chosen time window.
+                    Study the market story without accidentally reading later coverage.
                 </p>
                 <div class="hero-features" role="list" aria-label="Research features">
                     <span role="listitem">Inclusive dates</span>
                     <span role="listitem">Multiple sources</span>
-                    <span role="listitem">Export-ready</span>
+                    <span role="listitem">Downloadable</span>
                 </div>
             </div>
 
             <aside class="hero-principle">
                 <span class="principle-number">Research rule 01</span>
-                <strong>Freeze the information set before forming a view.</strong>
+                <strong>Set the cutoff before you form a view.</strong>
                 <p>
-                    Choose an end date, inspect only the records inside that boundary,
-                    then write down what you would have believed at the time.
+                    Choose an end date, read only the records inside it, then write down
+                    what you would have believed at the time.
                 </p>
             </aside>
         </div>
@@ -52,21 +52,21 @@
             <div class="panel-heading">
                 <span class="section-index">01</span>
                 <div>
-                    <p class="section-kicker">Define the information set</p>
+                    <p class="section-kicker">Choose what was available</p>
                     <h2>Build a historical search</h2>
                 </div>
                 <p class="panel-guidance">
-                    Start broad. Narrow by source or provider-specific filters only when
-                    the first result set is too noisy.
+                    Start broad. Narrow by source or source-specific filters only when
+                    the first results are too noisy.
                 </p>
             </div>
 
             <form class="search-form" id="search-form">
                 <div class="research-note">
-                    <strong>Point-in-time research mode</strong>
+                    <strong>Historical research mode</strong>
                     <span>
-                        The end date is your information boundary. Search results are limited
-                        to provider records dated inside the inclusive window.
+                        The end date is your cutoff. Results include only source records
+                        dated inside the inclusive window.
                     </span>
                 </div>
 
@@ -81,7 +81,7 @@
                         <input type="date" id="start-date" required>
                     </label>
                     <label class="primary-field date-field">
-                        <span>Through (as of)</span>
+                        <span>Through (cutoff)</span>
                         <input type="date" id="end-date" required>
                     </label>
                     <button type="submit" id="search-btn">Search</button>
@@ -94,70 +94,70 @@
                     </div>
 
                     <div class="control-group">
-                        <span class="control-label">Quick Filters</span>
+                        <span class="control-label">Quick filters</span>
                         <div class="inline-controls">
                             <label class="checkbox-label">
                                 <input type="checkbox" id="english-only">
-                                English Only
+                                English only
                             </label>
 
                             <label class="checkbox-label">
                                 <input type="checkbox" id="dedupe" checked>
-                                Deduplicate
+                                Remove duplicates
                             </label>
                         </div>
                     </div>
                 </div>
 
                 <details class="advanced-panel">
-                    <summary>Advanced Search</summary>
+                    <summary>More filters</summary>
                     <p class="advanced-copy">
-                        Provider-aware filters apply where supported: Guardian and NYT handle
-                        section-style filters, NewsAPI supports field-scoped search and domain
-                        exclusions, and GDELT/MediaCloud stay broad with stronger local filtering.
+                        Source-specific filters apply where supported: Guardian and NYT accept
+                        section filters, NewsAPI can search selected fields and domains, and
+                        GDELT/MediaCloud use broader source searches with local filtering.
                     </p>
                     <div class="advanced-grid">
                         <label>
-                            <span>Exact Phrase</span>
+                            <span>Exact phrase</span>
                             <input type="text" id="exact-phrase" placeholder="e.g. federal reserve">
                         </label>
 
                         <label>
-                            <span>Exclude Terms</span>
+                            <span>Exclude terms</span>
                             <input type="text" id="exclude-terms" placeholder="e.g. sports, gossip">
                         </label>
 
                         <label>
-                            <span>Include Domains</span>
+                            <span>Include domains</span>
                             <input type="text" id="domain-filter" placeholder="e.g. reuters.com, wsj.com">
                         </label>
 
                         <label>
-                            <span>Exclude Domains</span>
+                            <span>Exclude domains</span>
                             <input type="text" id="exclude-domains" placeholder="e.g. youtube.com, reddit.com">
                         </label>
 
                         <label>
-                            <span>Search Scope</span>
+                            <span>Search scope</span>
                             <select id="search-scope">
-                                <option value="all" selected>All Available Fields</option>
-                                <option value="title">Title Only</option>
+                                <option value="all" selected>All available fields</option>
+                                <option value="title">Title only</option>
                             </select>
                         </label>
 
                         <label>
-                            <span>Keyword Match</span>
+                            <span>Keyword match</span>
                             <select id="match-mode">
-                                <option value="provider" selected>Provider Default</option>
-                                <option value="all_terms">Require All Terms</option>
-                                <option value="any_term">Require Any Term</option>
+                                <option value="provider" selected>Source default</option>
+                                <option value="all_terms">Require all terms</option>
+                                <option value="any_term">Require any term</option>
                             </select>
                         </label>
 
                         <label>
-                            <span>Provider Ranking</span>
+                            <span>Source ranking</span>
                             <select id="provider-sort">
-                                <option value="default" selected>Provider Default</option>
+                                <option value="default" selected>Source default</option>
                                 <option value="newest">Newest</option>
                                 <option value="oldest">Oldest</option>
                                 <option value="relevance">Relevance</option>
@@ -171,31 +171,31 @@
                         </label>
 
                         <label>
-                            <span>NYT News Desk</span>
+                            <span>NYT news desk</span>
                             <input type="text" id="news-desk-filter" placeholder="e.g. Business Day, Washington">
                         </label>
 
                         <label>
-                            <span>Guardian Tag</span>
+                            <span>Guardian tag</span>
                             <input type="text" id="guardian-tag-filter" placeholder="e.g. business/economics">
                         </label>
 
                         <label>
-                            <span>NewsAPI Search In</span>
+                            <span>NewsAPI search in</span>
                             <select id="newsapi-search-in">
-                                <option value="all" selected>All Indexed Fields</option>
+                                <option value="all" selected>All indexed fields</option>
                                 <option value="title">Title</option>
                                 <option value="description">Description</option>
                                 <option value="content">Content</option>
-                                <option value="title,description">Title + Description</option>
-                                <option value="title,content">Title + Content</option>
-                                <option value="description,content">Description + Content</option>
-                                <option value="title,description,content">Title + Description + Content</option>
+                                <option value="title,description">Title + description</option>
+                                <option value="title,content">Title + content</option>
+                                <option value="description,content">Description + content</option>
+                                <option value="title,description,content">Title + description + content</option>
                             </select>
                         </label>
 
                         <label>
-                            <span>Sort Order</span>
+                            <span>Sort order</span>
                             <select id="sort-order">
                                 <option value="date_desc" selected>Newest First</option>
                                 <option value="date_asc">Oldest First</option>
@@ -211,7 +211,7 @@
                 <span class="section-index">02</span>
                 <div>
                     <p class="section-kicker">Review the archive</p>
-                    <h2>Evidence available at the time</h2>
+                    <h2>What was available then</h2>
                 </div>
             </div>
             <div class="window-banner" id="window-banner" hidden></div>
@@ -227,7 +227,7 @@
             <p class="visually-hidden" id="a11y-status" role="status" aria-live="polite" aria-atomic="true"></p>
             <div class="results" id="results" aria-busy="false">
                 <div class="research-start">
-                    <p class="research-start-kicker">A disciplined first pass</p>
+                    <p class="research-start-kicker">A useful first pass</p>
                     <h3>Search, inspect, then form a view.</h3>
                     <div class="research-steps">
                         <div>
@@ -237,13 +237,13 @@
                         </div>
                         <div>
                             <span>2</span>
-                            <strong>Read across sources</strong>
+                            <strong>Compare sources</strong>
                             <p>Look for disagreement, missing context, and changes in tone.</p>
                         </div>
                         <div>
                             <span>3</span>
-                            <strong>Record the thesis</strong>
-                            <p>Write the signal before checking what the market did next.</p>
+                            <strong>Record your view</strong>
+                            <p>Write it down before checking what the market did next.</p>
                         </div>
                     </div>
                 </div>
@@ -251,7 +251,7 @@
             <div class="pagination-shell" id="pagination-shell" hidden>
                 <button class="pager-btn" id="previous-page-btn" type="button">Previous</button>
                 <span class="pagination-label" id="pagination-label">Page 1</span>
-                <button class="pager-btn" id="next-page-btn" type="button">Next Page</button>
+                <button class="pager-btn" id="next-page-btn" type="button">Next page</button>
             </div>
         </section>
     </main>

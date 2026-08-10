@@ -1,4 +1,4 @@
-"""Static contract tests for the self-hosted Docker deployment files."""
+"""Static tests for the self-hosted Docker deployment files."""
 
 from __future__ import annotations
 

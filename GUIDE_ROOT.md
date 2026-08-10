@@ -1,79 +1,70 @@
 # GUIDE_ROOT
 
-## Part 1 -- Conceptual Explanation
+## Part 1 -- What the root contains
 
-### Purpose
-
-The project root coordinates an installable historical news-retrieval product.
-The Python package owns the API, command-line interface (CLI), provider
-adapters, search pipeline, exports, validated settings, and static browser
-assets. Root files configure development, document usage, and provide local
-operator overrides.
+The repository root ties together an installable historical news-retrieval
+product. The Python package owns the API, CLI, source adapters, search rules,
+exports, validated settings, and browser files. Root files hold development
+configuration, user documentation, and local operator settings.
 
 ### Runtime flow
 
-1. `news-server` resolves optional credentials, validated configuration, and
-   configurable bind settings.
-2. The application factory builds an isolated process cache and binds provider
-   execution and status dependencies.
-3. Browser or CLI inputs become one validated search request.
-4. Requested providers execute concurrently and normalize their records.
-5. Local filtering, conservative deduplication, and stable sorting produce one
-   provider page.
-6. The API returns JavaScript Object Notation (JSON); the CLI can also write
-   comma-separated values (CSV), JSON, or SQLite.
+1. `news-server` reads optional credentials, settings, and bind options.
+2. The application factory creates a local cache and connects the source
+   request and status functions.
+3. Browser or CLI input becomes one validated search request.
+4. Selected sources are queried in parallel and their records are normalized.
+5. Local filtering, cautious duplicate removal, and stable sorting produce one
+   source page.
+6. The API returns JSON; the CLI can also write CSV, JSON, or SQLite.
 
-### Runtime and generated state
+### Runtime files and generated files
 
-- `.env` in the process working directory holds optional provider credentials
-  plus the optional `NEWS_SERVER_URL` CLI default and is never tracked.
-- External TOML overrides packaged defaults through `--config`, `NEWS_CONFIG`,
-  or current-directory `config.toml`, in that order.
-- Docker seeds the repository defaults into the mounted
-  `${HOME}/.containers/news` data directory once, then preserves operator
-  changes across image rebuilds.
-- Exports, environments, caches, logs, and build artifacts are generated only
-  when needed and remain ignored.
+- `.env` in the process working directory holds optional credentials and the
+  optional `NEWS_SERVER_URL` CLI default. It is never tracked.
+- External TOML settings override packaged defaults through `--config`,
+  `NEWS_CONFIG`, or `config.toml` in the current directory, in that order.
+- Docker seeds the repository defaults into `${HOME}/.containers/news` once and
+  keeps operator changes across image rebuilds.
+- Exports, environments, caches, logs, and build files are created only when
+  needed and remain ignored.
 - The checked-in OpenAPI schema is generated from the application and tested as
-  the public HTTP contract.
+  the public HTTP definition.
 
-The exact implemented tree and responsibility table live only in
-`docs/reference/PROJECT_STRUCTURE.md`. The high-level system view is in
+The exact tree and responsibility table are in
+`docs/reference/PROJECT_STRUCTURE.md`. The system-level explanation is in
 `GUIDE_OVERVIEW.md`.
 
-## Part 2 -- Code Reference
+## Part 2 -- Code reference
 
-- `README.md`: user setup, canonical commands, and documentation entry points.
+- `README.md`: setup, normal commands, and documentation links.
 - `pyproject.toml`: dependencies, package discovery, package data, and commands.
-- `config.toml`: documented local frontend and cache overrides.
-- `.env.example`: secret-free provider credential template.
+- `config.toml`: local browser and cache settings.
+- `.env.example`: secret-free credential template.
 - `Dockerfile`, `docker-compose.yml`, and `docker-entrypoint.sh`: self-hosted
-  image, deployment defaults, persistent configuration seeding, and a
-  Dockerized CLI client.
-- `.dockerignore`: excludes development, secret, test, documentation, and local
-  artifact files from the image build context.
+  image, deployment defaults, persistent settings, and Dockerized CLI use.
+- `.dockerignore`: files excluded from the image build context.
 - `.agents/skills/summarize-news-cli/`: workspace-only agent procedure for
-  CLI retrieval and evidence-bounded news summaries.
+  retrieval and evidence-bounded summaries.
 - `blog/`: local article source; it is not a website publish target.
 - `src/`: importable implementation and installed resources; start with
   `src/GUIDE_src.md`.
-- `scripts/`: thin local workflow commands; see `scripts/GUIDE_scripts.md`.
-- `tests/`: deterministic tests organized by production responsibility; see
+- `scripts/`: small local commands; see `scripts/GUIDE_scripts.md`.
+- `tests/`: deterministic tests by production responsibility; see
   `tests/GUIDE_tests.md`.
-- `docs/user/`: user-facing API documentation.
-- `docs/reference/`: exact developer structure and generated OpenAPI contract.
-- `docs/plans/`: implementation plans, whose checkboxes distinguish completed
-  and outstanding work.
+- `docs/user/`: user-facing API and Docker documentation.
+- `docs/reference/`: exact structure and generated OpenAPI definition.
+- `docs/plans/`: plans, with checkboxes for completed and outstanding work.
 
-## Part 3 -- Short Journal
+## Part 3 -- Short journal
 
-- 2026-07-26: Removed obsolete research artifacts and kept Git history as their recovery path.
-- 2026-07-26: Packaged browser assets and defaults so installed wheels do not depend on repository-parent traversal.
-- 2026-07-26: Replaced permissive configuration dictionaries with immutable validated settings and explicit cache injection.
-- 2026-07-26: Made package exports, application dependencies, and the generated OpenAPI schema explicit contracts.
-- 2026-07-26: Kept API module imports free of configuration reads so `news-server --config` is resolved before application construction.
-- 2026-07-29: Mirrored the podcast-downloader Docker operations pattern while keeping the unauthenticated API loopback-only and reserving host port 50023.
-- 2026-07-29: Made remote agent endpoints configurable through `NEWS_SERVER_URL` and kept the summary skill local to this workspace.
-- 2026-08-08: Moved lint rules into `pyproject.toml` so import order and modern-syntax rewrites are decided by ruff instead of by hand.
-- 2026-08-08: Gave `Article` one accessor for its provenance so the "no recorded sources means the originating source" rule is interpreted in a single place.
-- 2026-08-08: Made every browser render function announce its own outcome, because pairing announcements with render calls by hand had already left two error paths silent.
+- 2026-07-26: Removed obsolete research files and kept Git history as their recovery path.
+- 2026-07-26: Packaged browser assets and defaults so an installed wheel does not need to search above the package directory.
+- 2026-07-26: Replaced loose configuration dictionaries with validated settings and passed the cache explicitly.
+- 2026-07-26: Made package exports, application dependencies, and the generated OpenAPI schema explicit public definitions.
+- 2026-07-26: Kept API imports free of configuration reads so `news-server --config` is resolved before the application is built.
+- 2026-07-29: Followed the Docker operations pattern used by the podcast downloader while keeping the unauthenticated API on loopback and reserving port 50023.
+- 2026-07-29: Made remote agent addresses configurable through `NEWS_SERVER_URL` and kept the summary skill local to this workspace.
+- 2026-08-08: Moved lint rules into `pyproject.toml` so ruff, rather than manual judgment, decides import order and modern-syntax rewrites.
+- 2026-08-08: Gave `Article` one accessor for source history so its fallback rule is applied in one place.
+- 2026-08-08: Made every browser display function announce its result because two error paths had previously stayed silent.

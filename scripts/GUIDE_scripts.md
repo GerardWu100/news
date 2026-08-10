@@ -4,14 +4,14 @@
 
 ### Purpose
 
-The `scripts/` folder holds a thin credential-bootstrap command outside the
-importable `src/news/` product package. Reusable ACLED request, response
-validation, and dotenv persistence behavior lives in the source package.
+The `scripts/` folder holds small setup commands outside the importable
+`src/news/` package. The source package owns the reusable ACLED request,
+response checks, and `.env` update logic.
 
 ### Main scripts
 
-- `acled_oauth_token.py`: requests an ACLED OAuth token and persists the bearer
-  fields required by the ACLED provider to the root `.env`.
+- `acled_oauth_token.py`: requests an ACLED OAuth token and saves the bearer
+  fields needed by the ACLED source to the root `.env`.
 - `generate_openapi.py`: regenerates the checked-in HTTP API contract from the
   application routes and response models.
 
@@ -20,9 +20,9 @@ validation, and dotenv persistence behavior lives in the source package.
 - `acled_oauth_token.py`
   - Resolves the project root from `scripts/`.
   - Loads OAuth login fields from `.env`.
-  - Calls the reusable package workflow.
-  - Maps input, network, and provider errors to concise terminal messages.
-  - Prints masked token metadata after successful persistence.
+  - Calls the reusable package function.
+  - Turns input, network, and source errors into short terminal messages.
+  - Prints masked token details after saving the token.
   - Deliberately does not save the raw OAuth response because it contains
     credentials.
 
@@ -31,11 +31,11 @@ injected network and clock functions so its tests never use a live provider or
 real credential.
 
 - `generate_openapi.py`
-  - Constructs the configured application without starting a server.
+  - Builds the configured application without starting a server.
   - Writes stable, sorted JSON to `docs/reference/openapi.json`.
   - Accepts `--output PATH` for review or tooling workflows.
 
-Regenerate the public contract from the repository root:
+Regenerate the public API definition from the repository root:
 
 ```bash
 uv run python scripts/generate_openapi.py

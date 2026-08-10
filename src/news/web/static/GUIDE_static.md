@@ -5,21 +5,21 @@
 ### Purpose
 
 The `static/` folder contains the entire browser client: one HTML shell, one
-CSS file, and a small set of JavaScript modules. These assets ship as package
-data so the browser works from both a source checkout and an installed wheel.
-The frontend is dependency-light and focuses only on retrieval:
+CSS file, and a small set of JavaScript modules. These files ship with the
+package so the browser works from both a source checkout and an installed
+wheel. The frontend is dependency-light and focuses only on retrieval:
 
-- explaining the point-in-time research method before the form,
+- explaining the historical cutoff before the form,
 - restoring searches from the browser URL,
-- keeping the inclusive publication window visible as an information boundary,
-- rendering the current provider page,
-- showing per-source execution status,
+- keeping the inclusive publication window visible as a date cutoff,
+- displaying the current source page,
+- showing the status of each source request,
 - downloading the exact visible page as JSON or CSV,
 - copying a shareable query link,
-- keeping pagination state coherent during async loads,
+- keeping page navigation correct during asynchronous loads,
 - and opening an in-app article detail dialog.
 
-It no longer renders analytics cards or breakdown charts.
+It no longer shows analytics cards or breakdown charts.
 
 The visual hierarchy follows the research workflow. The editorial masthead
 states the purpose and the information-set rule; the numbered search workspace
@@ -36,20 +36,20 @@ technology receives the same grouping visible in the layout.
 
 1. On load, the page fetches `/api/config` and `/api/sources`.
 2. Configured default sources are preselected, and the default date range is initialized in browser-local calendar time.
-3. If the browser URL already contains a search query, the form is hydrated from that URL and the search is rerun automatically.
+3. If the browser URL already contains a search query, the form is restored from that URL and the search runs again automatically.
 4. When the form is submitted, obvious bad date ranges are rejected locally.
 5. The active search state is mirrored into the browser URL.
 6. `/api/search` is called with the selected parameters.
-7. The page renders:
-   - the active point-in-time information window,
+7. The page displays:
+   - the active historical date window,
    - a search summary line,
    - JSON, CSV, and copy-link actions,
    - source execution chips,
    - result cards,
    - previous/next provider-page controls.
-8. Pagination requests the next or previous provider page without committing the new page number until the request succeeds.
+8. Page navigation requests the next or previous source page without changing the page number until the request succeeds.
 9. Clicking a result card opens an in-app dialog that shows provider-supplied context text already present in the API response.
-10. The article dialog link is rendered only after URL validation and attribute escaping.
+10. The article dialog link appears only after URL validation and attribute escaping.
 
 ## Part 2 -- Folder Tree and File Map
 
@@ -61,10 +61,10 @@ static/
 ├── styles.css            -- Shared editorial theme, layout, cards, and dialog styles.
 └── scripts/
     ├── api.js            -- API helpers for config, sources, and search calls.
-    ├── app.js            -- UI orchestration, submission, pagination, export, and share-link actions.
+    ├── app.js            -- UI coordination, submission, page navigation, export, and share-link actions.
     ├── form.js           -- Form reading, URL hydration/sync, and export/share-link helpers.
-    ├── render.js         -- Boundary, result, action, status, dialog, and safe-link rendering.
-    └── state.js          -- In-memory state container for the active search.
+    ├── render.js         -- Cutoff, result, action, status, dialog, and safe-link display.
+    └── state.js          -- In-memory state for the active search.
 ```
 
 ## Part 3 -- Code Reference
@@ -75,7 +75,7 @@ static/
   controls, research-method card, first-use instructions, information-boundary
   banner, result actions, pagination, and dialog.
 - Places exact-page JSON/CSV downloads and the copy-link button beside the
-  rendered meta summary.
+  displayed search summary.
 - Loads the packaged SVG favicon, stylesheet, and JavaScript entrypoint.
 
 ### `styles.css`
@@ -107,27 +107,27 @@ static/
 ### `scripts/render.js`
 
 Every function that replaces the results region also writes a short sentence to
-the polite live region, so a caller cannot render a state that a screen reader
+the polite live region, so a caller cannot display a state that a screen reader
 never hears.
 
 - `setSearchLoading(...)`: disables and relabels the search button and sets
   `aria-busy` on the results region for the duration of a request.
 - `renderSources(...)`: draws source checkboxes and applies configured defaults.
-- `renderMeta(...)`: shows the current provider page, counts, and latency.
-- `renderResearchWindow(...)`: shows the inclusive information boundary.
+- `renderMeta(...)`: shows the current source page and counts.
+- `renderResearchWindow(...)`: shows the inclusive date cutoff.
 - `renderResultActions(...)`: binds exact-page JSON and CSV downloads.
-- `renderSourceReports(...)`: shows source execution chips.
-- `renderResults(...)`: renders the current page of result cards and announces
+- `renderSourceReports(...)`: shows source request status chips.
+- `renderResults(...)`: displays the current page of result cards and announces
   how many landed on which page.
 - `renderArticleDialog(...)`: opens the in-app detail dialog for one result.
-- `buildSafeArticleUrl(...)`: validates dialog URLs before they are rendered.
-- `escapeAttribute(...)`: escapes attribute values used in rendered links.
+- `buildSafeArticleUrl(...)`: validates dialog URLs before they are displayed.
+- `escapeAttribute(...)`: escapes attribute values used in links.
 - `renderPagination(...)`: controls the previous/next page buttons and label.
 - `clearStatus()`: clears result status and hides the boundary and action group.
 
 ### `scripts/state.js`
 
-- Stores the active query object, current results, current page, pagination flags, abort controller, and last metadata payload.
+    - Stores the active query object, current results, current page, page flags, request-cancellation controller, and last search details.
 
 ### `scripts/app.js`
 

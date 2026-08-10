@@ -1,1 +1,1 @@
-"""Search validation, transformation, cache, and orchestration tests."""
+"""Search validation, transformation, cache, and coordination tests."""

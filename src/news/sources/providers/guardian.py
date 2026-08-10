@@ -1,7 +1,7 @@
-"""Adapter for the Guardian Open Platform content search endpoint.
+"""Adapter for the Guardian Open Platform search endpoint.
 
-The adapter queries Guardian article metadata and optional rich text fields,
-then maps each record into the shared ``Article`` model.
+The adapter reads Guardian article details and optional text fields, then maps
+each record to the common ``Article`` model.
 """
 
 from __future__ import annotations
@@ -22,7 +22,7 @@ GUARDIAN_ORDER_BY_PROVIDER = frozenset({"newest", "oldest", "relevance"})
 
 
 class GuardianSource(BaseSource):
-    """Adapter for the Guardian content search endpoint."""
+    """Read articles from the Guardian content search endpoint."""
 
     name = "guardian"
     display_name = "The Guardian"
@@ -31,14 +31,14 @@ class GuardianSource(BaseSource):
     _BASE_URL = "https://content.guardianapis.com/search"
 
     def is_available(self) -> bool:
-        """Return ``True`` when ``GUARDIAN_API_KEY`` exists in the environment."""
+        """Return ``True`` when ``GUARDIAN_API_KEY`` is set."""
         return bool(os.getenv("GUARDIAN_API_KEY"))
 
     async def search(
         self,
         options: SourceSearchOptions,
     ) -> SourcePageResult:
-        """Query the Guardian API and normalize the returned article records."""
+        """Read Guardian results and convert them to article records."""
         api_key = os.getenv("GUARDIAN_API_KEY", "")
         async with httpx.AsyncClient(timeout=build_timeout()) as client:
             params = {
@@ -76,7 +76,7 @@ class GuardianSource(BaseSource):
 
     @staticmethod
     def _to_article(raw: dict) -> Article:
-        """Convert one Guardian result object into the unified ``Article``."""
+        """Convert one Guardian result to the common ``Article`` format."""
         fields = raw.get("fields") or {}
         url = raw.get("webUrl", "")
         return Article(
@@ -96,7 +96,7 @@ class GuardianSource(BaseSource):
 
 
 def _compact_text(raw_html: str) -> str:
-    """Strip HTML and trim long Guardian text fields for the API payload."""
+    """Strip HTML and limit long Guardian text fields for the API response."""
     if not raw_html:
         return ""
 

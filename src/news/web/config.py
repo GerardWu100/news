@@ -1,8 +1,8 @@
-"""Load and validate immutable application settings.
+"""Load and validate application settings.
 
-Packaged TOML defines every default once. An external TOML file may override a
-subset of those values, but unknown tables, misspelled keys, invalid provider
-names, and non-positive cache limits fail before the application starts.
+Packaged TOML defines each default once. An external TOML file may override a
+subset, but unknown tables, misspelled keys, invalid source names, and
+non-positive cache limits fail before the application starts.
 """
 
 from __future__ import annotations
@@ -23,7 +23,7 @@ CACHE_SETTING_KEYS = frozenset({"ttl_seconds", "max_entries"})
 
 
 class SettingsError(ValueError):
-    """Raised when application configuration is missing or invalid."""
+    """Raised when application settings are missing or invalid."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -35,14 +35,14 @@ class FrontendSettings:
     default_english_only : bool
         Whether the initial browser form selects English-only filtering.
     default_sources : tuple[str, ...]
-        Ordered provider names selected when the browser first loads.
+        Ordered source names selected when the browser first loads.
     """
 
     default_english_only: bool
     default_sources: tuple[str, ...]
 
     def to_dict(self) -> dict[str, object]:
-        """Return a JavaScript Object Notation (JSON)-compatible mapping."""
+        """Return a mapping that can be converted to JSON."""
         return {
             "default_english_only": self.default_english_only,
             "default_sources": list(self.default_sources),
@@ -56,9 +56,9 @@ class CacheSettings:
     Attributes
     ----------
     ttl_seconds : int
-        Time to live (TTL) for each cached search result, in seconds.
+        Number of seconds to keep each cached search result.
     max_entries : int
-        Maximum number of live search results retained in one process.
+        Maximum number of current search results kept in one process.
     """
 
     ttl_seconds: int
@@ -67,14 +67,14 @@ class CacheSettings:
 
 @dataclass(frozen=True, slots=True)
 class AppSettings:
-    """Complete immutable application settings."""
+    """Complete application settings."""
 
     frontend: FrontendSettings
     cache: CacheSettings
 
 
 def load_settings(path: Path | str | None = None) -> AppSettings:
-    """Load packaged defaults, apply an external override, and validate.
+    """Load packaged defaults, apply an external override, and validate them.
 
     Parameters
     ----------
@@ -84,7 +84,7 @@ def load_settings(path: Path | str | None = None) -> AppSettings:
     Returns
     -------
     AppSettings
-        Validated immutable settings for application construction.
+        Validated settings for building the application.
 
     Raises
     ------
@@ -117,7 +117,7 @@ def _read_packaged_defaults() -> dict[str, Any]:
 
 
 def _read_toml_path(path: Path) -> dict[str, Any]:
-    """Read one external TOML file with a configuration-focused error."""
+    """Read one external TOML file and report settings errors clearly."""
     try:
         with path.open("rb") as config_file:
             return tomllib.load(config_file)
@@ -132,7 +132,7 @@ def _read_toml_path(path: Path) -> dict[str, Any]:
 
 
 def _validate_known_keys(config: Mapping[str, Any], *, source: str) -> None:
-    """Reject unknown tables and setting names before value parsing."""
+    """Reject unknown tables and setting names before reading values."""
     _reject_unknown_keys(config, ROOT_SETTING_KEYS, location=source)
     for table_name, allowed_keys in (
         ("frontend", FRONTEND_SETTING_KEYS),
@@ -154,7 +154,7 @@ def _reject_unknown_keys(
     *,
     location: str,
 ) -> None:
-    """Raise for misspelled or unsupported configuration keys."""
+    """Raise for misspelled or unsupported settings."""
     unknown_keys = sorted(set(values) - allowed_keys)
     if unknown_keys:
         joined_keys = ", ".join(unknown_keys)
@@ -167,7 +167,7 @@ def _merge_tables(
     defaults: Mapping[str, Any],
     overrides: Mapping[str, Any],
 ) -> dict[str, Any]:
-    """Overlay external table values on independent copies of defaults."""
+    """Apply external table values to independent copies of the defaults."""
     merged = {
         table_name: dict(table_values) for table_name, table_values in defaults.items()
     }
@@ -191,8 +191,8 @@ def _parse_settings(config: Mapping[str, Any]) -> AppSettings:
     ):
         raise SettingsError("frontend.default_sources must be an array of source names")
 
-    # Normalize once, then compare against the registry used by provider
-    # selection so configuration and runtime recognize the same source names.
+    # Clean names once, then compare them with the registry used for source
+    # selection so settings and runtime use the same names.
     normalized_sources = tuple(source.strip().lower() for source in raw_sources)
     known_sources = source_names()
     invalid_sources = sorted(set(normalized_sources) - known_sources)

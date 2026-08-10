@@ -1,44 +1,44 @@
-# API Reference
+# API reference
 
 Base URL when running locally: `http://127.0.0.1:8000`
 
-## Common Query Parameters
+## Common query parameters
 
-The search and export endpoints share the same request shape.
+The search and export routes accept the same parameters.
 
 | Name | Type | Default | Meaning |
 |---|---|---|---|
-| `q` | string | required | Query string |
+| `q` | string | required | Search text |
 | `start` | string | required | Start date `YYYY-MM-DD` |
 | `end` | string | required | End date `YYYY-MM-DD` |
 | `sources` | string | `""` | Comma-separated source names |
 | `language` | string | `""` | Language filter |
-| `dedupe` | bool | `true` | Enable deduplication |
-| `exact_phrase` | string | `""` | Exact phrase requirement |
-| `exclude_terms` | string | `""` | Comma-separated exclusion terms |
-| `domain` | string | `""` | Include domains |
-| `exclude_domains` | string | `""` | Exclude domains |
+| `dedupe` | bool | `true` | Remove repeated articles |
+| `exact_phrase` | string | `""` | Phrase that must appear |
+| `exclude_terms` | string | `""` | Comma-separated terms to exclude |
+| `domain` | string | `""` | Domains to include |
+| `exclude_domains` | string | `""` | Domains to exclude |
 | `search_scope` | string | `all` | `all` or `title` |
 | `match_mode` | string | `provider` | `provider`, `all_terms`, or `any_term` |
-| `provider_sort` | string | `default` | Upstream sort mode |
+| `provider_sort` | string | `default` | Source sort mode |
 | `section` | string | `""` | Section filters |
 | `news_desk` | string | `""` | NYT desk filters |
 | `guardian_tag` | string | `""` | Guardian tags |
 | `newsapi_search_in` | string | `all` | NewsAPI field scope |
 | `sort` | string | `date_desc` | `date_desc` or `date_asc` |
-| `page` | integer | `1` | 1-based provider page |
+| `page` | integer | `1` | 1-based source page |
 
-Validation notes:
+Validation rules:
 
-- dates must use strict `YYYY-MM-DD`
-- `start` must be on or before `end`
-- date range cannot exceed 366 days
-- unknown source names return HTTP 422
+- Dates must use strict `YYYY-MM-DD`.
+- `start` must be on or before `end`.
+- A date range cannot exceed 366 days.
+- An unknown source returns HTTP 422.
 
 ## `GET /api/config`
 
-Returns the validated frontend settings resolved from an explicit path,
-`NEWS_CONFIG`, current-directory `config.toml`, or packaged defaults.
+Returns the validated browser settings chosen from an explicit path,
+`NEWS_CONFIG`, `config.toml` in the current directory, or packaged defaults.
 
 ### Example
 
@@ -57,7 +57,7 @@ curl "http://127.0.0.1:8000/api/config"
 
 ## `GET /api/sources`
 
-Returns provider availability and descriptions.
+Returns source availability and descriptions.
 
 ### Example
 
@@ -80,7 +80,8 @@ curl "http://127.0.0.1:8000/api/sources"
 
 ## `GET /api/search`
 
-Runs one validated provider-page search and returns normalized articles plus metadata.
+Runs one validated source-page search and returns normalized articles and
+search details.
 
 ### Example
 
@@ -151,36 +152,28 @@ curl "http://127.0.0.1:8000/api/search?q=inflation&start=2025-01-01&end=2025-03-
 
 ## `GET /api/export/csv`
 
-Runs the same single-page search as `/api/search` and returns a downloadable CSV file.
-
-### Example
+Runs the same single-page search as `/api/search` and returns a downloadable
+CSV file.
 
 ```bash
 curl -OJ "http://127.0.0.1:8000/api/export/csv?q=inflation&start=2025-01-01&end=2025-03-01"
 ```
 
-### Response
-
-- content type: `text/csv`
-- content disposition: attachment
+Response: `text/csv` with an attachment disposition.
 
 ## `GET /api/export/json`
 
-Runs the same single-page search as `/api/search` and returns the raw article array as a downloadable JSON file.
-
-### Example
+Runs the same single-page search as `/api/search` and returns the article list
+as a downloadable JSON file.
 
 ```bash
 curl -OJ "http://127.0.0.1:8000/api/export/json?q=inflation&start=2025-01-01&end=2025-03-01"
 ```
 
-### Response
+Response: `application/json` with an attachment disposition and a JSON array of
+normalized article objects.
 
-- content type: `application/json`
-- content disposition: attachment
-- body: JSON array of normalized article objects
-
-## Error Responses
+## Error responses
 
 ### Validation failure
 
@@ -192,19 +185,15 @@ HTTP 422:
 }
 ```
 
-Other common validation failures:
+Other common failures are an empty query, invalid date format, reversed dates,
+a range longer than 366 days, or an invalid value for `match_mode`,
+`search_scope`, `provider_sort`, `sort`, or `newsapi_search_in`.
 
-- empty query
-- invalid date format
-- reversed date range
-- date range longer than 366 days
-- invalid enum value for `match_mode`, `search_scope`, `provider_sort`, `sort`, or `newsapi_search_in`
-
-## OpenAPI Contract
+## OpenAPI definition
 
 The generated OpenAPI schema is checked in at
-`docs/reference/openapi.json`. Tests compare it with the current FastAPI routes
-and response models so a public contract change must be reviewed explicitly.
+`docs/reference/openapi.json`. Tests compare it with the current FastAPI
+routes and response models, so a public API change must be reviewed explicitly.
 
 Regenerate it after an intentional API change:
 

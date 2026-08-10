@@ -1,8 +1,7 @@
-"""Provider registry and concurrent fan-out orchestration.
+"""Source registry and parallel search coordination.
 
-The source layer owns adapter registration, source-availability reporting, and
-fault-isolated fan-out execution so one failing provider cannot break the full
-search response.
+The source layer registers adapters, reports availability, and isolates failures
+so one source cannot stop the complete search response.
 """
 
 from __future__ import annotations
@@ -32,7 +31,7 @@ __all__ = [
 
 @dataclass(frozen=True, slots=True)
 class SourceQueryReport:
-    """Per-source execution summary."""
+    """Summary of one source request."""
 
     name: str
     display_name: str
@@ -43,7 +42,7 @@ class SourceQueryReport:
     error: str = ""
 
     def to_dict(self) -> dict[str, object]:
-        """Serialize the report for the API response."""
+        """Turn the report into data for the API response."""
         return {
             "name": self.name,
             "display_name": self.display_name,
@@ -56,7 +55,7 @@ class SourceQueryReport:
 
 
 def get_source_status() -> list[dict[str, object]]:
-    """Return lightweight source metadata for the frontend status panel."""
+    """Return source descriptions and availability for the browser."""
     return [
         {
             "name": s.name,
@@ -72,25 +71,25 @@ async def search_all_detailed(
     options: SourceSearchOptions,
     source_names: Sequence[str] | None = None,
 ) -> tuple[list[Article], list[SourceQueryReport]]:
-    """Query selected providers concurrently and return rows plus source reports.
+    """Query selected sources in parallel and return articles plus reports.
 
     Parameters
     ----------
     options : SourceSearchOptions
-        Validated provider-facing query options.
+        Validated options in the format source adapters expect.
     source_names : Sequence[str] | None, optional
-        Explicit source-name allowlist from the caller. ``None`` means use all
-        currently available adapters.
+        Explicit source names from the caller. ``None`` means use every source
+        that is currently available.
 
     Returns
     -------
     tuple[list[Article], list[SourceQueryReport]]
-        Merged article rows and one execution report per requested source.
+        Merged articles and one report for each requested source.
     """
     if source_names is not None:
         requested_names = list(dict.fromkeys(source_names))
     else:
-        # Default behavior queries every currently available adapter.
+        # With no explicit list, query every source that is available now.
         requested_names = [
             source.name for source in ALL_SOURCES if source.is_available()
         ]
@@ -98,13 +97,13 @@ async def search_all_detailed(
     reports: list[SourceQueryReport] = []
 
     for source in ALL_SOURCES:
-        # Skip adapters the caller did not request.
+        # Skip sources the caller did not request.
         requested = source.name in requested_names
         if not requested:
             continue
 
-        # Preserve requested-but-unavailable sources in the report so callers
-        # can distinguish "no results" from "missing credentials".
+        # Keep unavailable requested sources in the report so callers can tell
+        # the difference between "no results" and "missing credentials".
         if not source.is_available():
             reports.append(
                 SourceQueryReport(
@@ -119,8 +118,8 @@ async def search_all_detailed(
             continue
         selected_sources.append(source)
 
-    # If every requested source is unavailable, return the reports immediately
-    # without launching empty fan-out tasks.
+    # If every requested source is unavailable, return without starting empty
+    # tasks.
     if not selected_sources:
         return [], reports
 
@@ -128,9 +127,8 @@ async def search_all_detailed(
     source_pages = await asyncio.gather(*tasks)
 
     articles: list[Article] = []
-    # gather() preserves task order, so the two sequences are the same length;
-    # strict=True turns any future drift into an error instead of dropping the
-    # trailing sources silently from the reports.
+    # gather() keeps task order. strict=True turns a future length mismatch into
+    # an error instead of silently dropping a source from the reports.
     for source, (page, error_message) in zip(
         selected_sources, source_pages, strict=True
     ):
@@ -154,7 +152,7 @@ async def _safe_search(
     source: BaseSource,
     options: SourceSearchOptions,
 ) -> tuple[SourcePageResult, str]:
-    """Catch per-source failures so one adapter cannot abort the fan-out."""
+    """Catch one source failure so it cannot stop the other searches."""
     try:
         page = await source.search(options)
         return page, ""
@@ -164,7 +162,7 @@ async def _safe_search(
 
 
 def _format_source_error(exc: Exception) -> str:
-    """Map raw adapter errors into user-facing source report messages."""
+    """Turn adapter errors into short messages for the source report."""
     if isinstance(exc, RuntimeError) and str(exc).strip():
         return str(exc)
 

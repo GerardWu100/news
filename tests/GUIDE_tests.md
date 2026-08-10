@@ -5,22 +5,21 @@
 ### Purpose
 
 The test tree mirrors production responsibilities so a failure points to the
-boundary or subsystem that owns it. All default tests are deterministic and
-offline. Live provider behavior is excluded because credentials, network
-conditions, rate limits, and changing upstream records would make the core
-suite unreliable.
+part of the system that owns it. Default tests are deterministic and offline.
+Live source behavior is excluded because credentials, network conditions, rate
+limits, and changing source records would make the core suite unreliable.
 
 The suite protects:
 
-- API routes, settings startup, and error mapping;
+- API routes, settings startup, and error messages;
 - CLI parsing and output;
 - export formats and local database cleanup;
-- request validation, filtering, deduplication, caching, and orchestration;
-- OAuth, retry infrastructure, and individual provider adapters;
+- request validation, filtering, duplicate removal, caching, and coordination;
+- OAuth, retry code, and individual source adapters;
 - browser link safety and wheel-installed runtime assets.
 - Docker build, bind, persistence, and entrypoint contracts.
 
-Shared builders live in `fixtures/` and are named for the contract they create.
+Shared builders live in `fixtures/` and are named for the data they create.
 There is no catch-all helper module.
 
 ## Part 2 -- Folder Tree and File Map
@@ -89,11 +88,11 @@ Package marker files are omitted from the tree.
 - `exports/test_formats.py` checks CSV, JSON, and SQLite contracts, including
   connection cleanup and duplicate handling.
 
-### Search pipeline
+### Search process
 
 - `search/test_validation.py` checks request boundary parsing and failure cases.
 - `search/test_filters.py` checks language normalization and stable sorting.
-- `search/test_deduplication.py` checks canonical URLs and rich-field merging.
+- `search/test_deduplication.py` checks cleaned URLs and full-field merging.
 - `search/test_service.py` checks provider-facing options, local processing,
   pagination metadata, and source reports through typed fake executors.
 - `search/test_cache.py` checks expiry, eviction, invariants, and service
@@ -106,13 +105,13 @@ Package marker files are omitted from the tree.
   updates.
 - `sources/test_retry.py` checks timeout, HTTP 5xx, and HTTP 4xx retry rules.
 - Each file under `sources/providers/` owns the adapter-specific normalization,
-  availability, pagination, or cooldown checks for the provider in its
+  availability, pagination, or pause checks for the source in its
   filename.
 
 ### Web and fixtures
 
-- `web/test_static.py` checks security-sensitive article-link rendering plus
-  point-in-time labels, guided first-use structure, reduced-motion support, and
+- `web/test_static.py` checks security-sensitive article-link display plus
+  historical cutoff labels, first-use guidance, reduced-motion support, and
   active-page export wiring. It also protects the semantic list used by the
   hero's research-feature badges.
 - `web/test_wheel_installation.py` builds and installs a clean wheel, then
@@ -138,5 +137,5 @@ uv run python -m unittest discover -s tests -v
 ## Part 4 -- Short Journal
 
 - 2026-07-26: Organized tests by production responsibility and kept live provider checks outside the deterministic default suite.
-- 2026-07-29: Added daemon-independent deployment contract tests because Docker socket access is not guaranteed in every development environment.
-- 2026-08-08: Added a cross-provider date-format contract test after one adapter silently emitted a datetime, which broke sorting and duplicate matching without failing any per-provider test.
+- 2026-07-29: Added deployment tests that do not need a Docker daemon because Docker socket access is not available in every development environment.
+- 2026-08-08: Added a cross-source date-format test after one adapter silently emitted a datetime, which broke sorting and duplicate matching without failing its own source test.

@@ -1,5 +1,5 @@
 #!/bin/sh
-# Seed persistent Docker configuration, then run the requested command.
+# Create persistent Docker settings on first boot, then run the command.
 
 set -eu
 

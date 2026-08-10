@@ -1,4 +1,4 @@
-"""Tests for canonical URL handling and duplicate article collapse."""
+"""Tests for cleaned URLs and repeated-article removal."""
 
 from __future__ import annotations
 
@@ -80,7 +80,7 @@ class DeduplicationTests(unittest.TestCase):
         self.assertEqual(deduplicated[0].source, "gdelt")
 
     def test_deduplicate_articles_preserves_metadata_across_both_passes(self) -> None:
-        """URL-pass provenance must survive a later syndicated-title merge."""
+        """Source names from URL matching must survive a later title merge."""
         syndicated_title = (
             "Federal Reserve signals a pause in interest rate hikes this year"
         )

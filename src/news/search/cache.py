@@ -1,9 +1,8 @@
-"""In-memory time-to-live cache for validated search requests.
+"""Short-lived in-memory cache for validated search requests.
 
-The cache stores full ``SearchResult`` objects keyed by immutable
-``SearchRequest`` values. It reduces repeated upstream fan-out for identical
-queries, expires entries by wall-clock age, and evicts oldest live rows when
-capacity limits are reached.
+The cache stores complete ``SearchResult`` objects under immutable
+``SearchRequest`` keys. It avoids repeating the same source requests, expires
+entries by age, and removes the oldest live rows when it reaches its limit.
 """
 
 from __future__ import annotations
@@ -19,7 +18,7 @@ from .models import SearchRequest, SearchResult
 
 
 class SearchResultCache:
-    """TTL cache keyed by the fully validated ``SearchRequest`` object."""
+    """Short-lived cache keyed by a validated ``SearchRequest``."""
 
     def __init__(
         self,
@@ -42,7 +41,7 @@ class SearchResultCache:
 
     def get(self, request: SearchRequest) -> SearchResult | None:
         """Return a deep-copied cached result if the entry is still fresh."""
-        # Expire the cache once before lookup so the requested entry needs no
+        # Remove old entries once before lookup so the requested entry needs no
         # second age check.
         self._evict_expired()
         entry = self._entries.get(request)
