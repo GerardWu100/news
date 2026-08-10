@@ -40,6 +40,7 @@ in `docs/plans/PROJECT_REFACTOR_PLAN.md`.
 │       │   ├── fetch.py
 │       │   ├── output.py
 │       │   ├── parser.py
+│       │   ├── trends.py
 │       │   └── workflow.py
 │       ├── exports/
 │       │   └── formats.py
@@ -64,6 +65,9 @@ in `docs/plans/PROJECT_REFACTOR_PLAN.md`.
 │       │       ├── mediacloud.py
 │       │       ├── newsapi.py
 │       │       └── nyt.py
+│       ├── trends/
+│       │   ├── google.py
+│       │   └── models.py
 │       └── web/
 │           ├── config.py
 │           ├── default_config.toml
@@ -90,13 +94,16 @@ in `docs/plans/PROJECT_REFACTOR_PLAN.md`.
 │   │   ├── test_config.py
 │   │   ├── test_openapi_contract.py
 │   │   ├── test_public_exports.py
-│   │   └── test_server_cli.py
+│   │   ├── test_server_cli.py
+│   │   └── test_trends_endpoints.py
 │   ├── cli/
-│   │   └── test_cli.py
+│   │   ├── test_cli.py
+│   │   └── test_trends_cli.py
 │   ├── exports/
 │   │   └── test_formats.py
 │   ├── fixtures/
-│   │   └── search_results.py
+│   │   ├── search_results.py
+│   │   └── trends_results.py
 │   ├── search/
 │   │   ├── test_cache.py
 │   │   ├── test_deduplication.py
@@ -114,6 +121,8 @@ in `docs/plans/PROJECT_REFACTOR_PLAN.md`.
 │   │       ├── test_mediacloud.py
 │   │       ├── test_newsapi.py
 │   │       └── test_nyt.py
+│   ├── trends/
+│   │   └── test_google.py
 │   └── web/
 │       ├── test_static.py
 │       └── test_wheel_installation.py
@@ -140,6 +149,7 @@ readability.
 | `src/news/exports/` | CSV, JSON, and SQLite serialization |
 | `src/news/search/` | Validated search behavior, cache, filters, deduplication, and metadata |
 | `src/news/sources/` | Provider access, ACLED OAuth bootstrap, retry/cooldown behavior, registry, and concurrent fan-out |
+| `src/news/trends/` | Google Trends search-interest models and the replaceable `pytrends`-backed client |
 | `src/news/web/` | Typed configuration validation, package defaults, path lookup, and installed browser assets |
 | `.agents/skills/summarize-news-cli/` | Workspace-local AI-agent retrieval, coverage audit, and summary procedure |
 | `blog/` | Local-only article source about the deployment and agent workflow |

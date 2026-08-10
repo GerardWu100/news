@@ -355,6 +355,189 @@
         "title": "SourceStatusResponse",
         "type": "object"
       },
+      "TrendsInterestResponse": {
+        "description": "Relative search-interest series returned by ``GET /api/trends/interest``.\n\nValues are Google's 0-100 index scaled jointly across all requested\nkeywords within the window; they are never absolute search counts.\n``is_partial`` aligns with ``dates`` and flags still-accumulating periods.",
+        "properties": {
+          "dates": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Dates",
+            "type": "array"
+          },
+          "fetched_at": {
+            "title": "Fetched At",
+            "type": "string"
+          },
+          "geo": {
+            "title": "Geo",
+            "type": "string"
+          },
+          "is_partial": {
+            "items": {
+              "type": "boolean"
+            },
+            "title": "Is Partial",
+            "type": "array"
+          },
+          "keywords": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Keywords",
+            "type": "array"
+          },
+          "timeframe": {
+            "title": "Timeframe",
+            "type": "string"
+          },
+          "values": {
+            "additionalProperties": {
+              "items": {
+                "type": "integer"
+              },
+              "type": "array"
+            },
+            "title": "Values",
+            "type": "object"
+          }
+        },
+        "required": [
+          "keywords",
+          "timeframe",
+          "geo",
+          "fetched_at"
+        ],
+        "title": "TrendsInterestResponse",
+        "type": "object"
+      },
+      "TrendsRegionRowResponse": {
+        "description": "One region's 0-100 interest values keyed by keyword.",
+        "properties": {
+          "region": {
+            "title": "Region",
+            "type": "string"
+          },
+          "values": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Values",
+            "type": "object"
+          }
+        },
+        "required": [
+          "region"
+        ],
+        "title": "TrendsRegionRowResponse",
+        "type": "object"
+      },
+      "TrendsRegionsResponse": {
+        "description": "Regional breakdown returned by ``GET /api/trends/regions``.",
+        "properties": {
+          "fetched_at": {
+            "title": "Fetched At",
+            "type": "string"
+          },
+          "geo": {
+            "title": "Geo",
+            "type": "string"
+          },
+          "keywords": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Keywords",
+            "type": "array"
+          },
+          "regions": {
+            "items": {
+              "$ref": "#/components/schemas/TrendsRegionRowResponse"
+            },
+            "title": "Regions",
+            "type": "array"
+          },
+          "resolution": {
+            "title": "Resolution",
+            "type": "string"
+          },
+          "timeframe": {
+            "title": "Timeframe",
+            "type": "string"
+          }
+        },
+        "required": [
+          "keywords",
+          "timeframe",
+          "geo",
+          "resolution",
+          "fetched_at"
+        ],
+        "title": "TrendsRegionsResponse",
+        "type": "object"
+      },
+      "TrendsRelatedQueryResponse": {
+        "description": "One related query; ``value`` is 0-100 volume in the top list and\npercent growth in the rising list.",
+        "properties": {
+          "query": {
+            "title": "Query",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "query",
+          "value"
+        ],
+        "title": "TrendsRelatedQueryResponse",
+        "type": "object"
+      },
+      "TrendsRelatedResponse": {
+        "description": "Related-query lists returned by ``GET /api/trends/related``.",
+        "properties": {
+          "fetched_at": {
+            "title": "Fetched At",
+            "type": "string"
+          },
+          "geo": {
+            "title": "Geo",
+            "type": "string"
+          },
+          "keyword": {
+            "title": "Keyword",
+            "type": "string"
+          },
+          "rising": {
+            "items": {
+              "$ref": "#/components/schemas/TrendsRelatedQueryResponse"
+            },
+            "title": "Rising",
+            "type": "array"
+          },
+          "timeframe": {
+            "title": "Timeframe",
+            "type": "string"
+          },
+          "top": {
+            "items": {
+              "$ref": "#/components/schemas/TrendsRelatedQueryResponse"
+            },
+            "title": "Top",
+            "type": "array"
+          }
+        },
+        "required": [
+          "keyword",
+          "timeframe",
+          "geo",
+          "fetched_at"
+        ],
+        "title": "TrendsRelatedResponse",
+        "type": "object"
+      },
       "ValidationError": {
         "properties": {
           "ctx": {
@@ -398,7 +581,7 @@
     }
   },
   "info": {
-    "description": "Search GDELT, MediaCloud, ACLED, The New York Times, The Guardian, and NewsAPI by keyword and date range.",
+    "description": "Search GDELT, MediaCloud, ACLED, The New York Times, The Guardian, and NewsAPI by keyword and date range. Also serves Google Trends relative search-interest data under /api/trends.",
     "title": "Historical News Search Engine",
     "version": "0.1.0"
   },
@@ -1228,6 +1411,196 @@
           }
         },
         "summary": "Sources"
+      }
+    },
+    "/api/trends/interest": {
+      "get": {
+        "description": "Return the relative search-interest series for up to 5 keywords.",
+        "operationId": "trends_interest_api_trends_interest_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": true,
+            "schema": {
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "timeframe",
+            "required": false,
+            "schema": {
+              "default": "today 12-m",
+              "title": "Timeframe",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "geo",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Geo",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrendsInterestResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Trends Interest"
+      }
+    },
+    "/api/trends/regions": {
+      "get": {
+        "description": "Return the regional search-interest breakdown for up to 5 keywords.",
+        "operationId": "trends_regions_api_trends_regions_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": true,
+            "schema": {
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "timeframe",
+            "required": false,
+            "schema": {
+              "default": "today 12-m",
+              "title": "Timeframe",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "geo",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Geo",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "resolution",
+            "required": false,
+            "schema": {
+              "default": "COUNTRY",
+              "title": "Resolution",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrendsRegionsResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Trends Regions"
+      }
+    },
+    "/api/trends/related": {
+      "get": {
+        "description": "Return top and rising related queries for one keyword.",
+        "operationId": "trends_related_api_trends_related_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": true,
+            "schema": {
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "timeframe",
+            "required": false,
+            "schema": {
+              "default": "today 12-m",
+              "title": "Timeframe",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "geo",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Geo",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrendsRelatedResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Trends Related"
       }
     }
   }

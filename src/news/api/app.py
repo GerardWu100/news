@@ -20,6 +20,9 @@ from news.api.models import (
     FrontendConfigResponse,
     SearchResponse,
     SourceStatusResponse,
+    TrendsInterestResponse,
+    TrendsRegionsResponse,
+    TrendsRelatedResponse,
 )
 from news.api.params import SearchQueryParams
 from news.exports.formats import format_csv, format_json
@@ -28,13 +31,21 @@ from news.search.cache import SearchResultCache, build_search_cache
 from news.search.errors import SearchValidationError
 from news.search.models import SearchResult
 from news.sources import get_source_status, search_all_detailed
+from news.trends import (
+    GoogleTrendsClient,
+    TrendsClient,
+    TrendsFetchError,
+    TrendsValidationError,
+)
+from news.trends.google import DEFAULT_GEO, DEFAULT_RESOLUTION, DEFAULT_TIMEFRAME
 from news.web.config import AppSettings, load_settings
 from news.web.paths import CONFIG_ENVIRONMENT_VARIABLE, env_path, static_dir
 
 APP_TITLE = "Historical News Search Engine"
 APP_DESCRIPTION = (
     "Search GDELT, MediaCloud, ACLED, The New York Times, The Guardian, "
-    "and NewsAPI by keyword and date range."
+    "and NewsAPI by keyword and date range. Also serves Google Trends "
+    "relative search-interest data under /api/trends."
 )
 APP_VERSION = "0.1.0"
 SERVER_HOST = "127.0.0.1"
@@ -48,6 +59,7 @@ def create_app(
     search_cache: SearchResultCache | None = None,
     search_executor: SearchExecutor = search_all_detailed,
     source_status_provider: SourceStatusProvider = get_source_status,
+    trends_client: TrendsClient | None = None,
 ) -> FastAPI:
     """Construct an application from validated runtime dependencies.
 
@@ -61,6 +73,9 @@ def create_app(
         Provider fan-out function. Tests may inject an offline fake.
     source_status_provider : SourceStatusProvider, optional
         Provider metadata function. Tests may inject deterministic status.
+    trends_client : TrendsClient | None, optional
+        Google Trends client. ``None`` builds the production ``pytrends``
+        client; tests may inject an offline fake.
 
     Returns
     -------
@@ -70,6 +85,7 @@ def create_app(
     active_cache = (
         build_search_cache(settings.cache) if search_cache is None else search_cache
     )
+    active_trends = GoogleTrendsClient() if trends_client is None else trends_client
     static_assets = static_dir()
     application = FastAPI(
         title=APP_TITLE,
@@ -108,6 +124,53 @@ def create_app(
             executor=search_executor,
         )
         return result.to_payload()
+
+    # Trends routes are synchronous on purpose: the underlying pytrends
+    # library blocks on HTTP, and FastAPI runs plain ``def`` routes in its
+    # worker thread pool so the event loop stays free.
+    @application.get("/api/trends/interest", response_model=TrendsInterestResponse)
+    def trends_interest(
+        q: str,
+        timeframe: str = DEFAULT_TIMEFRAME,
+        geo: str = DEFAULT_GEO,
+    ) -> dict[str, object]:
+        """Return the relative search-interest series for up to 5 keywords."""
+        result = _run_trends_request(
+            lambda: active_trends.interest_over_time(
+                q.split(","), timeframe=timeframe, geo=geo
+            )
+        )
+        return result.to_dict()
+
+    @application.get("/api/trends/regions", response_model=TrendsRegionsResponse)
+    def trends_regions(
+        q: str,
+        timeframe: str = DEFAULT_TIMEFRAME,
+        geo: str = DEFAULT_GEO,
+        resolution: str = DEFAULT_RESOLUTION,
+    ) -> dict[str, object]:
+        """Return the regional search-interest breakdown for up to 5 keywords."""
+        result = _run_trends_request(
+            lambda: active_trends.interest_by_region(
+                q.split(","),
+                timeframe=timeframe,
+                geo=geo,
+                resolution=resolution,
+            )
+        )
+        return result.to_dict()
+
+    @application.get("/api/trends/related", response_model=TrendsRelatedResponse)
+    def trends_related(
+        q: str,
+        timeframe: str = DEFAULT_TIMEFRAME,
+        geo: str = DEFAULT_GEO,
+    ) -> dict[str, object]:
+        """Return top and rising related queries for one keyword."""
+        result = _run_trends_request(
+            lambda: active_trends.related_queries(q, timeframe=timeframe, geo=geo)
+        )
+        return result.to_dict()
 
     @application.get("/api/export/csv")
     async def export_csv(params: SearchQueryParams = Depends()) -> Response:
@@ -157,6 +220,20 @@ def create_configured_app(
     """
     load_dotenv(env_path())
     return create_app(load_settings(config_file))
+
+
+def _run_trends_request[ResultT](fetch: Callable[[], ResultT]) -> ResultT:
+    """Run one trends fetch and map its errors onto HTTP status codes.
+
+    Invalid inputs surface as 422 like search validation failures; upstream
+    Google failures surface as 502 because the fault is the remote service.
+    """
+    try:
+        return fetch()
+    except TrendsValidationError as exc:
+        raise HTTPException(status_code=422, detail=exc.message) from exc
+    except TrendsFetchError as exc:
+        raise HTTPException(status_code=502, detail=exc.message) from exc
 
 
 async def _run_search_request(

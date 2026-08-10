@@ -11,6 +11,10 @@ news retrieval.
 - `search/`: validation, shared boundary parsing, cache, filtering, deduplication, sorting, and result metadata.
 - `sources/`: source registry, fan-out, retry behavior, provider adapters, and
   reusable ACLED OAuth bootstrap behavior.
+- `trends/`: Google Trends models and the `pytrends`-backed client. Trends
+  data is a relative 0-100 search-interest index, not articles, so this
+  package stays outside the search pipeline and has its own API routes and
+  `news-trends` command.
 - `exports/`: CSV, JSON, and SQLite serialization.
 - `cli/`: command-line parser, fetch paths, table/JSON/JSONL output rendering,
   and workflow orchestration.
@@ -28,9 +32,16 @@ for downstream model pipelines.
 The API application owns the process-local cache and passes it into the search
 service; low-level search modules do not read configuration files.
 
-The application factory also accepts a provider executor and source-status
-function. Production uses the registered adapters; tests supply offline fakes
-without patching module globals.
+The application factory also accepts a provider executor, a source-status
+function, and a trends client. Production uses the registered adapters and the
+`pytrends`-backed client; tests supply offline fakes without patching module
+globals. Trends routes are synchronous on purpose so FastAPI runs their
+blocking HTTP calls in its worker thread pool.
+
+`news-trends` calls the trends package directly instead of going through the
+HTTP API: Google Trends needs no server-held credentials and no cross-provider
+orchestration, so a server round-trip would add a dependency without adding
+capability.
 
 Importing the API module does not construct a configured application.
 `news-server` parses command arguments first, then the server invokes the
@@ -52,5 +63,8 @@ against a local process, Docker Compose service, or protected remote server.
 - `news.sources` exports shared provider models and fan-out entry points, not
   individual adapters.
 - `news.exports` exports CSV, JSON, and SQLite format functions.
+- `news.trends` exports the `TrendsClient` interface, the production
+  `GoogleTrendsClient`, result models, and trends error types; `pytrends`
+  usage stays private to `news.trends.google` so the library is replaceable.
 - Root, API, CLI, and web package initializers intentionally export nothing;
   callers use explicit module paths for those boundaries.
