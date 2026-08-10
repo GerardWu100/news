@@ -77,4 +77,3 @@ The exact implemented tree and responsibility table live only in
 - 2026-08-08: Moved lint rules into `pyproject.toml` so import order and modern-syntax rewrites are decided by ruff instead of by hand.
 - 2026-08-08: Gave `Article` one accessor for its provenance so the "no recorded sources means the originating source" rule is interpreted in a single place.
 - 2026-08-08: Made every browser render function announce its own outcome, because pairing announcements with render calls by hand had already left two error paths silent.
-- 2026-08-09: Added Google Trends retrieval (`news-trends`, `/api/trends/*`) as its own package behind a replaceable client interface, because the archived `pytrends` library scrapes unofficial endpoints and may need swapping without touching callers.

@@ -17,8 +17,6 @@ The suite protects:
 - export formats and local database cleanup;
 - request validation, filtering, deduplication, caching, and orchestration;
 - OAuth, retry infrastructure, and individual provider adapters;
-- Google Trends frame conversion, keyword validation, rate-limit retries,
-  route serialization, and CLI rendering;
 - browser link safety and wheel-installed runtime assets.
 - Docker build, bind, persistence, and entrypoint contracts.
 
@@ -36,16 +34,13 @@ tests/
 │   ├── test_config.py
 │   ├── test_openapi_contract.py
 │   ├── test_public_exports.py
-│   ├── test_server_cli.py
-│   └── test_trends_endpoints.py
+│   └── test_server_cli.py
 ├── cli/
-│   ├── test_cli.py
-│   └── test_trends_cli.py
+│   └── test_cli.py
 ├── exports/
 │   └── test_formats.py
 ├── fixtures/
-│   ├── search_results.py
-│   └── trends_results.py
+│   └── search_results.py
 ├── search/
 │   ├── test_cache.py
 │   ├── test_deduplication.py
@@ -62,8 +57,6 @@ tests/
 │       ├── test_mediacloud.py
 │       ├── test_newsapi.py
 │       └── test_nyt.py
-├── trends/
-│   └── test_google.py
 └── web/
     ├── test_static.py
     └── test_wheel_installation.py
@@ -87,24 +80,14 @@ Package marker files are omitted from the tree.
 - `api/test_server_cli.py` starts the server boundary in a subprocess and
   verifies explicit configuration wins over a malformed current-directory
   file before application construction.
-- `api/test_trends_endpoints.py` checks the three trends routes through an
-  offline fake client, including 422 validation and 502 upstream mapping.
 
 ### CLI and exports
 
 - `cli/test_cli.py` checks parser flags, structured-output and temporal-boundary
   help, API parameter mapping, multi-page aggregation, table output, and
   package entry points.
-- `cli/test_trends_cli.py` checks news-trends subcommand parsing and table,
-  JSON, and CSV rendering through the offline fake client.
 - `exports/test_formats.py` checks CSV, JSON, and SQLite contracts, including
   connection cleanup and duplicate handling.
-
-### Trends
-
-- `trends/test_google.py` checks keyword validation, pytrends DataFrame
-  conversion (daily, intraday, and empty frames; regions; related queries),
-  and the rate-limit retry and error-wrapping rules, all offline.
 
 ### Search pipeline
 
@@ -136,8 +119,6 @@ Package marker files are omitted from the tree.
   requests `/` outside the source checkout.
 - `fixtures/search_results.py` builds schema-complete results and provider
   responses shared across boundary and cache tests.
-- `fixtures/trends_results.py` builds deterministic trends results and the
-  offline fake client shared by the API and CLI trends tests.
 - `test_docker_setup.py` protects the loopback host port, Toronto time,
   persistent data mount, external network, image command, and first-boot
   configuration behavior without requiring a Docker daemon.
@@ -159,4 +140,3 @@ uv run python -m unittest discover -s tests -v
 - 2026-07-26: Organized tests by production responsibility and kept live provider checks outside the deterministic default suite.
 - 2026-07-29: Added daemon-independent deployment contract tests because Docker socket access is not guaranteed in every development environment.
 - 2026-08-08: Added a cross-provider date-format contract test after one adapter silently emitted a datetime, which broke sorting and duplicate matching without failing any per-provider test.
-- 2026-08-09: Added offline trends coverage; live Google Trends behavior stays outside the default suite for the same reliability reasons as live providers.

@@ -15,12 +15,6 @@ The product is retrieval-first. It does not rank by proprietary relevance
 models, crawl article bodies, or compute page-level analytics. The value is a
 clean, provider-aware search and export workflow for research.
 
-Alongside articles, the package also retrieves Google Trends relative
-search-interest data (a 0-100 index of how much people searched a term)
-through dedicated `/api/trends/*` routes and the `news-trends` command. That
-data lives outside the article search pipeline because it is a time series,
-not a set of records to filter and deduplicate.
-
 The browser emphasizes human point-in-time exploration: its inclusive end date
 is shown as an information boundary beside every completed result set. The CLI
 emphasizes reproducible machine use with table, JSON, and JSONL output. Neither
@@ -35,7 +29,7 @@ downstream workflows.
 ├── blog/           -- Local-only article source.
 ├── Dockerfile      -- Reproducible Python 3.13 application image.
 ├── docker-compose.yml -- Persistent self-hosted server and optional CLI client.
-├── src/news/       -- Installable API, CLI, search, source, trends, export, and web package.
+├── src/news/       -- Installable API, CLI, search, source, export, and web package.
 ├── scripts/        -- Thin credential and OpenAPI generation commands.
 ├── tests/          -- Offline tests organized by production responsibility.
 └── docs/           -- Completed plans, exact reference material, and user docs.

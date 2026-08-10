@@ -33,8 +33,7 @@ returns, simulate trades, or report backtest performance.
 Planned next steps focus on making the browser a richer point-in-time research
 workspace:
 
-- Show Google Trends data in the browser for the selected period (the CLI and
-  API endpoints exist; see Google Trends below).
+- Add historical Google Trends data for the selected period.
 - Add macroeconomic data that was available during the selected period.
 - Add an AI-agent news summary, produced through a large language model (LLM)
   API call, to the browser and optionally to the CLI.
@@ -121,34 +120,6 @@ uv run news-search "central bank" \
 
 Run `uv run news-search --help` for source filters, exact phrases, domain
 filters, pagination, direct mode, and file exports.
-
-## Google Trends
-
-`news-trends` fetches Google's relative search-interest data — a different
-signal from news articles: how much people searched for a term, not what was
-published about it.
-
-```bash
-uv run news-trends interest bitcoin ethereum --timeframe "today 3-m" --geo US
-uv run news-trends regions bitcoin --geo US --resolution REGION --format csv
-uv run news-trends related bitcoin --timeframe "today 3-m" --format json
-```
-
-The same data is served by `GET /api/trends/interest`, `/api/trends/regions`,
-and `/api/trends/related`; see `docs/user/API_REFERENCE.md`.
-
-Interpretation caveats that matter for research:
-
-- Every value is a 0-100 index scaled to the peak within the requested window
-  and keyword set. Changing the window or the keyword batch changes every
-  number, and absolute search counts are never available.
-- Google samples the underlying data, so two fetches of the same window can
-  differ slightly. Each result carries `fetched_at`; store it with the data so
-  a point-in-time history can be built from repeated fetches.
-- Data comes from the unofficial endpoints behind trends.google.com (via the
-  archived `pytrends` library, wrapped behind this project's own interface so
-  the library can be replaced in one module). Expect occasional rate limits
-  and breakage after upstream changes.
 
 ## Docker
 

@@ -16,6 +16,4 @@ outside `src/`.
   `--reload` only during development; `--host` and `--port` control the bind.
 - Use `uv run news-search ...` for command-line search and export workflows.
   `NEWS_SERVER_URL` supplies a reusable local or remote API base URL.
-- Use `uv run news-trends ...` for Google Trends search-interest data; it
-  calls the package directly and needs no running server.
 - Keep reusable Python logic under `src/news/`.
