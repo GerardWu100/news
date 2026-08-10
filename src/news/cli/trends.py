@@ -230,9 +230,7 @@ def _format_table(rows: list[list[str]]) -> str:
     """Align header-plus-rows into fixed-width columns."""
     if len(rows) == 1:
         return "No data returned."
-    widths = [
-        max(len(row[column]) for row in rows) for column in range(len(rows[0]))
-    ]
+    widths = [max(len(row[column]) for row in rows) for column in range(len(rows[0]))]
     lines = [
         "  ".join(cell.ljust(width) for cell, width in zip(row, widths, strict=True))
         for row in rows

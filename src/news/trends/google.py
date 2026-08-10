@@ -228,7 +228,9 @@ def _call_with_rate_limit_retry[ResultT](fetch: Callable[[], ResultT]) -> Result
             # Exponential backoff: base, 2x base, ...
             time.sleep(RATE_LIMIT_BASE_DELAY_SECONDS * (2**attempt))
         except ResponseError as exc:
-            raise TrendsFetchError(f"Google Trends rejected the request: {exc}") from exc
+            raise TrendsFetchError(
+                f"Google Trends rejected the request: {exc}"
+            ) from exc
         except requests.RequestException as exc:
             raise TrendsFetchError(f"Google Trends request failed: {exc}") from exc
     raise TrendsFetchError("Unreachable retry state.")
