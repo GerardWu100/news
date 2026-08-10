@@ -21,9 +21,14 @@ services:
       TZ: America/Toronto
       NEWS_DATA_DIR: /data
       NEWS_CONFIG: /data/config.toml
-      # Sign-in account. Without both values the server answers nothing.
+      # Sign-in accounts. Without one complete account the server answers
+      # nothing. The numbered slots are optional extra people.
       UI_USERNAME: ${UI_USERNAME:-}
       UI_PASSWORD: ${UI_PASSWORD:-}
+      UI_USERNAME_2: ${UI_USERNAME_2:-}
+      UI_PASSWORD_2: ${UI_PASSWORD_2:-}
+      UI_USERNAME_3: ${UI_USERNAME_3:-}
+      UI_PASSWORD_3: ${UI_PASSWORD_3:-}
       NYT_API_KEY: ${NYT_API_KEY:-}
       NYT_API_SECRET: ${NYT_API_SECRET:-}
       MEDIACLOUD_API_KEY: ${MEDIACLOUD_API_KEY:-}
@@ -68,7 +73,7 @@ services:
       - ALL
     environment:
       NEWS_SERVER_URL: http://news:8000
-      # The command line signs in with the same account as the browser.
+      # The command line signs in with the first browser account.
       UI_USERNAME: ${UI_USERNAME:-}
       UI_PASSWORD: ${UI_PASSWORD:-}
     networks:

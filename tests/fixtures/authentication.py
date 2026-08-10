@@ -25,11 +25,20 @@ from news.web.paths import (
 
 TEST_USERNAME = "tester"
 TEST_PASSWORD = "correct-horse-battery-staple"
-_TEST_PASSWORD_HASH = hash_password(TEST_PASSWORD)
+# A second account, so tests can prove that any configured account signs in.
+SECOND_TEST_USERNAME = "colleague"
+SECOND_TEST_PASSWORD = "another-correct-horse"
+_PASSWORD_HASH_FOR_ACCOUNT = {
+    TEST_USERNAME: hash_password(TEST_PASSWORD),
+    SECOND_TEST_USERNAME: hash_password(SECOND_TEST_PASSWORD),
+}
 
 
 def write_test_credentials(data_directory: Path) -> Path:
-    """Write ``.ui_credentials.json`` for the shared test account.
+    """Write ``.ui_credentials.json`` for the shared test accounts.
+
+    Both test accounts are written, because the production file holds a list
+    of accounts and every route must accept any of them.
 
     Parameters
     ----------
@@ -43,7 +52,14 @@ def write_test_credentials(data_directory: Path) -> Path:
     """
     credentials_file = data_directory / CREDENTIALS_FILENAME
     credentials_file.write_text(
-        json.dumps({"username": TEST_USERNAME, "password_hash": _TEST_PASSWORD_HASH}),
+        json.dumps(
+            {
+                "accounts": [
+                    {"username": username, "password_hash": password_hash}
+                    for username, password_hash in _PASSWORD_HASH_FOR_ACCOUNT.items()
+                ]
+            }
+        ),
         encoding="utf-8",
     )
     return credentials_file
@@ -91,17 +107,30 @@ def basic_auth_headers(
     return {"Authorization": f"Basic {encoded_credentials}"}
 
 
-def attach_session_cookie(client: TestClient, sessions: LoginSessions) -> str:
+def attach_session_cookie(
+    client: TestClient,
+    sessions: LoginSessions,
+    username: str = TEST_USERNAME,
+) -> str:
     """Start a session and give the client its cookie.
 
     This skips the sign-in form, so route tests do not pay the password
     hashing cost on every request.
+
+    Parameters
+    ----------
+    client : TestClient
+        Test client that should carry the session cookie.
+    sessions : LoginSessions
+        Sign-in state that owns the session file.
+    username : str, optional
+        Account name the session is signed in as.
 
     Returns
     -------
     str
         The session identifier now held by the client.
     """
-    session_id = sessions.start_session()
+    session_id = sessions.start_session(username)
     client.cookies.set(SESSION_COOKIE_NAME, session_id)
     return session_id

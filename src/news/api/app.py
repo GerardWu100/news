@@ -257,8 +257,10 @@ def create_configured_app(
     """Load local credentials and settings, then construct the application.
 
     Reads ``.env`` from the data directory, refreshes the stored password hash
-    from ``UI_USERNAME`` and ``UI_PASSWORD``, and logs the result. A missing or
-    incomplete account leaves every protected route closed rather than open.
+    of every configured sign-in account (``UI_USERNAME`` and ``UI_PASSWORD``,
+    plus the numbered slots described in :mod:`news.web.credentials`), and logs
+    the result. Settings without a single complete account leave every
+    protected route closed rather than open.
 
     Parameters
     ----------

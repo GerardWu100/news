@@ -14,7 +14,7 @@ from tempfile import TemporaryDirectory
 from types import SimpleNamespace
 
 from news.api.auth import SESSION_COOKIE_NAME
-from tests.fixtures.authentication import build_login_sessions
+from tests.fixtures.authentication import TEST_USERNAME, build_login_sessions
 
 
 def _request_with_cookie(session_id: str) -> SimpleNamespace:
@@ -35,7 +35,7 @@ class SharedSessionTests(unittest.TestCase):
 
     def test_a_session_started_on_one_worker_is_accepted_by_the_other(self) -> None:
         """Otherwise a browser is signed in or out depending on which answers."""
-        session_id = self.first_worker.start_session()
+        session_id = self.first_worker.start_session(TEST_USERNAME)
         request = _request_with_cookie(session_id)
 
         self.assertTrue(self.first_worker.session_is_valid(request))
@@ -43,7 +43,7 @@ class SharedSessionTests(unittest.TestCase):
 
     def test_signing_out_on_one_worker_ends_it_everywhere(self) -> None:
         """A sign-out that only half works is worse than none at all."""
-        session_id = self.first_worker.start_session()
+        session_id = self.first_worker.start_session(TEST_USERNAME)
         request = _request_with_cookie(session_id)
 
         self.second_worker.end_session(session_id)
@@ -55,7 +55,7 @@ class SharedSessionTests(unittest.TestCase):
         self,
     ) -> None:
         """The page and the submission need not reach the same process."""
-        session_id = self.first_worker.start_session()
+        session_id = self.first_worker.start_session(TEST_USERNAME)
         request = _request_with_cookie(session_id)
 
         token = self.first_worker.sign_out_token(request)
@@ -65,7 +65,7 @@ class SharedSessionTests(unittest.TestCase):
 
     def test_the_same_session_keeps_one_sign_out_token(self) -> None:
         """A second page load must not invalidate the first page's form."""
-        session_id = self.first_worker.start_session()
+        session_id = self.first_worker.start_session(TEST_USERNAME)
         request = _request_with_cookie(session_id)
 
         first_token = self.first_worker.sign_out_token(request)
@@ -75,7 +75,7 @@ class SharedSessionTests(unittest.TestCase):
 
     def test_a_wrong_sign_out_token_is_refused(self) -> None:
         """The token is what stops another site from signing the user out."""
-        session_id = self.first_worker.start_session()
+        session_id = self.first_worker.start_session(TEST_USERNAME)
         request = _request_with_cookie(session_id)
         self.first_worker.sign_out_token(request)
 
@@ -85,8 +85,8 @@ class SharedSessionTests(unittest.TestCase):
 
     def test_starting_a_session_keeps_the_sessions_already_stored(self) -> None:
         """A second sign-in must not overwrite the first browser's session."""
-        first_session = self.first_worker.start_session()
-        second_session = self.second_worker.start_session()
+        first_session = self.first_worker.start_session(TEST_USERNAME)
+        second_session = self.second_worker.start_session(TEST_USERNAME)
 
         self.assertTrue(
             self.second_worker.session_is_valid(_request_with_cookie(first_session))

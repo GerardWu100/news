@@ -4,8 +4,10 @@ Base URL when running locally: `http://127.0.0.1:8000`
 
 ## Signing in
 
-Every route below requires the account set through `UI_USERNAME` and
-`UI_PASSWORD`. A program sends it as HTTP Basic authentication:
+Every route below requires one of the configured accounts. The first is set
+through `UI_USERNAME` and `UI_PASSWORD`; the optional second and third use the
+numbered settings described in `docs/user/SIGN_IN.md`, and any of them opens
+every route. A program sends its account as HTTP Basic authentication:
 
 ```bash
 curl -u "$UI_USERNAME:$UI_PASSWORD" "http://127.0.0.1:8000/api/config"

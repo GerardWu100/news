@@ -21,9 +21,13 @@ The `news` package implements historical news retrieval from several sources.
 ## Sign-in
 
 `web/passwords.py` holds the PBKDF2 hashing and the constant-time check.
-`web/credentials.py` turns `UI_USERNAME` and `UI_PASSWORD` into
-`.ui_credentials.json` on every startup and re-verifies the stored hash, so no
-hashing command exists. `web/auth_store.py` keeps remembered sessions and
+`web/credentials.py` turns the configured account slots -- `UI_USERNAME` and
+`UI_PASSWORD` plus the numbered `_2` and `_3` pairs, at most three accounts --
+into the account list in `.ui_credentials.json` on every startup and re-verifies
+each stored hash, so no hashing command exists. Sign-in accepts any stored
+account and records its name in the session, and `api/auth.py` always checks one
+password hash even when no account name matched, so the timing does not reveal
+which half was wrong. `web/auth_store.py` keeps remembered sessions and
 failed-attempt counters in locked, atomically replaced JSON files, and
 `web/security.py` decides response headers, the client address, and whether the
 connection used HTTPS.

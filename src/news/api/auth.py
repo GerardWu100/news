@@ -1,12 +1,16 @@
 """Sign-in state, sign-in routes, and the check that guards every API route.
 
-Two ways to prove who you are are supported, and both check the same account:
+Two ways to prove who you are are supported, and both check the same set of
+accounts. The operator may configure up to three accounts (see
+:mod:`news.web.credentials`); any of them opens every route, so the accounts
+separate people, not permissions.
 
 Session cookie
     A browser posts the sign-in form once. The server stores a random session
-    identifier and hands the same value back as a cookie.
+    identifier together with the account name that signed in, and hands the
+    identifier back as a cookie.
 HTTP Basic
-    A program, in practice the ``news-search`` command, puts the account name
+    A program, in practice the ``news-search`` command, puts an account name
     and password in an ``Authorization`` header on every request.
 
 Protection against guessing
@@ -40,7 +44,7 @@ from fastapi.responses import RedirectResponse, Response
 
 from news.api.login_page import render_login_page
 from news.web.auth_store import AuthStore, JsonRecord, JsonState
-from news.web.credentials import load_ui_credentials
+from news.web.credentials import load_ui_accounts
 from news.web.passwords import verify_password
 from news.web.security import client_ip, login_page_headers, request_is_secure
 
@@ -123,11 +127,11 @@ class LoginSessions:
         self._cached_credentials_changed_at = self.credentials_changed_at()
 
     def login_is_configured(self) -> bool:
-        """Return whether a stored account name and password hash exist."""
-        return load_ui_credentials(self.credentials_file) is not None
+        """Return whether at least one stored account exists."""
+        return bool(load_ui_accounts(self.credentials_file))
 
     def credentials_changed_at(self) -> float:
-        """Return when the stored account was last written, or zero.
+        """Return when the stored accounts were last written, or zero.
 
         Reading the file's modification time is how a running process notices
         that the operator changed the password, so a header accepted under the
@@ -175,28 +179,54 @@ class LoginSessions:
             lambda state: _reset_failures(state, address)
         )
 
-    def credentials_are_valid(self, username: str, password: str) -> bool:
-        """Check one account name and password against the stored hash.
+    def matching_account(self, username: str, password: str) -> str | None:
+        """Return the stored account name this pair signs in as, or ``None``.
 
-        Both halves are always checked, so a wrong account name costs the same
-        time as a wrong password and the response does not reveal which half
-        was wrong.
+        The submitted name is compared against every stored account. Exactly
+        one password hash is then checked, either the matched account's or,
+        when no name matched, the first account's as a decoy. Doing the hashing
+        work either way keeps a wrong account name as expensive as a wrong
+        password, so the timing does not reveal which half was wrong.
+
+        Parameters
+        ----------
+        username : str
+            Account name submitted by a browser form or a Basic header.
+        password : str
+            Password submitted with it.
+
+        Returns
+        -------
+        str | None
+            The stored account name on success, otherwise ``None``.
         """
         if (
             len(username) > MAX_CREDENTIAL_LENGTH
             or len(password) > MAX_CREDENTIAL_LENGTH
         ):
-            return False
-        credentials = load_ui_credentials(self.credentials_file)
-        if credentials is None:
-            return False
-        expected_username, expected_password_hash = credentials
-        username_matches = secrets.compare_digest(
-            username.encode("utf-8"),
-            expected_username.encode("utf-8"),
+            return None
+        accounts = load_ui_accounts(self.credentials_file)
+        if not accounts:
+            return None
+
+        matched_account = None
+        for account in accounts:
+            if secrets.compare_digest(
+                username.encode("utf-8"),
+                account.username.encode("utf-8"),
+            ):
+                matched_account = account
+                break
+
+        hash_to_check = (
+            matched_account.password_hash
+            if matched_account is not None
+            else accounts[0].password_hash
         )
-        password_matches = verify_password(password, expected_password_hash)
-        return username_matches and password_matches
+        password_matches = verify_password(password, hash_to_check)
+        if matched_account is None or not password_matches:
+            return None
+        return matched_account.username
 
     def issue_form_token(self) -> tuple[str, str]:
         """Create a one-time sign-in form token.
@@ -232,13 +262,26 @@ class LoginSessions:
             return False
         return bool(expected_token) and secrets.compare_digest(token, expected_token)
 
-    def start_session(self) -> str:
-        """Create a session and return the identifier for the cookie."""
+    def start_session(self, username: str) -> str:
+        """Create a session and return the identifier for the cookie.
+
+        Parameters
+        ----------
+        username : str
+            Stored account name that just signed in. It is kept in the session
+            record so any worker process can name the signed-in account
+            without asking for the password again.
+
+        Returns
+        -------
+        str
+            Session identifier to place in the cookie.
+        """
         session_id = secrets.token_urlsafe(32)
 
         def add_session(sessions: JsonState) -> None:
             """Record the new session beside the ones already stored."""
-            sessions[session_id] = {"created_at": time.time()}
+            sessions[session_id] = {"created_at": time.time(), "username": username}
 
         self.auth_store.update_sessions(add_session, SESSION_MAX_AGE_SECONDS)
         return session_id
@@ -257,6 +300,20 @@ class LoginSessions:
     def session_is_valid(self, request: Request) -> bool:
         """Return whether the request carries a live session cookie."""
         return self._stored_session(request) is not None
+
+    def session_username(self, request: Request) -> str:
+        """Return the account name this request is signed in as.
+
+        Returns
+        -------
+        str
+            The account name stored with the session, or an empty string when
+            the request carries no live session.
+        """
+        session = self._stored_session(request)
+        if session is None:
+            return ""
+        return str(session.get("username", ""))
 
     def sign_out_token(self, request: Request) -> str:
         """Return this session's sign-out token, creating it when needed.
@@ -334,7 +391,7 @@ class LoginSessions:
         Returns
         -------
         bool
-            ``True`` when the header carries the configured account name and
+            ``True`` when the header carries a configured account name and its
             password.
         """
         scheme, _, encoded_credentials = authorization_header.partition(" ")
@@ -367,7 +424,7 @@ class LoginSessions:
         if not separator:
             return False
 
-        if not self.credentials_are_valid(username, password):
+        if self.matching_account(username, password) is None:
             return False
         with self._lock:
             self._accepted_basic_headers[header_digest] = (
@@ -528,13 +585,14 @@ def build_auth_router() -> APIRouter:
         ):
             return _redirect_to_login("bad_request")
 
-        if not sessions.credentials_are_valid(username, password):
+        signed_in_username = sessions.matching_account(username, password)
+        if signed_in_username is None:
             if sessions.record_failure(address) > 0:
                 return _redirect_to_login("banned")
             return _redirect_to_login("bad_credentials")
 
         sessions.clear_failures(address)
-        session_id = sessions.start_session()
+        session_id = sessions.start_session(signed_in_username)
         response = RedirectResponse(url="/", status_code=302)
         response.set_cookie(
             SESSION_COOKIE_NAME,
@@ -563,9 +621,8 @@ def build_auth_router() -> APIRouter:
         sessions: LoginSessions = request.app.state.login_sessions
         if not sessions.session_is_valid(request):
             raise HTTPException(status_code=401, detail="No browser session.")
-        credentials = load_ui_credentials(sessions.credentials_file)
         return {
-            "username": credentials[0] if credentials else "",
+            "username": sessions.session_username(request),
             "sign_out_token": sessions.sign_out_token(request),
         }
 

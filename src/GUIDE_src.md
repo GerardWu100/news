@@ -13,7 +13,9 @@ outside `src/`.
 ## Development Notes
 
 - Set `UI_USERNAME` and `UI_PASSWORD` in `.env` before starting anything. Every
-  route that returns news data refuses requests without them.
+  route that returns news data refuses requests without them. Two more accounts
+  are optional, through `UI_USERNAME_2`/`UI_PASSWORD_2` and
+  `UI_USERNAME_3`/`UI_PASSWORD_3`.
 - Use `uv run news-server` to start the local API and frontend server. Add
   `--reload` only during development; `--host` and `--port` control the bind.
 - Use `uv run news-search ...` for command-line search and export workflows.

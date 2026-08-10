@@ -33,7 +33,9 @@ cp .env.example .env
 ```
 
 `UI_USERNAME` and `UI_PASSWORD` are required. Without both, the container starts
-but refuses every request, and the entrypoint prints a warning saying so. See
+but refuses every request, and the entrypoint prints a warning saying so. The
+optional `UI_USERNAME_2`, `UI_PASSWORD_2`, `UI_USERNAME_3`, and `UI_PASSWORD_3`
+add a second and third account; Compose passes all of them to the container. See
 `docs/user/SIGN_IN.md` for what the server does with them.
 
 The container serves as an unprivileged account rather than as root, so it must
@@ -121,9 +123,9 @@ docker compose run --rm \
   --quiet
 ```
 
-The command line signs in with the same `UI_USERNAME` and `UI_PASSWORD` as the
-browser, sent as an HTTP Basic header on every request. Compose passes both to
-the `news-cli` service; outside Docker they come from `.env`.
+The command line signs in with `UI_USERNAME` and `UI_PASSWORD`, the first
+browser account, sent as an HTTP Basic header on every request. Compose passes
+both to the `news-cli` service; outside Docker they come from `.env`.
 
 For a remote agent, still put a Transport Layer Security (TLS) reverse proxy or
 a private virtual private network (VPN) in front of the `news` container and

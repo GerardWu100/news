@@ -39,8 +39,8 @@ study into non-overlapping windows and label each one.
 
 Prefer a private virtual private network (VPN) address or a Transport Layer
 Security (TLS) reverse-proxy URL. The server also requires a sign-in account:
-set `UI_USERNAME` and `UI_PASSWORD` in `.env`, and `news-search` sends them on
-every request. Set the endpoint once:
+set `UI_USERNAME` and `UI_PASSWORD` in `.env`, and `news-search` sends that
+first account on every request. Set the endpoint once:
 
 ```bash
 export NEWS_SERVER_URL="https://news.example.com"

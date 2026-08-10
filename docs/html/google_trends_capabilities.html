@@ -3,7 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Google Trends: What the Data Can Provide</title>
+<title>Google Trends for a Historical Window</title>
+<script>
+  window.MathJax = {
+    tex: {
+      inlineMath: [['$', '$']],
+      displayMath: [['$$', '$$']]
+    },
+    options: { skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'] }
+  };
+</script>
+<script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 <style>
   :root {
     --text: #1a1a1a;
@@ -14,6 +24,7 @@
     --accent: #0b5fa5;
     --good: #1a7a3a;
     --bad: #b03030;
+    --warn: #8a5a00;
   }
   @media (prefers-color-scheme: dark) {
     :root {
@@ -25,6 +36,7 @@
       --accent: #6ab0e8;
       --good: #6cc98a;
       --bad: #e08080;
+      --warn: #d7a54a;
     }
   }
   * { box-sizing: border-box; }
@@ -76,8 +88,11 @@
     padding: 0.8em 1.1em;
     margin: 1em 0;
   }
-  .works { color: var(--good); font-weight: 600; }
+  .callout.danger { border-left-color: var(--bad); }
+  .keep { color: var(--good); font-weight: 600; }
+  .drop { color: var(--muted); font-weight: 600; }
   .broken { color: var(--bad); font-weight: 600; }
+  .caution { color: var(--warn); font-weight: 600; }
   .sample-note { color: var(--muted); font-size: 0.9em; margin-top: -0.5em; }
   ul, ol { padding-left: 1.4em; }
   li { margin: 0.3em 0; }
@@ -86,176 +101,255 @@
 <body>
 <main>
 
-<h1>Google Trends: What the Data Can Provide</h1>
+<h1>Google Trends for a Historical Window</h1>
 <p class="lede">
-A decision document for the news project. It explains what Google Trends
-measures, every data type that is currently retrievable for free, the request
-options, the limits that matter for quantitative research, and a menu of
-features that could be built. Nothing described here is implemented; this page
-exists so you can choose.
+A decision document for the news project. The project reconstructs a past
+window: you give a start date and an end date and see only what existed inside
+them. This page inventories every function the <code>pytrends</code> library
+exposes, says which ones still work, marks which ones can be pointed at a past
+window, and recommends building exactly one of them. Every status below was
+re-tested against the live endpoints from this machine on 2026-08-10. Nothing
+is implemented in the project yet.
 </p>
 
-<h2>1. What Google Trends Measures</h2>
+<div class="callout">
+<strong>The function that matters.</strong>
+<code>interest_over_time</code> with an explicit start and end date -- the
+search-attention series for chosen keywords across a window that has already
+passed. Everything else is either broken, aimed at the present moment, or a
+second data shape the project does not need. Section 2 shows the evidence for
+each.
+</div>
+
+<h2>1. What the Number Means</h2>
 <p>
 Google Trends reports how often people typed a term into Google search,
 expressed as a <strong>relative index from 0 to 100</strong>. The value 100 is
-assigned to the moment of highest search volume <em>within the window and
-keyword set you requested</em>; every other value is scaled against that peak.
+assigned to the moment of highest search volume <em>within the window you
+requested</em>; every other value is scaled against that peak.
 </p>
 <p>
-Concretely: if "bitcoin" scores 100 on May 12 and 50 on June 3, people
-searched it half as much on June 3 as at the May peak. But if you re-request a
-wider window that contains an even bigger spike, both numbers shrink, because
-the scale is anchored to the new peak. Two consequences follow:
+Concretely: if "bitcoin" scores 100 on 2015-05-12 and 50 on 2015-06-03, people
+searched it half as much on June 3 as at the May peak. Request a wider window
+containing a bigger spike and both numbers shrink, because the scale re-anchors
+to the new peak. Section 5 shows a measured example of that and explains why it
+is dangerous for a backtest. Two consequences up front:
 </p>
 <ul>
-  <li><strong>No absolute counts, ever.</strong> You cannot learn how many
-  searches happened, only the shape of attention over time.</li>
-  <li><strong>Numbers are only comparable within one response.</strong>
+  <li><strong>No absolute counts, ever.</strong> You learn the shape of
+  attention over time, not how many searches happened.</li>
+  <li><strong>Numbers are comparable only within one response.</strong>
   Requesting several keywords together (up to five) puts them on one shared
-  scale, which is how cross-keyword comparison is done.</li>
+  scale, which is the only honest way to compare keywords.</li>
 </ul>
 <p>
-This is a <em>public attention</em> signal. It complements the news project's
-article retrieval: articles say what was published; Trends says what ordinary
-people were actively curious about, including things the press had not
-covered yet.
+For this project it is a public-attention series covering the same days as the
+articles. Articles say what was published; Trends says what ordinary people
+were curious about during those same days, including things the press had not
+covered yet. The gap between the two is the reason to want it, and it only
+means something when both sides cover identical dates.
 </p>
 
-<h2>2. Retrievable Data Types</h2>
+<h2>2. Every pytrends Function, Tested</h2>
 <p>
-Verified against the live endpoints from this machine on 2026-08-09 using the
-free <code>pytrends</code> library:
+The library exposes eleven public data functions plus one payload builder and
+one stitching helper in a separate module. All were called from this machine on
+2026-08-10. The middle column is what Google actually returned; the right
+column is the decision for this project.
 </p>
 <div class="scroll">
 <table>
-  <tr><th>Data type</th><th>Status</th><th>What you get</th><th>Question it answers</th></tr>
   <tr>
-    <td>Interest over time</td>
-    <td class="works">works</td>
-    <td>Dated series of 0-100 values for up to 5 keywords, plus a flag marking the still-accumulating last period</td>
-    <td>How did attention to X move across this window?</td>
+    <th>Function</th>
+    <th>What it returns</th>
+    <th>Live result 2026-08-10</th>
+    <th>Accepts a past window?</th>
+    <th>Verdict</th>
   </tr>
   <tr>
-    <td>Interest by region</td>
-    <td class="works">works</td>
-    <td>One 0-100 value per country, state/province, city, or United States metro area</td>
-    <td>Where is the attention concentrated?</td>
+    <td><code>build_payload(kw_list, cat, timeframe, geo, gprop)</code></td>
+    <td>Not data. Sets the keywords, category, window, geography, and search property that the next four functions inherit.</td>
+    <td>works</td>
+    <td>Yes -- this is where the historical dates go</td>
+    <td class="keep">Required</td>
   </tr>
   <tr>
-    <td>Related queries</td>
-    <td class="works">works</td>
-    <td>Two ranked lists: "top" (highest-volume companion searches, 0-100) and "rising" (fastest-growing, percent growth; extreme growth is flagged as breakout)</td>
-    <td>What else are people who search X also searching?</td>
+    <td><code>interest_over_time()</code></td>
+    <td>Dated series of 0-100 values, one column per keyword, plus an <code>isPartial</code> flag on the last period</td>
+    <td>works; returned 181 daily rows for 2015-01-01 to 2015-06-30</td>
+    <td>Yes</td>
+    <td class="keep">BUILD THIS</td>
   </tr>
   <tr>
-    <td>Suggestions / topic IDs</td>
-    <td class="works">works</td>
-    <td>Google's disambiguated entity identifiers for a term (for example "Bitcoin -- Cryptocurrency" vs the literal string)</td>
-    <td>Which entity do I actually mean, so results are not polluted by same-spelling terms?</td>
+    <td><code>suggestions(keyword)</code></td>
+    <td>Google's entity identifiers for a term, so a series tracks the concept rather than the string</td>
+    <td>works; "bitcoin" returned <code>/m/05p0rrx</code> (Bitcoin, Cryptocurrency) among five entries</td>
+    <td>Not time-based; it names entities, it does not measure them</td>
+    <td class="keep">Optional input helper</td>
   </tr>
   <tr>
-    <td>Related topics</td>
-    <td class="broken">Google endpoint no longer works</td>
-    <td>Returns empty data since a Google backend change</td>
+    <td><code>categories()</code></td>
+    <td>The full tree of about 1,400 numeric categories usable in the <code>cat</code> argument</td>
+    <td>works; returned the complete nested tree</td>
+    <td>Not time-based</td>
+    <td class="caution">Run once, hard-code the few identifiers you need</td>
+  </tr>
+  <tr>
+    <td><code>related_queries()</code></td>
+    <td>Two ranked lists for the requested window: "top" by volume, "rising" by growth</td>
+    <td>works, and genuinely historical -- the 2015 window returned period-appropriate queries such as "mining bitcoin" and "reddit bitcoin"</td>
+    <td>Yes</td>
+    <td class="drop">Skip for now; a real second data shape, worth revisiting only if the project wants query discovery</td>
+  </tr>
+  <tr>
+    <td><code>interest_by_region(resolution)</code></td>
+    <td>One 0-100 value per country, state, city, or United States metro area, over the requested window</td>
+    <td>works; returned all US states for the 2015 window</td>
+    <td>Yes</td>
+    <td class="drop">Skip; answers "where", which this project does not ask</td>
+  </tr>
+  <tr>
+    <td><code>related_topics()</code></td>
+    <td>Companion entities rather than companion query strings</td>
+    <td class="broken">returns an empty dictionary -- silently dead</td>
     <td>--</td>
+    <td class="drop">Unusable</td>
   </tr>
   <tr>
-    <td>Trending searches (today)</td>
-    <td class="broken">Google endpoint no longer works</td>
-    <td>Endpoint removed by Google (HTTP 404)</td>
+    <td><code>multirange_interest_over_time()</code></td>
+    <td>Two or more separate date ranges compared inside one request</td>
+    <td class="broken">HTTP 400</td>
     <td>--</td>
+    <td class="drop">Unusable; two requests plus manual rescaling does the same job</td>
   </tr>
   <tr>
-    <td>Multirange comparison</td>
-    <td class="broken">Google endpoint no longer works</td>
-    <td>Comparing different date ranges in one request fails (HTTP 400)</td>
+    <td><code>top_charts(year)</code></td>
+    <td>Google's year-in-search ranking for a past calendar year</td>
+    <td class="broken">HTTP 404</td>
+    <td>It was historical, which is why it is worth noting</td>
+    <td class="drop">Unusable</td>
+  </tr>
+  <tr>
+    <td><code>trending_searches(pn)</code></td>
+    <td>Today's most popular searches for a country</td>
+    <td class="broken">HTTP 404</td>
+    <td>No -- present moment only</td>
+    <td class="drop">Not wanted regardless</td>
+  </tr>
+  <tr>
+    <td><code>today_searches(pn)</code></td>
+    <td>Today's search list with article links</td>
+    <td class="broken">HTTP 404</td>
+    <td>No -- present moment only</td>
+    <td class="drop">Not wanted regardless</td>
+  </tr>
+  <tr>
+    <td><code>realtime_trending_searches(pn, cat, count)</code></td>
+    <td>Live rising story clusters</td>
+    <td class="broken">HTTP 404</td>
+    <td>No -- present moment only</td>
+    <td class="drop">Not wanted regardless</td>
+  </tr>
+  <tr>
+    <td><code>get_historical_interest(...)</code></td>
+    <td>Was meant to assemble long hourly history automatically</td>
+    <td class="broken">raises <code>NotImplementedError</code>; the library removed it "for incorrectness" and will delete it in version 5</td>
     <td>--</td>
+    <td class="drop">Do not call. Section 6 covers the working alternatives.</td>
+  </tr>
+  <tr>
+    <td><code>pytrends.dailydata.get_daily_data(word, start_year, start_mon, stop_year, stop_mon, geo)</code></td>
+    <td>Long daily history for <strong>one</strong> keyword, stitched by the library from monthly and daily fetches</td>
+    <td>works; returned 59 daily rows for January to February 2017 with columns <code>unscaled</code>, <code>monthly</code>, <code>scale</code>, and the rescaled result</td>
+    <td>Yes, by year and month</td>
+    <td class="caution">Useful only for windows longer than 9 months. See section 6 for its limits.</td>
   </tr>
 </table>
 </div>
+<p>
+The pattern is worth stating plainly: <strong>every "what is popular right now"
+function is dead</strong>, and every function that accepts a date window still
+works. Google has been removing the real-time surface from these unofficial
+endpoints while leaving historical retrieval intact. For this project that is
+the convenient direction to lose things in.
+</p>
 
-<h3>Sample: interest over time</h3>
-<p class="sample-note">Live fetch, keywords "bitcoin" and "ethereum", United States, last 3 months, daily granularity.</p>
+<h3>What the recommended function actually returned</h3>
+<p class="sample-note">Keywords "bitcoin" and "ethereum", geography US, window 2015-01-01 to 2015-06-30. Daily granularity, 181 rows.</p>
 <div class="scroll">
 <table>
-  <tr><th>date</th><th>bitcoin</th><th>ethereum</th><th>partial</th></tr>
-  <tr><td>2026-05-10</td><td>40</td><td>8</td><td>no</td></tr>
-  <tr><td>2026-05-11</td><td>53</td><td>9</td><td>no</td></tr>
-  <tr><td>2026-05-12</td><td>55</td><td>9</td><td>no</td></tr>
+  <tr><th>date</th><th>bitcoin</th><th>ethereum</th><th>isPartial</th></tr>
+  <tr><td>2015-01-01</td><td>27</td><td>0</td><td>False</td></tr>
+  <tr><td>2015-01-02</td><td>28</td><td>0</td><td>False</td></tr>
+  <tr><td>2015-01-03</td><td>31</td><td>0</td><td>False</td></tr>
+  <tr><td>2015-01-04</td><td>41</td><td>0</td><td>False</td></tr>
   <tr><td>...</td><td>...</td><td>...</td><td>...</td></tr>
-  <tr><td>2026-08-09</td><td>29</td><td>6</td><td>no</td></tr>
-  <tr><td>2026-08-10</td><td>27</td><td>6</td><td>yes (still accumulating)</td></tr>
+  <tr><td>2015-06-29</td><td>32</td><td>0</td><td>False</td></tr>
+  <tr><td>2015-06-30</td><td>34</td><td>0</td><td>False</td></tr>
 </table>
 </div>
 <p>
-Reading it: both keywords share one scale, so "ethereum" at 8 while "bitcoin"
-is at 40 means bitcoin drew roughly five times the search volume that day.
+Both keywords share one scale. Ethereum reads 0 for the whole window because it
+barely existed in 2015, which is also a live demonstration of low-volume
+censoring: 0 here means "below Google's reporting threshold", not "nobody
+searched it". <code>isPartial</code> marks a period Google is still filling in;
+a fully historical window never has one, but the flag still has to be handled
+for any window whose end date reaches the present.
 </p>
 
-<h3>Sample: related queries</h3>
-<p class="sample-note">Live fetch, keyword "bitcoin", United States, last 3 months ("top" list, first rows).</p>
+<h3>Hourly data from a past week works too</h3>
+<p class="sample-note">Keyword "bitcoin", geography US, window <code>2015-03-01T00 2015-03-07T23</code>. 168 hourly rows.</p>
 <div class="scroll">
 <table>
-  <tr><th>rank</th><th>query</th><th>relative volume</th></tr>
-  <tr><td>1</td><td>bitcoin price</td><td>100</td></tr>
-  <tr><td>2</td><td>bitcoin stock</td><td>23</td></tr>
-  <tr><td>3</td><td>bitcoin today</td><td>22</td></tr>
-  <tr><td>4</td><td>bitcoin price today</td><td>16</td></tr>
-  <tr><td>5</td><td>bitcoin usd</td><td>15</td></tr>
+  <tr><th>timestamp</th><th>bitcoin</th></tr>
+  <tr><td>2015-03-01 00:00</td><td>38</td></tr>
+  <tr><td>2015-03-01 01:00</td><td>39</td></tr>
+  <tr><td>2015-03-01 02:00</td><td>27</td></tr>
+  <tr><td>...</td><td>...</td></tr>
+  <tr><td>2015-03-07 22:00</td><td>34</td></tr>
+  <tr><td>2015-03-07 23:00</td><td>43</td></tr>
 </table>
 </div>
 <p>
-The companion "rising" list ranks by growth rate instead of volume. Rising
-queries are an early-attention signal: query spikes around an emerging event
-often precede the headline coverage the news providers return.
+Worth knowing because it is easy to assume hourly means recent. It does not:
+any seven-day window back to 2004 returns hourly values, using the
+<code>YYYY-MM-DDTHH</code> timestamp form. For a study of a single news event
+this is the highest resolution available.
 </p>
 
-<h3>Sample: interest by region</h3>
-<p class="sample-note">Live fetch, keyword "bitcoin", United States by state, last 3 months (first rows).</p>
+<h2>3. Arguments</h2>
 <div class="scroll">
 <table>
-  <tr><th>state</th><th>relative interest</th></tr>
-  <tr><td>Alabama</td><td>36</td></tr>
-  <tr><td>Alaska</td><td>54</td></tr>
-  <tr><td>Arizona</td><td>46</td></tr>
-  <tr><td>Arkansas</td><td>28</td></tr>
-</table>
-</div>
-
-<h2>3. Request Options</h2>
-<div class="scroll">
-<table>
-  <tr><th>Option</th><th>Values</th><th>Notes</th></tr>
+  <tr><th>Argument</th><th>Values</th><th>Notes</th></tr>
   <tr>
     <td>Keywords</td>
     <td>1 to 5 per request</td>
-    <td>All keywords in one request share one 0-100 scale. Comparing more than 5 requires overlapping batches and rescaling through a shared anchor keyword.</td>
+    <td>All keywords in one request share one 0-100 scale. Five is a hard endpoint limit.</td>
   </tr>
   <tr>
     <td>Timeframe</td>
-    <td><code>today 3-m</code>, <code>today 12-m</code>, <code>today 5-y</code>, <code>all</code>, <code>now 7-d</code>, or explicit dates <code>2025-01-01 2025-06-30</code></td>
-    <td>Historical data reaches back to 2004. The window length dictates granularity (next table).</td>
+    <td>Explicit dates, <code>2015-01-01 2015-06-30</code>, or hourly form <code>2015-03-01T00 2015-03-07T23</code></td>
+    <td><strong>Only these forms.</strong> The library also accepts today-anchored shorthands (<code>today 3-m</code>, <code>today 5-y</code>, <code>now 7-d</code>, <code>all</code>); the project's wrapper should not expose them, because they return a different window every day and no result reproduces. History reaches back to 2004.</td>
   </tr>
   <tr>
-    <td>Geography</td>
-    <td><code>""</code> worldwide, <code>US</code> country, <code>US-NY</code> state, <code>CA</code> Canada, ...</td>
-    <td>Standard two-letter country codes with optional region suffix.</td>
+    <td>Geography (<code>geo</code>)</td>
+    <td><code>""</code> worldwide, <code>US</code>, <code>US-NY</code>, <code>CA</code>, ...</td>
+    <td>Two-letter country code with optional region suffix. Keep it fixed across a study; changing it changes the scale.</td>
   </tr>
   <tr>
-    <td>Category</td>
-    <td>About 1,400 numeric Google categories</td>
-    <td>For example Finance or Investing; restricts which searches count, disambiguating terms like "apple".</td>
+    <td>Category (<code>cat</code>)</td>
+    <td>Numeric identifier from <code>categories()</code>; 0 means all</td>
+    <td>Restricts which searches count. Worth setting for financial keywords, since the unfiltered series mixes in unrelated consumer searches for terms like "apple".</td>
   </tr>
   <tr>
-    <td>Search property</td>
-    <td>Web (default), News, Images, YouTube, Shopping</td>
-    <td>News-search-only interest is possible and thematically close to this project.</td>
+    <td>Search property (<code>gprop</code>)</td>
+    <td><code>""</code> web (default), <code>news</code>, <code>images</code>, <code>youtube</code>, <code>froogle</code></td>
+    <td>Verified working with historical windows. <code>news</code> is thematically closest to this project, but it is far sparser: the same 2015 window returned mostly zeros with isolated spikes, because news-tab search volume is small enough to hit the censoring threshold. Treat web as the default and news as a cross-check.</td>
   </tr>
 </table>
 </div>
 
-<h3>Granularity is decided by window length</h3>
+<h3>The window length silently sets the granularity</h3>
 <div class="scroll">
 <table>
   <tr><th>Requested window</th><th>Granularity you receive</th></tr>
@@ -266,40 +360,167 @@ often precede the headline coverage the news providers return.
 </table>
 </div>
 <p>
-You cannot ask for daily values over 3 years directly. Getting a long daily
-history requires fetching overlapping shorter windows and stitching them by
-rescaling through the overlap -- a known technique, but it must be built
-deliberately.
+This is not a setting; it follows from the dates, and it caused a visible
+surprise during testing: a request for all of 2015 came back weekly, not daily,
+so it could not be compared row-for-row against a six-month request. The
+wrapper should return the granularity it actually received, so a caller never
+assumes daily and silently gets weekly.
 </p>
 
-<h2>4. Limits That Matter for Quantitative Research</h2>
+<h2>4. Measured: the Same Day Reads 100 or 30 Depending on the Window</h2>
+<p>
+Two requests, same keyword, same geography, both short enough to return daily
+values. Only the end date differs.
+</p>
+<div class="scroll">
+<table>
+  <tr>
+    <th>date</th>
+    <th>fetched with window 2017-01-01 to 2017-03-31</th>
+    <th>fetched with window 2017-01-01 to 2017-09-15</th>
+    <th>ratio</th>
+  </tr>
+  <tr><td>2017-01-01</td><td>47</td><td>14</td><td>3.36</td></tr>
+  <tr><td>2017-01-02</td><td>80</td><td>24</td><td>3.33</td></tr>
+  <tr><td>2017-01-03</td><td>69</td><td>21</td><td>3.29</td></tr>
+  <tr><td>2017-01-04</td><td>95</td><td>28</td><td>3.39</td></tr>
+  <tr><td>2017-01-05</td><td>100</td><td>30</td><td>3.33</td></tr>
+  <tr><td>2017-01-06</td><td>86</td><td>26</td><td>3.31</td></tr>
+</table>
+</div>
+<p>
+January 5, 2017 is either the single busiest day on record or a quiet day at 30
+out of 100, depending only on how far past it the request reached. The long
+window's peak sits on 2017-05-25, five months <em>after</em> the rows shown.
+The ratio column is the important detail: it is the same constant on every day,
+about 3.33, which is the fingerprint of a single shared divisor. Section 5
+explains what follows from that.
+</p>
+
+<h2>5. The Scaling Trap, and What to Do About It</h2>
+<p>
+Write $v_t$ for the true, unobservable search volume on day $t$. For the
+requested window $[s, e]$, what Google returns is
+</p>
+$$ I_t^{[s,e]} \;=\; \mathrm{round}\!\left( 100 \cdot \frac{v_t}{\max_{s \le u \le e} v_u} \right) $$
+<p>
+Every symbol: $I_t^{[s,e]}$ is the reported index on day $t$ from a request
+covering $s$ to $e$; $v_t$ is the true volume on day $t$; the denominator is
+the largest true volume on any day in the window, <em>including days after
+$t$</em>. That last part is the whole problem. A series fetched for all of 2017
+tells every January value where the May peak was. If a study stands on
+2017-01-05 and reads a number, that number already knows the future. This is
+look-ahead bias arriving through the normalization rather than through data
+selection, so the project's publication-date filter cannot catch it.
+</p>
+
+<h3>When it hurts and when it does not</h3>
+<p>
+The leak is one constant divisor applied to the whole series, exactly as the
+ratio column in section 4 shows. That gives a clean rule:
+</p>
+<ul>
+  <li><strong>Scale-invariant use is nearly safe.</strong> Ratios, percentage
+  changes, log differences, and z-scores computed only from data up to the
+  decision date are unchanged when the entire series is multiplied by a
+  constant. The future peak cancels.</li>
+  <li><strong>Level-dependent use leaks.</strong> Any rule like "index above
+  80", or comparing raw levels between two series fetched over different
+  windows, reads the future peak directly. In section 4 the same day is both
+  above and below any threshold you might pick.</li>
+  <li><strong>Rounding leaks a little even in the safe case.</strong> Values
+  are integers from 0 to 100. A large later spike compresses earlier values
+  toward zero, so a quiet stretch that should read 3.4 and 2.6 both arrive as
+  3. That precision loss is a function of future data and no scale-invariant
+  arithmetic recovers it.</li>
+</ul>
+
+<h3>The fix</h3>
+<p>
+If a study makes a decision on date $d$, request $[s, d]$ instead of $[s, e]$
+with $e > d$. The denominator becomes $\max_{s \le u \le d} v_u$, knowable at
+$d$. Stepping through many decision dates therefore means an expanding-window
+fetch: one request per decision date, each ending on that date. Honest, but a
+daily study over one year is roughly 250 requests for one keyword set against a
+rate-limited unofficial endpoint. Two cheaper options:
+</p>
 <ol>
-  <li><strong>Relative scaling.</strong> Every number depends on the window
-  and keyword batch it was fetched with. Series fetched at different times or
-  with different windows are not directly comparable without rescaling.</li>
-  <li><strong>Sampling noise.</strong> Google computes the index from a sample
-  of searches. Fetching the identical request twice can return slightly
-  different values. Serious research fetches several times and averages.</li>
-  <li><strong>Not historical as-of data.</strong> Today’s fetch of 2025 data is not
-  what you would have seen in 2025. Backtesting on freshly fetched history
-  carries revision risk. The honest fix is storing every fetch with its
-  timestamp and building your own dated archive going forward.</li>
+  <li><strong>Rebase locally.</strong> Fetch one long window, then for each
+  decision date $d$ divide the series by its own running maximum up to $d$. One
+  request instead of hundreds, and it reproduces the as-of scale exactly unless
+  rounding already flattened the early values.</li>
+  <li><strong>Use only scale-invariant features</strong>, and keep the window as
+  short as the study allows so the peak stays near the data you care about.</li>
+</ol>
+<div class="callout danger">
+<strong>Rule to encode in the wrapper:</strong> never return or store a series
+without the window it was fetched with. A bare 0-100 series with no window
+attached cannot be audited for this bias, and looks perfectly reasonable while
+being wrong.
+</div>
+
+<h2>6. Getting Daily Values Across More Than 9 Months</h2>
+<p>
+Ask for a window longer than about 9 months and Google downgrades you to weekly
+(section 3). Three ways out, in order of preference.
+</p>
+<div class="scroll">
+<table>
+  <tr><th>Approach</th><th>How it works</th><th>Cost and caveats</th></tr>
+  <tr>
+    <td>Manual stitching (recommended)</td>
+    <td>Fetch overlapping windows of at most 9 months. For adjacent windows $A$ and $B$ sharing overlap $O$, compute
+    $k = \left(\sum_{t \in O} x^A_t\right) / \left(\sum_{t \in O} x^B_t\right)$,
+    replace every value of $B$ with $k \cdot x^B_t$, and concatenate. Repeating forward puts the whole history on the first window's scale.</td>
+    <td>Roughly two requests per year of history, plus repeats for noise averaging. Seam errors compound along the chain, so fetch each window more than once and average before stitching. Supports up to 5 keywords, since it is just repeated normal requests.</td>
+  </tr>
+  <tr>
+    <td><code>pytrends.dailydata.get_daily_data</code></td>
+    <td>The library's own helper. Fetches one month at a time for daily shape, plus one long request for the monthly level, then multiplies the daily values by the monthly level to put everything on a common scale. Verified working: January to February 2017 returned 59 rows with <code>unscaled</code>, <code>monthly</code>, <code>scale</code>, and the combined column.</td>
+    <td><span class="caution">Three real limits.</span> One keyword per call, so no shared-scale comparison. One request per month means a ten-year history is about 120 requests with a built-in wait between each. And the method only makes sense when the overall range exceeds 9 months; below that the "monthly" request itself returns daily data and the rescaling degenerates. Output values are not integers and no longer max at 100, which is fine but breaks any code expecting the 0-100 convention.</td>
+  </tr>
+  <tr>
+    <td><code>get_historical_interest</code></td>
+    <td>The old built-in for long hourly history.</td>
+    <td class="broken">Removed. Calling it raises <code>NotImplementedError</code> with a note that it was withdrawn for incorrectness and will be deleted in version 5. Any tutorial recommending it is out of date.</td>
+  </tr>
+</table>
+</div>
+
+<h2>7. Other Limits That Matter</h2>
+<ol>
+  <li><strong>Revisions: today's fetch of 2015 is not what 2015 looked like.</strong>
+  Google recomputes from its current sample with its current methodology.
+  Correct as-of windowing removes the normalization leak, not this one. The only
+  complete fix is storing every fetch with its timestamp and building a dated
+  archive going forward, which does nothing for windows before you start.</li>
+  <li><strong>Sampling noise.</strong> The index comes from a sample of
+  searches, so the identical request twice can return slightly different values.
+  Careful use fetches several times and averages.</li>
   <li><strong>Rate limiting.</strong> The endpoints are unofficial and
-  aggressively rate limited (HTTP 429 after bursts). Bulk collection needs
-  spacing, retries, and ideally caching.</li>
-  <li><strong>Low-volume censoring.</strong> Terms or regions below a volume
-  threshold return 0 or are omitted entirely, which can look like "no
-  interest" when it means "not enough data".</li>
+  aggressively rate limited (HTTP 429 after bursts). The probe run behind this
+  page needed several seconds of spacing between calls to complete. Any
+  repeated, stitched, or expanding-window use needs a cache and delays; treat
+  that as part of the feature, not a later optimization.</li>
+  <li><strong>Low-volume censoring.</strong> Terms below a threshold return 0,
+  which reads as "no interest" when it means "not enough data". Visible twice in
+  the samples above: ethereum across all of 2015, and the news search property
+  returning mostly zeros. Older windows are more exposed, because a term common
+  now may have been rare then.</li>
+  <li><strong>Keyword meaning drifts.</strong> The same string searched in 2012
+  and in 2024 can refer to different things. Using the entity identifier from
+  <code>suggestions()</code> instead of the raw string reduces this without
+  removing it.</li>
 </ol>
 
-<h2>5. Access Routes</h2>
+<h2>8. Access Routes</h2>
 <div class="scroll">
 <table>
   <tr><th>Route</th><th>Cost</th><th>Status as of 2026-08</th></tr>
   <tr>
     <td><code>pytrends</code> (Python library)</td>
     <td>Free</td>
-    <td>Archived April 2025, unmaintained -- yet its three core functions verifiably work today from this machine. Risk: any Google backend change can break it permanently.</td>
+    <td>Archived April 2025, unmaintained -- yet the historical functions verifiably work today, as section 2 documents. Risk: any Google backend change can break it permanently, and nobody will fix it. The dead functions in section 2 are that process already in progress.</td>
   </tr>
   <tr>
     <td><code>trendspyg</code> (Python library)</td>
@@ -319,80 +540,70 @@ deliberately.
 </table>
 </div>
 <div class="callout">
-Whatever the route, the sane design is one thin internal interface with the
-chosen library isolated behind it, so a dead library is a one-file swap and
-the rest of the project never notices.
+Whatever the route, hide the library behind one thin internal interface, so a
+dead library is a one-file swap and the rest of the project never notices.
+Because only one function is in scope, that interface is a single method.
 </div>
 
-<h2>6. Feature Menu for the News Project</h2>
+<h2>9. Build List</h2>
 <p>
-Ordered roughly from foundational to optional. Each row is independently
-choosable.
+Item 1 is the feature. Item 2 is what makes item 1 usable more than a handful
+of times. Items 3 to 5 are conditional on a study actually needing them.
 </p>
 <div class="scroll">
 <table>
-  <tr><th>#</th><th>Feature</th><th>What it gives you</th><th>Effort</th></tr>
+  <tr><th>#</th><th>Item</th><th>What it gives you</th><th>Effort</th></tr>
   <tr>
     <td>1</td>
-    <td>Interest-over-time retrieval (CLI and/or API route)</td>
-    <td>The core series: attention over a chosen window, up to 5 keywords, table/JSON/CSV output</td>
+    <td>Interest over time for an explicit date window (CLI and/or API route)</td>
+    <td>The series for the same start and end dates the news search uses, up to 5 keywords, table/JSON/CSV output, with the window and the received granularity stored beside the values</td>
     <td>Small</td>
   </tr>
   <tr>
     <td>2</td>
-    <td>Related-queries retrieval</td>
-    <td>Top and rising companion searches; the rising list doubles as an event-discovery signal</td>
+    <td>Caching and request spacing</td>
+    <td>A cache keyed by the full request plus a delay between calls, so repeated and stitched use stops hitting HTTP 429</td>
     <td>Small</td>
   </tr>
   <tr>
     <td>3</td>
-    <td>Regional breakdown retrieval</td>
-    <td>Country/state/city attention map data</td>
+    <td>As-of rescaling helper</td>
+    <td>A pure function: given a fetched series and a decision date, return it rebased to the running maximum up to that date, so level-dependent features stop reading the future peak (section 5)</td>
     <td>Small</td>
   </tr>
   <tr>
     <td>4</td>
-    <td>Browser integration</td>
-    <td>A trends chart beside search results for the selected historical window -- the item already on the project roadmap</td>
+    <td>Window stitching for long daily history</td>
+    <td>Daily values across multiple years from overlapping 9-month fetches (section 6). Build only when a study needs a window that long.</td>
     <td>Medium</td>
   </tr>
   <tr>
     <td>5</td>
-    <td>Long daily history via window stitching</td>
-    <td>Daily-granularity series over multiple years, assembled from overlapping fetches</td>
+    <td>Browser panel for the selected window</td>
+    <td>A chart beside the search results covering exactly the dates already chosen in the search form -- the roadmap item</td>
     <td>Medium</td>
-  </tr>
-  <tr>
-    <td>6</td>
-    <td>Point-in-time archive</td>
-    <td>Scheduled fetches stored with timestamps (SQLite or ClickHouse), building revision-safe history for backtests</td>
-    <td>Medium</td>
-  </tr>
-  <tr>
-    <td>7</td>
-    <td>Caching and rate-limit management</td>
-    <td>A short-lived response cache plus request spacing, so bulk or repeated use stops hitting HTTP 429</td>
-    <td>Small</td>
-  </tr>
-  <tr>
-    <td>8</td>
-    <td>Wikipedia pageviews as a companion source</td>
-    <td>Absolute daily view counts from an official free API -- no sampling, no relative scaling; a better-behaved attention proxy to cross-check Trends</td>
-    <td>Small</td>
   </tr>
 </table>
 </div>
-
-<h2>7. Implementation Blueprint</h2>
 <p>
-A complete implementation was built, verified against the live endpoints, and
-then removed so features could be chosen deliberately. It lives in git
-history: commit <code>38ff678</code> added it, commit <code>3a70fac</code>
-reverted it, so any subset can be restored without rewriting. This section
-records that design and the ideas that go beyond it.
+Not being built: trending searches, today's searches, real-time trending, top
+charts, related topics, multirange comparison, and any today-anchored window.
+The first four of those are dead endpoints anyway. Related queries and interest
+by region both work and both accept historical windows; they are set aside as
+scope, not as broken, and section 2 records what they return in case that
+changes.
 </p>
 
-<h3>Architecture that was built and verified</h3>
+<h2>10. Implementation Blueprint</h2>
+<p>
+A full implementation was built, verified against the live endpoints, and then
+removed so features could be chosen deliberately. It lives in git history:
+commit <code>38ff678</code> added it, commit <code>3a70fac</code> reverted it.
+It covered three functions; only one is now wanted, so restoring it is a
+subset, not a revert.
+</p>
+
+<h3>Architecture, trimmed to the one function</h3>
 <pre>
 Google's private endpoints
         |
@@ -403,17 +614,22 @@ src/news/trends/google.py     GoogleTrendsClient
         |                     - one retry with backoff on HTTP 429
         |                     - DataFrame -> plain dataclasses
         v
-src/news/trends/models.py     TrendsClient interface + result models
-        |                     InterestOverTime / InterestByRegion /
-        |                     RelatedQueries, each with fetched_at
+src/news/trends/models.py     TrendsClient interface (one method)
+        |                     InterestOverTime result: series, keywords,
+        |                     window, granularity, fetched_at
         +----------------------+
         |                      |
         v                      v
-FastAPI routes            news-trends CLI
-/api/trends/interest      interest | regions | related
-/api/trends/regions       table / json / csv output
-/api/trends/related       calls the package directly
+FastAPI route             news-trends CLI
+/api/trends/interest      interest
+                          table / json / csv output
+                          calls the package directly
 </pre>
+<p>
+Dropped from the original build: <code>/api/trends/regions</code>,
+<code>/api/trends/related</code>, the matching CLI subcommands, and the
+<code>InterestByRegion</code> and <code>RelatedQueries</code> models.
+</p>
 
 <h3>Design decisions worth keeping, and why</h3>
 <ul>
@@ -421,102 +637,70 @@ FastAPI routes            news-trends CLI
   article process converts records into one common format, filters, and
   deduplicates. A 0-100 time series fits none of that, so forcing it into the
   provider registry would corrupt both abstractions.</li>
-  <li><strong>The library hides behind one interface.</strong> Routes, CLI,
-  and tests depend on a small <code>TrendsClient</code> interface; only one
-  module imports <code>pytrends</code>. When the archived library breaks, the
-  swap (to <code>trendspyg</code> or the official API) touches one file.</li>
-  <li><strong>Synchronous route handlers on purpose.</strong> The library
-  blocks on HTTP; declaring the FastAPI routes as plain functions makes the
-  framework run them in its worker thread pool, keeping the async event loop
-  free for article searches.</li>
-  <li><strong>The CLI skips the server.</strong> Unlike article search, Trends
-  needs no server-held credentials and no coordination across sources, so
-  <code>news-trends</code> calls the package directly and works without a
-  running server.</li>
+  <li><strong>The library hides behind one interface.</strong> Route, CLI, and
+  tests depend on a small <code>TrendsClient</code> interface; only one module
+  imports <code>pytrends</code>. When the archived library breaks, the swap
+  touches one file.</li>
+  <li><strong>Synchronous route handler on purpose.</strong> The library blocks
+  on HTTP; declaring the FastAPI route as a plain function makes the framework
+  run it in its worker thread pool, keeping the async event loop free for
+  article searches.</li>
+  <li><strong>The CLI skips the server.</strong> Trends needs no server-held
+  credentials and no coordination across sources, so <code>news-trends</code>
+  calls the package directly and works without a running server.</li>
   <li><strong>Errors map by fault.</strong> Bad inputs (empty keywords, more
-  than five, bad resolution) return HTTP 422; Google service failures,
-  including rate limits, return HTTP 502 with a plain-language message.</li>
-  <li><strong>Every result carries <code>fetched_at</code>.</strong> Because
-  Google samples and rescales, a stored result is only meaningful together
-  with when it was fetched. Recording it from day one makes a future
-  point-in-time archive possible.</li>
-  <li><strong>Tests stay offline.</strong> Twenty-three tests covered frame
-  conversion, validation, retry rules, route output, and CLI display
-  through fake clients and fake DataFrames -- the same policy the project
-  applies to news providers, since live Google behavior is not deterministic.</li>
+  than five, bad dates) return HTTP 422; Google failures, including rate limits,
+  return HTTP 502 with a plain-language message.</li>
+  <li><strong>Tests stay offline.</strong> Fake clients and fake DataFrames
+  cover conversion, validation, retry rules, route output, and CLI display --
+  the same policy the project applies to news providers, since live Google
+  behavior is not deterministic.</li>
 </ul>
 
-<h3>Ideas beyond the previous build</h3>
-<div class="scroll">
-<table>
-  <tr><th>Menu item</th><th>Implementation sketch</th></tr>
-  <tr>
-    <td>4. Browser integration</td>
-    <td>Add a trends panel to the existing frontend that calls
-    <code>/api/trends/interest</code> with the search window's dates as an
-    explicit timeframe, so the chart shows attention during the same
-    historical period as the articles. Needs a small chart renderer and a
-    date-window bridge from the search form.</td>
-  </tr>
-  <tr>
-    <td>5. Long daily history</td>
-    <td>Fetch overlapping windows of at most 9 months, then rescale each
-    window so values agree on the overlap (divide by the ratio of overlapping
-    means) and concatenate. The seams inherit sampling noise, so fetch each
-    window more than once and average before stitching.</td>
-  </tr>
-  <tr>
-    <td>6. Point-in-time archive</td>
-    <td>A table keyed by (keyword set, timeframe, geo, fetched_at) storing
-    the raw series -- SQLite through the existing export layer, or ClickHouse
-    for research joins. A scheduled daily fetch of a fixed keyword list turns
-    the relative-index problem into your own absolute history going
-    forward.</td>
-  </tr>
-  <tr>
-    <td>7. Caching and rate limits</td>
-    <td>Reuse the search cache pattern: a short time-to-live in-process cache
-    keyed by the full request, plus the existing cooldown idea from the news
-    providers (after a 429, fail fast locally for a window instead of
-    hammering Google).</td>
-  </tr>
-  <tr>
-    <td>More than 5 keywords</td>
-    <td>Batch keywords with one shared anchor keyword in every batch, then
-    rescale all batches onto the anchor's scale. Doubles or triples request
-    count, so it depends on caching being in place first.</td>
-  </tr>
-  <tr>
-    <td>8. Wikipedia pageviews</td>
-    <td>A sibling package with the same interface shape, calling the official
-    Wikimedia pageviews API: absolute daily counts, no sampling, no relative
-    scaling, generous limits. Cross-checking both attention measures guards
-    against artifacts in either.</td>
-  </tr>
-</table>
-</div>
+<h3>Three changes that build needs before it returns</h3>
+<ol>
+  <li><strong>Take a start date and an end date, not a timeframe string.</strong>
+  Build the timeframe internally and never expose the today-anchored
+  shorthands. This alone removes present-moment behavior from the interface, so
+  it cannot be called by accident.</li>
+  <li><strong>Store the window and the granularity, not just
+  <code>fetched_at</code>.</strong> The timestamp says when the request ran; the
+  window says what the 0-100 scale is anchored to, which section 5 makes the
+  load-bearing field. The granularity says whether the caller got hourly, daily,
+  or weekly values, which the dates decide silently.</li>
+  <li><strong>Default the window to the news search window.</strong> When called
+  from the browser, the trends dates should be the article dates. Any divergence
+  should be an explicit choice, never a default.</li>
+</ol>
 
-<h3>How to bring any of it back</h3>
+<h3>How to restore</h3>
 <ul>
-  <li>Everything at once: <code>git revert 3a70fac</code>.</li>
-  <li>A subset: restore files from <code>38ff678</code> (for example
-  <code>git checkout 38ff678 -- src/news/trends/</code>) and trim routes,
-  CLI, and docs to the chosen features.</li>
+  <li>Bring the files back, then delete what is out of scope:
+  <code>git checkout 38ff678 -- src/news/trends/</code>, then remove the region
+  and related-query models, routes, and CLI subcommands.</li>
+  <li><code>git revert 3a70fac</code> restores all three functions, so it is the
+  wrong starting point unless the scope decision changes.</li>
 </ul>
 
 <h2>TL;DR</h2>
 <p>
-Google Trends can give the project four working data types -- attention over
-time, attention by region, companion queries (top and rising), and entity
-disambiguation -- filtered by window, geography, category, and search
-property, back to 2004. All values are a relative 0-100 index shaped by
-sampling, window-dependent granularity, and rate limits; none are absolute
-counts, and none are point-in-time safe without building an archive. Free
-access rides on unofficial libraries (working today, breakable tomorrow), so
-any implementation should hide the library behind one replaceable interface.
-Pick features from the menu in section 6; section 7 records the verified
-implementation design sitting in git history, ready to restore in part or in
-full.
+Tested live on 2026-08-10: every pytrends function that reports "what is
+popular right now" is dead (trending searches, today's searches, real-time
+trending, top charts, all HTTP 404), and so are related topics and multirange
+comparison. Everything that takes a date window still works -- interest over
+time, related queries, interest by region -- plus <code>suggestions</code> for
+entity identifiers and <code>categories</code> for filtering. The project needs
+one of them: interest over time with explicit start and end dates, which also
+delivers hourly resolution for any past week and can be stitched past the
+9-month daily limit. The trap to design around is the 0-100 scale, divided by
+the peak of the whole requested window: a measured example shows 2017-01-05
+reading 100 in one window and 30 in another, with a constant ratio, because the
+long window's peak sits in May. Scale-invariant features survive that; level
+thresholds do not. Fix it by ending the window on the decision date or rebasing
+to a running maximum, and always store the window next to the values. Free
+access rides on an archived library, so keep it behind a one-method interface.
+Section 9 is the build list; section 10 shows how to restore the matching
+subset from git history and the three changes it needs first.
 </p>
 
 </main>

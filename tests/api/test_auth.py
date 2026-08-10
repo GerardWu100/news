@@ -16,6 +16,8 @@ from news.sources import SourceQueryReport
 from news.sources.base import Article, SourceSearchOptions
 from news.web.config import load_settings
 from tests.fixtures.authentication import (
+    SECOND_TEST_PASSWORD,
+    SECOND_TEST_USERNAME,
     TEST_PASSWORD,
     TEST_USERNAME,
     attach_session_cookie,
@@ -126,6 +128,27 @@ class SignInTests(AuthenticationTestCase):
         self.assertIn(SESSION_COOKIE_NAME, response.cookies)
         self.assertEqual(self.client.get("/api/config").status_code, 200)
 
+    def test_second_account_signs_in_as_itself(self) -> None:
+        """Any configured account opens the data routes under its own name."""
+        response = self.submit_sign_in_form(
+            SECOND_TEST_USERNAME,
+            SECOND_TEST_PASSWORD,
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(self.client.get("/api/config").status_code, 200)
+        self.assertEqual(
+            self.client.get("/api/session").json()["username"],
+            SECOND_TEST_USERNAME,
+        )
+
+    def test_one_account_password_does_not_open_another(self) -> None:
+        """Accounts are separate people, so their passwords must not cross."""
+        response = self.submit_sign_in_form(SECOND_TEST_USERNAME, TEST_PASSWORD)
+
+        self.assertEqual(response.headers["location"], "/login?reason=bad_credentials")
+        self.assertEqual(self.client.get("/api/config").status_code, 401)
+
     def test_wrong_password_returns_to_the_form(self) -> None:
         """A failure names neither which half was wrong nor the account."""
         response = self.submit_sign_in_form(TEST_USERNAME, "not-the-password")
@@ -228,6 +251,15 @@ class HeaderCredentialTests(AuthenticationTestCase):
     def test_correct_header_opens_the_data_routes(self) -> None:
         """One header, no cookie, and the request is served."""
         response = self.client.get("/api/config", headers=basic_auth_headers())
+
+        self.assertEqual(response.status_code, 200)
+
+    def test_second_account_header_opens_the_data_routes(self) -> None:
+        """The command line may sign in as any configured account."""
+        response = self.client.get(
+            "/api/config",
+            headers=basic_auth_headers(SECOND_TEST_USERNAME, SECOND_TEST_PASSWORD),
+        )
 
         self.assertEqual(response.status_code, 200)
 

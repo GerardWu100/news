@@ -29,7 +29,8 @@ if [ ! -f "$CONFIG_PATH" ]; then
 fi
 
 # Make a missing sign-in account obvious here, because the server answers
-# every request with 401 until both values are present.
+# every request with 401 until the first account is complete. The optional
+# UI_USERNAME_2 and UI_USERNAME_3 accounts are checked by the server itself.
 if [ -z "${UI_USERNAME:-}" ] || [ -z "${UI_PASSWORD:-}" ]; then
     echo "[startup] WARNING: UI_USERNAME or UI_PASSWORD is unset; the server"
     echo "[startup] will refuse every request. Set both in .env beside"

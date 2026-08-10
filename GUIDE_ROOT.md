@@ -26,10 +26,11 @@ configuration, user documentation, and local operator settings.
 
 - The data directory is `NEWS_DATA_DIR` when set and the process working
   directory otherwise. Docker points it at the mounted `/data`.
-- `.env` in the data directory holds the sign-in account, provider credentials,
-  and the optional `NEWS_SERVER_URL` CLI default. It is never tracked.
+- `.env` in the data directory holds the sign-in accounts (up to three),
+  provider credentials, and the optional `NEWS_SERVER_URL` CLI default. It is
+  never tracked.
 - `.ui_credentials.json`, `.ui_sessions.json`, and `.login_state.json` in the
-  data directory hold the hashed password, remembered browsers, and
+  data directory hold the hashed account passwords, remembered browsers, and
   failed-attempt counters. All three are owner-only and never tracked. The two
   state files are read and written under a lock on every use, so several server
   processes can serve one data directory.
@@ -51,7 +52,7 @@ The exact tree and responsibility table are in
 - `README.md`: setup, normal commands, and documentation links.
 - `pyproject.toml`: dependencies, package discovery, package data, and commands.
 - `config.toml`: local browser, cache, and proxy-trust settings.
-- `.env.example`: secret-free sign-in account and credential template.
+- `.env.example`: secret-free sign-in accounts and credential template.
 - `Dockerfile`, `docker-compose.yml`, and `docker-entrypoint.sh`: self-hosted
   image, deployment defaults, persistent settings, and Dockerized CLI use.
 - `.dockerignore`: files excluded from the image build context.

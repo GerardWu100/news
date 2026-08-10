@@ -42,9 +42,9 @@ The exact tree is maintained in `docs/reference/PROJECT_STRUCTURE.md`.
 - Optional language, duplicate-removal, exact-phrase, excluded-term, and
   included/excluded-domain filters.
 - Optional source ranking and source-specific section filters.
-- A sign-in account and provider credentials from `.env` in the data directory,
-  created from `.env.example`. The data directory is `NEWS_DATA_DIR` when set
-  and the working directory otherwise.
+- Sign-in accounts (at most three) and provider credentials from `.env` in the
+  data directory, created from `.env.example`. The data directory is
+  `NEWS_DATA_DIR` when set and the working directory otherwise.
 - Browser, cache, and proxy-trust settings from an explicit server option,
   `NEWS_CONFIG`, a current-directory `config.toml`, or packaged defaults, in
   that order.
@@ -167,7 +167,7 @@ so injected markup has nothing to execute.
 
 - Use `uv` for Python commands and dependency management.
 - Keep the frontend dependency-light.
-- Store the sign-in account and provider credentials in `.env`.
+- Store the sign-in accounts and provider credentials in `.env`.
 - Keep project docs in sync after code changes.
 - Treat this project as a retrieval tool, not an analytics system.
 - Keep Docker ports private and put a virtual private network or a Transport

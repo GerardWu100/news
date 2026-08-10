@@ -55,8 +55,11 @@ uv run news-server
 Open `http://127.0.0.1:8000`, sign in, choose the historical window, and search.
 
 Every route that returns news data needs that account; without it the server
-starts and refuses every request. `docs/user/SIGN_IN.md` explains how the
-password is stored and how the command line signs in.
+starts and refuses every request. Up to three accounts can be configured, using
+`UI_USERNAME_2`, `UI_PASSWORD_2`, `UI_USERNAME_3`, and `UI_PASSWORD_3`, so
+separate people can have separate passwords; they all reach the same routes.
+`docs/user/SIGN_IN.md` explains how the passwords are stored and how the command
+line signs in.
 
 For live-reload development:
 
@@ -120,13 +123,13 @@ uv run news-search "central bank" \
   --quiet
 ```
 
-The explicit `--server URL` option overrides `NEWS_SERVER_URL`. The command line signs in with `UI_USERNAME` and `UI_PASSWORD` on every request, so those credentials travel in a header. Send them only over an encrypted connection: put remote access behind a Transport Layer Security (TLS) reverse proxy or a private virtual private network (VPN), never a publicly exposed container port on plain HTTP.
+The explicit `--server URL` option overrides `NEWS_SERVER_URL`. The command line signs in with `UI_USERNAME` and `UI_PASSWORD`, the first configured account, on every request, so those credentials travel in a header. Send them only over an encrypted connection: put remote access behind a Transport Layer Security (TLS) reverse proxy or a private virtual private network (VPN), never a publicly exposed container port on plain HTTP.
 
 See `docs/user/DOCKER.md` for configuration, operations, Dockerized CLI use, and the security boundary. The workspace-only `.agents/skills/summarize-news-cli/` skill teaches an AI agent how to retrieve, audit, and summarize CLI results. The accompanying local article is `blog/index.md`; it is not copied into the website repository.
 
 ## Configuration
 
-Copy `.env.example` to `.env`, set `UI_USERNAME` and `UI_PASSWORD`, and fill in credentials only for the sources you want to enable. Commands look for this file in the data directory, which is `NEWS_DATA_DIR` when set and the current working directory otherwise.
+Copy `.env.example` to `.env`, set `UI_USERNAME` and `UI_PASSWORD` (and the optional second and third accounts), and fill in credentials only for the sources you want to enable. Commands look for this file in the data directory, which is `NEWS_DATA_DIR` when set and the current working directory otherwise.
 
 ```bash
 cp .env.example .env

@@ -4,7 +4,7 @@ Every route that returns news data requires an account. Three things stay open,
 because none of them reveal search results: the sign-in page, the browser's own
 static files under `/static`, and the `/healthz` check the container uses.
 
-## Set the account
+## Set the accounts
 
 1. Copy the template and edit it:
 
@@ -12,7 +12,7 @@ static files under `/static`, and the `/healthz` check the container uses.
    cp .env.example .env
    ```
 
-2. Set both values:
+2. Set the first account:
 
    ```ini
    UI_USERNAME=analyst
@@ -21,22 +21,52 @@ static files under `/static`, and the `/healthz` check the container uses.
 
 3. Start or restart the server.
 
-On startup the server hashes the password, verifies the hash against the
-password it just hashed, and writes the account name plus the hash to
+On startup the server hashes each password, verifies the hash against the
+password it just hashed, and writes the account names plus their hashes to
 `.ui_credentials.json` in the data directory. The startup log says which of the
 two happened:
 
 ```text
-INFO: Hashed the login password for 'analyst' into /data/.ui_credentials.json and passed the hash self-test.
-INFO: Login credentials for 'analyst' verified against /data/.ui_credentials.json.
+INFO: Hashed the sign-in passwords for 'analyst' into /data/.ui_credentials.json and passed the hash self-test.
+INFO: Sign-in credentials for 'analyst' verified against /data/.ui_credentials.json.
 ```
 
-You never run a hashing command. To change the password, edit `.env` and
-restart; the hash is rewritten and every remembered browser is signed out.
+You never run a hashing command. To change a password, edit `.env` and restart;
+the hash is rewritten and every remembered browser is signed out.
 
 If `UI_USERNAME` or `UI_PASSWORD` is missing, the server starts but refuses
 every request and removes any stored account, so a broken configuration fails
 closed rather than open.
+
+## Up to three accounts
+
+Two more accounts are available so separate people can have separate passwords.
+The extra slots repeat the same two settings with a number added:
+
+```ini
+UI_USERNAME=analyst
+UI_PASSWORD=a-password-you-choose
+UI_USERNAME_2=colleague
+UI_PASSWORD_2=another-password
+UI_USERNAME_3=
+UI_PASSWORD_3=
+```
+
+Rules the server applies at startup:
+
+- A slot with both values set becomes an account; a slot left blank is skipped,
+  and slots need not be filled in order.
+- A slot with only one of the two values set is ignored and logged as a warning,
+  because half an account cannot sign in.
+- Two slots may not share an account name; the later one is ignored and logged,
+  because it could never be reached.
+- Every account opens every route. There are no roles, owners, or per-account
+  permissions here.
+- Adding, removing, or changing any account signs out every remembered browser
+  on the next restart.
+
+Nothing else changes: sign-in, the failed-attempt limit, and the sessions
+described below work the same whether one account is configured or three.
 
 ## How the password is stored
 
@@ -66,8 +96,8 @@ owner-only (600) permissions; keep the data directory private.
 | Browser | Sign-in form | A session cookie, set once and kept for 30 days |
 | `news-search` and other programs | HTTP Basic | `UI_USERNAME` and `UI_PASSWORD` as an `Authorization` header on every request |
 
-Both check the same account. The command line reads the same two settings from
-`.env`, so nothing extra is configured:
+Both check the same set of accounts. The command line reads `UI_USERNAME` and
+`UI_PASSWORD`, the first account, so nothing extra is configured:
 
 ```bash
 uv run news-search "central bank" --start 2026-01-01 --end 2026-01-31
@@ -87,13 +117,14 @@ five minutes later.
 
 - A session lasts 30 days.
 - Sessions live in `.ui_sessions.json` and survive a server restart.
-- The file stores the session identifier, its creation time, and the sign-out
-  token for that session. It is not tied to the address that signed in.
+- The file stores the session identifier, its creation time, the account name
+  that signed in, and the sign-out token for that session. It is not tied to
+  the address that signed in.
 - Every check reads the file under a lock rather than a copy held in memory, so
   a browser that signs in through one worker process is recognized by all of
   them.
 - A browser that opens `/login` with a live session goes straight to the app.
-- Changing the account name or password deletes the file, signing everyone out.
+- Changing any account name or password deletes the file, signing everyone out.
 
 ## Slowing down guessing
 
@@ -173,6 +204,7 @@ Leave it `false` when no proxy is in front.
 
 ## What this is not
 
-- One shared account, no second factor, no per-user permissions.
+- At most three accounts, no second factor, no per-account permissions. The
+  accounts separate people, not rights.
 - An admin surface for personal use, not a multi-user public application.
-- Anyone who can read the data directory can read the plain password in `.env`.
+- Anyone who can read the data directory can read the plain passwords in `.env`.
