@@ -31,9 +31,7 @@ PROTECTED_PATHS = (
     "/api/export/csv",
     "/api/export/json",
 )
-_HIDDEN_FIELD_PATTERN = re.compile(
-    r'<input type="hidden" name="(\w+)" value="([^"]*)"'
-)
+_HIDDEN_FIELD_PATTERN = re.compile(r'<input type="hidden" name="(\w+)" value="([^"]*)"')
 
 
 async def _offline_search_executor(

@@ -64,9 +64,7 @@ class PasswordHashingTests(unittest.TestCase):
         weak_iterations = MINIMUM_PBKDF2_ITERATIONS - 1
         strong_hash = hash_password("a-real-password")
         _, _, salt, derived_key = strong_hash.split("$")
-        weakened_hash = (
-            f"{PASSWORD_HASH_SCHEME}${weak_iterations}${salt}${derived_key}"
-        )
+        weakened_hash = f"{PASSWORD_HASH_SCHEME}${weak_iterations}${salt}${derived_key}"
 
         self.assertFalse(verify_password("a-real-password", weakened_hash))
 

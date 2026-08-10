@@ -148,7 +148,10 @@ class AuthStore:
             except (TypeError, ValueError):
                 continue
             session_age_seconds = current_time - created_at
-            if math.isfinite(created_at) and 0 <= session_age_seconds <= max_age_seconds:
+            if (
+                math.isfinite(created_at)
+                and 0 <= session_age_seconds <= max_age_seconds
+            ):
                 valid_sessions[session_id] = {"created_at": created_at}
         return valid_sessions
 

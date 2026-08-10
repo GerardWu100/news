@@ -43,9 +43,7 @@ def write_test_credentials(data_directory: Path) -> Path:
     """
     credentials_file = data_directory / CREDENTIALS_FILENAME
     credentials_file.write_text(
-        json.dumps(
-            {"username": TEST_USERNAME, "password_hash": _TEST_PASSWORD_HASH}
-        ),
+        json.dumps({"username": TEST_USERNAME, "password_hash": _TEST_PASSWORD_HASH}),
         encoding="utf-8",
     )
     return credentials_file
@@ -87,9 +85,9 @@ def basic_auth_headers(
     password: str = TEST_PASSWORD,
 ) -> dict[str, str]:
     """Return an HTTP Basic ``Authorization`` header for the given account."""
-    encoded_credentials = base64.b64encode(
-        f"{username}:{password}".encode()
-    ).decode("ascii")
+    encoded_credentials = base64.b64encode(f"{username}:{password}".encode()).decode(
+        "ascii"
+    )
     return {"Authorization": f"Basic {encoded_credentials}"}
 
 

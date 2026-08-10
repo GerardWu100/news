@@ -280,9 +280,7 @@ class LoginSessions:
         if scheme.lower() != "basic" or not encoded_credentials:
             return False
 
-        header_digest = hashlib.sha256(
-            authorization_header.encode("utf-8")
-        ).hexdigest()
+        header_digest = hashlib.sha256(authorization_header.encode("utf-8")).hexdigest()
         now = time.time()
         with self._lock:
             self._accepted_basic_headers = {
@@ -416,13 +414,9 @@ def build_auth_router() -> APIRouter:
             return RedirectResponse(url="/", status_code=302)
 
         message = _MESSAGE_FOR_REASON.get(reason, "")
-        remaining_ban = sessions.ban_seconds_remaining(
-            sessions.client_address(request)
-        )
+        remaining_ban = sessions.ban_seconds_remaining(sessions.client_address(request))
         if remaining_ban > 0:
-            message = (
-                f"Too many failed attempts. Try again in {remaining_ban} seconds."
-            )
+            message = f"Too many failed attempts. Try again in {remaining_ban} seconds."
         elif not sessions.login_is_configured():
             message = _MESSAGE_FOR_REASON["unconfigured"]
 
