@@ -227,7 +227,7 @@ frames.
   stand-ins. The two fetches are what make the rescaling test meaningful: they
   are the measured proof that the window changes every value.
 - `test_docker_setup.py` protects the loopback host port, Toronto time,
-  persistent data mount, external network, image command, unprivileged
+  persistent data mount, external network, image command, absence of a created
   container account, dropped privileges, read-only root filesystem, and
   first-boot configuration behavior without requiring a Docker daemon.
 - `sources/providers/test_article_date_contract.py` asserts across every

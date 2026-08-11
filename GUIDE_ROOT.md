@@ -90,7 +90,7 @@ The exact tree and responsibility table are in
 - 2026-08-10: Adopted the podcast downloader's sign-in model, so the operator sets a plain account in `.env` and startup, not a separate command, produces the stored hash.
 - 2026-08-10: Moved session state out of process memory and behind the file lock, because the in-memory copy meant a browser signed in through one worker was refused by the next.
 - 2026-08-10: Attached browser protection headers in one middleware instead of route by route, after the search page turned out to be serving third-party article text with no Content Security Policy.
-- 2026-08-10: Made the container serve as an unprivileged account with a read-only root filesystem, which requires the operator to set `NEWS_UID` and `NEWS_GID` to own the mounted data directory.
+- 2026-08-11: Gave the container a read-only root filesystem and dropped capabilities, but no created account, matching the podcast downloader. Debian's base image already defines a system user and group named `news`, so creating one broke the build, and pinning the container to a host user id made the mounted directory an ownership problem for the operator to solve.
 - 2026-08-10: Stopped logging source exceptions verbatim, because the request address in an HTTP error carries the provider key that travels in the query string.
 - 2026-08-10: Required the direct peer to be local or private before believing `X-Forwarded-For`, so the setting alone can no longer be used to bypass the failed-attempt limit.
 - 2026-08-10: Gave the command line HTTP Basic against the same account rather than a second token, because one secret is easier to rotate than two and the CLI already reads `.env`.

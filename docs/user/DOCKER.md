@@ -15,7 +15,7 @@ publishing, and an external reverse-proxy network named `single`.
 | Persistent data | `${HOME}/.containers/news` | Keeps settings outside the image |
 | Docker network | external `single` | Lets an existing reverse proxy reach the container |
 | Browser defaults | English; Guardian and NYT selected | Copied from `config.toml` on first boot |
-| Container account | `NEWS_UID`:`NEWS_GID`, unprivileged | Keeps root out of the container and off the mounted directory |
+| Container account | none created; matches the podcast service | The container owns the mounted directory, so nothing to align on the host |
 | Root filesystem | read-only, with a `/tmp` in memory | The application writes only to the mounted data directory |
 | Privileges | all capabilities dropped, `no-new-privileges` | Nothing here needs any of them |
 
@@ -38,20 +38,11 @@ optional `UI_USERNAME_2`, `UI_PASSWORD_2`, `UI_USERNAME_3`, and `UI_PASSWORD_3`
 add a second and third account; Compose passes all of them to the container. See
 `docs/user/SIGN_IN.md` for what the server does with them.
 
-The container serves as an unprivileged account rather than as root, so it must
-run as the owner of the mounted directory. Create that directory and record
-your own identifiers in `.env`:
+No host preparation is needed for the data directory. The container creates
+`${HOME}/.containers/news` on first boot and owns what it writes there, the
+same arrangement as the podcast service.
 
-```bash
-mkdir -p ~/.containers/news
-printf 'NEWS_UID=%s\nNEWS_GID=%s\n' "$(id -u)" "$(id -g)" >> .env
-```
-
-Without this the container stops on the first boot and prints the exact
-commands to run. Docker creates a missing bind-mount directory owned by root,
-which an unprivileged container cannot write to.
-
-Compose reads that root `.env` and passes the account and provider settings to
+Compose reads the root `.env` and passes the account and provider settings to
 the container. Create the shared network once if the reverse-proxy stack has not
 already created it:
 

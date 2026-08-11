@@ -139,11 +139,7 @@ docker compose up --build -d news
 
 Open `http://127.0.0.1:50023`. Host port `50023` avoids the podcast service’s `50022` default. On first boot, the container copies the repository `config.toml` into the persistent data directory. Later rebuilds preserve operator changes.
 
-Before the first start, create the data directory and set `NEWS_UID` and `NEWS_GID` in `.env` to your own `id -u` and `id -g`. The container serves as an unprivileged account, so it must run as the owner of that directory:
-
-```bash
-mkdir -p ~/.containers/news
-```
+The container creates `${HOME}/.containers/news` itself on first boot, so there is nothing to prepare beforehand.
 
 An AI agent can use the same CLI against a private remote deployment:
 

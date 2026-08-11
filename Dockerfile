@@ -20,19 +20,6 @@ RUN uv sync --frozen --no-dev
 COPY docker-entrypoint.sh /docker-entrypoint.sh
 RUN chmod +x /docker-entrypoint.sh
 
-# Serve as an unprivileged account. The server needs no privileged port and no
-# system file, so a compromise of the application code reaches nothing but the
-# mounted data directory. The identifiers are fixed so the files this container
-# writes into the mounted directory keep a stable owner across rebuilds.
-# The account is called "appuser" because Debian's base image already defines a
-# system group and user named "news" (gid 9), which would make groupadd fail.
-RUN groupadd --gid 10001 appuser \
-    && useradd --uid 10001 --gid 10001 --create-home --shell /usr/sbin/nologin appuser \
-    && mkdir -p /data \
-    && chown -R appuser:appuser /data /app
-
-USER appuser
-
 EXPOSE 8000
 
 ENTRYPOINT ["/docker-entrypoint.sh"]
