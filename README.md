@@ -130,7 +130,7 @@ Run `uv run news-search --help` for source filters, exact phrases, domain filter
 
 ## Docker
 
-The deployment uses Python 3.13 slim, `uv`, Toronto time, `restart: unless-stopped`, persistent configuration under `${HOME}/.containers/news` or the `NEWS_DATA_HOST_DIR` folder named in `.env`, loopback-only publishing, and the external `single` reverse-proxy network.
+The deployment uses Python 3.13 slim, `uv`, Toronto time, `restart: unless-stopped`, persistent configuration under `${HOME}/.containers/news`, loopback-only publishing, and the external `single` reverse-proxy network.
 
 ```bash
 docker network create single  # one time, if it does not already exist

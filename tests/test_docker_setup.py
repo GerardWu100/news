@@ -18,12 +18,7 @@ class DockerDeploymentTests(unittest.TestCase):
         self.assertIn('"127.0.0.1:50023:8000"', compose)
         self.assertIn("restart: unless-stopped", compose)
         self.assertIn("TZ: America/Toronto", compose)
-        # The host folder is an operator setting with the shared default, so
-        # the mount must keep both the variable and that fallback.
-        self.assertIn(
-            "${NEWS_DATA_HOST_DIR:-${HOME}/.containers/news}:/data",
-            compose,
-        )
+        self.assertIn("${HOME}/.containers/news:/data", compose)
         self.assertIn("NEWS_CONFIG: /data/config.toml", compose)
         self.assertIn("NEWS_SERVER_URL: http://news:8000", compose)
         self.assertIn("external: true", compose)
@@ -84,7 +79,6 @@ class DockerDeploymentTests(unittest.TestCase):
 
         self.assertIn("NEWS_UID=", example)
         self.assertIn("NEWS_GID=", example)
-        self.assertIn("NEWS_DATA_HOST_DIR=", example)
 
     def test_entrypoint_seeds_config_without_overwriting_operator_changes(self) -> None:
         """First boot should copy defaults only when no mounted config exists."""

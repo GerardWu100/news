@@ -12,7 +12,7 @@ publishing, and an external reverse-proxy network named `single`.
 | Host address and port | `127.0.0.1:50023` | Avoids public exposure and the podcast service’s `50022` port |
 | Time zone | `America/Toronto` | Matches the operator’s local time |
 | Restart policy | `unless-stopped` | Restarts after failure or host reboot |
-| Persistent data | `${HOME}/.containers/news`, or `NEWS_DATA_HOST_DIR` | Keeps settings outside the image |
+| Persistent data | `${HOME}/.containers/news` | Keeps settings outside the image |
 | Docker network | external `single` | Lets an existing reverse proxy reach the container |
 | Browser defaults | English; Guardian and NYT selected | Copied from `config.toml` on first boot |
 | Container account | `NEWS_UID`:`NEWS_GID`, unprivileged | Keeps root out of the container and off the mounted directory |
@@ -22,16 +22,6 @@ publishing, and an external reverse-proxy network named `single`.
 The mounted `config.toml` is seeded only when
 `${HOME}/.containers/news/config.toml` does not exist. Image upgrades therefore
 do not overwrite operator changes.
-
-Two settings are easy to confuse, because both name a data directory:
-
-| Setting | Which machine | Value |
-|---|---|---|
-| `NEWS_DATA_HOST_DIR` in `.env` | Yours | Folder holding `config.toml` and the sign-in state. Blank means `${HOME}/.containers/news` |
-| `NEWS_DATA_DIR` in `docker-compose.yml` | Inside the container | Always `/data`, the other end of the same mount |
-
-Only the first is yours to change. Give it a full path rather than one starting
-with `~`, because Docker Compose does not expand `~` in a mount.
 
 ## Start the service
 
@@ -56,8 +46,6 @@ your own identifiers in `.env`:
 mkdir -p ~/.containers/news
 printf 'NEWS_UID=%s\nNEWS_GID=%s\n' "$(id -u)" "$(id -g)" >> .env
 ```
-
-If you set `NEWS_DATA_HOST_DIR` to somewhere else, create that folder instead.
 
 Without this the container stops on the first boot and prints the exact
 commands to run. Docker creates a missing bind-mount directory owned by root,
@@ -95,7 +83,7 @@ docker compose down
 ```
 
 `docker compose down` removes the container and its Compose network attachment.
-It does not delete the mounted data folder.
+It does not delete `${HOME}/.containers/news`.
 
 ## Call the server from an AI agent
 
