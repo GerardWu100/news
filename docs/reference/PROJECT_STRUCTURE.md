@@ -7,6 +7,11 @@ This file records the repository as it exists. Proposed changes belong in
 
 ```text
 .
+├── .agents/
+│   └── skills/
+│       └── news-cli/
+│           ├── SKILL.md
+│           └── agents/openai.yaml
 ├── .dockerignore
 ├── .env.example
 ├── .gitignore
@@ -169,6 +174,7 @@ readability.
 | `src/news/sources/` | Source access, ACLED OAuth setup, retries and pauses, registry, and parallel requests |
 | `src/news/trends/` | Google Trends retrieval for one explicit past window, query-to-keyword conversion, request spacing, and as-of rescaling |
 | `src/news/web/` | Typed configuration validation, package defaults, path lookup, password hashing, stored sign-in state, and installed browser assets |
+| `.agents/skills/news-cli/` | Retrieval and coverage-check instructions for an outside AI agent, made to be copied into that agent's own skills folder |
 | `blog/` | Local-only article source about the deployment and agent workflow |
 | `scripts/` | Thin ACLED credential and OpenAPI generation commands |
 | `tests/` | Deterministic offline regression coverage |

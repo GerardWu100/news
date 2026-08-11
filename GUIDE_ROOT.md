@@ -63,6 +63,9 @@ The exact tree and responsibility table are in
 - `Dockerfile`, `docker-compose.yml`, and `docker-entrypoint.sh`: self-hosted
   image, deployment defaults, persistent settings, and Dockerized CLI use.
 - `.dockerignore`: files excluded from the image build context.
+- `.agents/skills/news-cli/`: retrieval instructions for an outside AI agent,
+  written to be copied into that agent's own skills folder. Retrieval and
+  coverage checking only; it does not ask for a summary.
 - `blog/`: local article source; it is not a website publish target.
 - `src/`: importable implementation and installed resources; start with
   `src/GUIDE_src.md`.
@@ -93,4 +96,4 @@ The exact tree and responsibility table are in
 - 2026-08-10: Required the direct peer to be local or private before believing `X-Forwarded-For`, so the setting alone can no longer be used to bypass the failed-attempt limit.
 - 2026-08-10: Gave the command line HTTP Basic against the same account rather than a second token, because one secret is easier to rotate than two and the CLI already reads `.env`.
 - 2026-08-10: Left `WWW-Authenticate` off the 401 responses so the browser shows this application's sign-in page instead of its own native password box.
-- 2026-08-11: Removed the bundled agent skill in `.agents/`, superseding the 2026-07-29 decision to keep it in this workspace. The agent's instructions now come from outside the repository and it calls `news-search` like any other program, so the model, the prompt, and the key stay with whoever runs the agent and this project keeps only the retrieval job.
+- 2026-08-11: Replaced the bundled summarize-and-retrieve skill with a retrieval-only one, `.agents/skills/news-cli/`. The product summarizes nothing; the skill exists to be copied into an outside agent's skills folder so that agent can sign in, drive both commands, and audit provider coverage while bringing its own model, prompt, and key.

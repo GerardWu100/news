@@ -1,0 +1,4 @@
+interface:
+  display_name: "News CLI"
+  short_description: "Retrieve point-in-time news and search attention"
+  default_prompt: "Use $news-cli to retrieve news published inside an exact date window through the project CLI, check provider coverage, and report the records."

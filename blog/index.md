@@ -98,11 +98,16 @@ large, expensive inputs for an LLM. A page limit makes the retrieval budget
 visible and prevents an agent from turning a vague request into an unbounded
 collection job.
 
-## The agent's instructions live outside the service
+## The service retrieves; it does not summarize
 
-The service contains no AI of its own. There is no model call, no prompt, and no
-generated summary in the code. An agent reads the same JSON any other program
-would and does its own work with it.
+The service contains no model of its own. There is no API call to a language
+model, no prompt, and no generated prose about the articles. An agent reads the
+same JSON any other program would and does its own work with it.
+
+What the repository does ship is a skill file: a short set of operating
+instructions meant to be copied into an agent's own skills folder. It covers
+signing in to a deployment, running the commands, and checking which providers
+actually answered. It deliberately stops there and does not ask for a summary.
 
 That split is deliberate rather than a gap waiting to be filled. Retrieval and
 interpretation fail in different ways and are best fixed separately: a missing

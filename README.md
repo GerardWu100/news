@@ -20,20 +20,21 @@ Planned work would make the browser a broader historical research workspace:
 - Add macroeconomic data that was available during the selected period.
 - Show the next configurable number of days of major financial and economic data releases in the browser.
 
-### Not planned for now: built-in AI
+### Not planned for now: news summaries
 
-This project has no artificial intelligence (AI) support built in, and none is
-planned at the moment. There is no large language model (LLM) API call, no
-bundled agent skill, and no generated summary anywhere in the code.
+The project retrieves news; it does not summarize it, and no summary feature is
+planned at the moment. There is no large language model (LLM) API call anywhere
+in the code, and nothing here generates prose about the articles.
 
-The intended arrangement is the other way around. An agent receives its
-instructions from outside this repository and calls `news-search` the way any
-other program would, reading the structured JSON output. That keeps the model
-choice, the prompt, and the API key with whoever runs the agent rather than in
-this codebase, and it keeps this project to one job: retrieval.
+Artificial intelligence (AI) agents are still intended users, from the outside.
+`.agents/skills/news-cli/SKILL.md` is a skill file written to be copied into an
+agent's own skills folder. It teaches the agent to sign in to a deployment, run
+`news-search` and `news-trends`, and check which providers actually answered
+before trusting a result. The agent brings its own model, prompt, and key; this
+project supplies the data and an honest account of what was retrieved.
 
-Revisit this only if something is needed that the structured CLI output cannot
-already support.
+Revisit a built-in summary only if something is needed that an outside agent
+reading the structured output cannot already do.
 
 ## Search attention for the same window
 
@@ -158,7 +159,7 @@ uv run news-search "central bank" \
 
 The explicit `--server URL` option overrides `NEWS_SERVER_URL`. The command line signs in with `UI_USERNAME` and `UI_PASSWORD`, the first configured account, on every request, so those credentials travel in a header. Send them only over an encrypted connection: put remote access behind a Transport Layer Security (TLS) reverse proxy or a private virtual private network (VPN), never a publicly exposed container port on plain HTTP.
 
-See `docs/user/DOCKER.md` for configuration, operations, Dockerized CLI use, and the security boundary. The accompanying local article is `blog/index.md`; it is not copied into the website repository.
+See `docs/user/DOCKER.md` for configuration, operations, Dockerized CLI use, and the security boundary. `.agents/skills/news-cli/SKILL.md` is the skill file to copy into an AI agent's own skills folder so it can drive the CLI against a deployment. The accompanying local article is `blog/index.md`; it is not copied into the website repository.
 
 ## Configuration
 

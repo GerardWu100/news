@@ -147,9 +147,12 @@ access-control system. Set `security.trust_forwarded_headers = true` in
 `config.toml` when a proxy you control sits in front, so failed-attempt limits
 count the real client address.
 
-Nothing about the agent's behavior lives in this repository. It calls the
-command like any other program and reads the structured output; the
-instructions, the model, and the key stay with whoever runs it.
+The agent brings its own model, prompt, and key; this repository supplies only
+the data and the instructions for getting it. Those instructions are
+`.agents/skills/news-cli/SKILL.md`, written to be copied into an agent's own
+skills folder. It covers signing in to a remote deployment, running both
+commands, and checking which providers answered before a result is trusted. It
+does not ask the agent to summarize anything.
 
 ## Configuration precedence
 
