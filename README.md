@@ -27,8 +27,10 @@ is no LLM call anywhere in the code.
 - Reports per-source success/failure (`source_reports`) on every response, so
   a source that returned zero articles is distinguishable from a source that
   failed.
-- `news-trends` / `GET /api/trends/interest` reports Google Trends search
-  interest for the same query and window, separate from article retrieval.
+- Reports Google Trends search interest for the same query and window, in the
+  browser, through `news-trends`, and at `GET /api/trends/interest`. A decision
+  date rescales the series to what was known then, since Google's own scaling
+  encodes a peak that had not yet happened.
 
 ```mermaid
 flowchart LR
@@ -68,7 +70,9 @@ cp .env.example .env   # set UI_USERNAME and UI_PASSWORD
 uv run news-server
 ```
 
-Open `http://127.0.0.1:8000`, sign in, choose the window, and search.
+Open `http://127.0.0.1:8000`, sign in, choose the window, and search. The page
+has three sections: build the search, review the archive, and compare it with
+what people searched for over the same dates.
 
 ## Usage
 

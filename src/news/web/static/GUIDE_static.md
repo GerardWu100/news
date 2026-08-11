@@ -7,7 +7,7 @@
 The `static/` folder contains the entire browser client: one HTML shell, one
 CSS file, and a small set of JavaScript modules. These files ship with the
 package so the browser works from both a source checkout and an installed
-wheel. The frontend is dependency-light and focuses only on retrieval:
+wheel. The frontend is dependency-light and focuses on retrieval:
 
 - explaining the historical cutoff before the form,
 - restoring searches from the browser URL,
@@ -17,9 +17,35 @@ wheel. The frontend is dependency-light and focuses only on retrieval:
 - downloading the exact visible page as JSON or CSV,
 - copying a shareable query link,
 - keeping page navigation correct during asynchronous loads,
-- and opening an in-app article detail dialog.
+- opening an in-app article detail dialog,
+- and drawing search attention for the same query and window.
 
-It no longer shows analytics cards or breakdown charts.
+## Search attention
+
+The third section asks `GET /api/trends/interest` for the same query and dates
+already in the search form. It deliberately has no query or date fields of its
+own: attention only means something beside the articles from the same window,
+and a second set of inputs would let the two drift apart without the reader
+noticing. Only the geography and the decision date are section-specific,
+because neither has any meaning for an article search.
+
+The chart is inline SVG built by `trends.js`, not a charting library. The
+page's Content Security Policy allows scripts only from this server, so no
+external library can load, and a line chart needs far less code than shipping
+one.
+
+Two details of the drawing exist for a reason. The vertical axis is fixed at 0
+to 100 rather than scaled to the data, because Google's index is already
+relative and a self-scaling axis would make two incomparable windows look
+alike. And the drawing is measured in the section's own pixel width instead of
+a fixed box stretched to fit, because stretching scales the horizontal and
+vertical axes by different amounts and distorts every label.
+
+The section states in words what the numbers mean. Google scales every value to
+the peak of the whole window requested, so a reader who takes 100 for "very
+high" rather than "the highest point of this window" misreads the chart, and
+the early part of a long window carries a peak that had not happened yet. The
+decision date asks the server to rescale to what was known on that date.
 
 The visual hierarchy follows the research workflow. The editorial masthead
 states the purpose and the information-set rule; the numbered search workspace
@@ -75,15 +101,16 @@ like, sends the reader to the sign-in page instead of showing a search error.
 static/
 ├── favicon.svg           -- Packaged browser-tab mark matching the masthead.
 ├── GUIDE_static.md       -- This documentation file.
-├── index.html            -- HTML shell for the search interface and results area.
-├── styles.css            -- Shared editorial theme, layout, cards, and dialog styles.
+├── index.html            -- HTML shell for the search interface, results area, and attention chart.
+├── styles.css            -- Shared editorial theme, layout, cards, chart, and dialog styles.
 └── scripts/
-    ├── api.js            -- API helpers for config, sources, and search calls.
+    ├── api.js            -- API helpers for config, sources, search, and trends calls.
     ├── app.js            -- UI coordination, submission, page navigation, export, and share-link actions.
     ├── form.js           -- Form reading, URL hydration/sync, and export/share-link helpers.
     ├── render.js         -- Cutoff, result, action, status, dialog, and safe-link display.
     ├── session.js        -- Signed-in account name and the sign-out form token.
-    └── state.js          -- In-memory state for the active search.
+    ├── state.js          -- In-memory state for the active search.
+    └── trends.js         -- Search-attention section: request, SVG chart, legend, and scale caption.
 ```
 
 ## Part 3 -- Code Reference
@@ -116,6 +143,8 @@ static/
 - `fetchConfig()`: fetches `/api/config`.
 - `fetchSources()`: fetches `/api/sources`.
 - `fetchSearch(params)`: fetches `/api/search` with the active query params.
+- `fetchTrends(params)`: fetches `/api/trends/interest` for the same query and
+  window.
 - A 401 from any of these sends the browser to `/login`, because an expired
   session makes every call fail the same way.
 
@@ -162,6 +191,20 @@ never hears.
 - `renderPagination(...)`: controls the previous/next page buttons and label.
 - `clearStatus()`: clears result status and hides the boundary and action group.
 
+### `scripts/trends.js`
+
+- `loadAttention()`: reads the query and window from the search form, requests
+  the series, and draws it. Bound to the section's own button on import.
+- `measureChartBox()`: reads the section's current width and picks a drawing
+  height from it, so the SVG never needs stretching.
+- `buildChart(...)`, `buildGridLine(...)`, `buildDateLabels(...)`,
+  `buildLine(...)`: assemble the SVG. Date labels are spaced by the width
+  available rather than by a fixed count, so they do not overlap on a phone.
+- `buildLegend(...)`: one colour swatch per keyword. The colour is written to
+  the element because the stylesheet cannot know the keyword order.
+- `describeSeries(...)`: states the geography, the point spacing, and what the
+  value 100 means for this particular request.
+
 ### `scripts/state.js`
 
     - Stores the active query object, current results, current page, page flags, request-cancellation controller, and last search details.
@@ -192,3 +235,7 @@ never hears.
 - 2026-08-11: Shortened the masthead so the search form is visible without
   scrolling, and replaced the fixed 1240-pixel column with fluid full-width
   bands so the page fills the window at any size or zoom level.
+- 2026-08-11: Added the search-attention section, and rewrote `styles.css` so
+  each selector is defined once. The file had grown from two stylesheets
+  concatenated, where 29 selectors were declared twice and the later copy
+  silently won, so the value a reader found was often not the value in use.

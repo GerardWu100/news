@@ -96,7 +96,8 @@ This file records the repository as it exists. Proposed changes belong in
 │                   ├── form.js
 │                   ├── render.js
 │                   ├── session.js
-│                   └── state.js
+│                   ├── state.js
+│                   └── trends.js
 ├── scripts/
 │   ├── GUIDE_scripts.md
 │   ├── acled_oauth_token.py

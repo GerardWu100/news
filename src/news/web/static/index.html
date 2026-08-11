@@ -260,6 +260,46 @@
                 <button class="pager-btn" id="next-page-btn" type="button">Next page</button>
             </div>
         </section>
+
+        <section class="glass-panel trends-panel">
+            <div class="panel-heading">
+                <span class="section-index">03</span>
+                <div>
+                    <p class="section-kicker">Compare with the crowd</p>
+                    <h2>What people searched for</h2>
+                </div>
+                <p class="panel-guidance">
+                    Uses the topic and dates above. Articles say what was published;
+                    this says what people were looking for.
+                </p>
+            </div>
+
+            <div class="research-note">
+                <strong>Read the scale carefully</strong>
+                <span>
+                    Google reports a relative index from 0 to 100, never a number of
+                    searches, and scales it to the highest point of the window
+                    requested. Set a decision date to rescale to what was known then.
+                </span>
+            </div>
+
+            <div class="trends-controls">
+                <label class="primary-field">
+                    <span>Geography</span>
+                    <input type="text" id="trends-geo" placeholder="e.g. US, CA, US-NY">
+                </label>
+                <label class="primary-field">
+                    <span>Decision date</span>
+                    <input type="date" id="trends-as-of">
+                </label>
+                <button type="button" id="trends-btn">Show attention</button>
+            </div>
+
+            <p class="trends-status" id="trends-status" role="status" aria-live="polite"></p>
+            <div class="trends-legend" id="trends-legend"></div>
+            <div class="trends-chart" id="trends-chart" aria-busy="false"></div>
+            <p class="trends-summary" id="trends-summary"></p>
+        </section>
     </main>
 
     <dialog class="article-dialog" id="article-dialog">
@@ -271,5 +311,6 @@
 
     <script type="module" src="/static/scripts/session.js"></script>
     <script type="module" src="/static/scripts/app.js"></script>
+    <script type="module" src="/static/scripts/trends.js"></script>
 </body>
 </html>

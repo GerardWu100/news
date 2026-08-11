@@ -12,6 +12,9 @@ STYLES_CSS_PATH = PROJECT_ROOT / "src" / "news" / "web" / "static" / "styles.css
 RENDER_JS_PATH = (
     PROJECT_ROOT / "src" / "news" / "web" / "static" / "scripts" / "render.js"
 )
+TRENDS_JS_PATH = (
+    PROJECT_ROOT / "src" / "news" / "web" / "static" / "scripts" / "trends.js"
+)
 
 
 class FrontendStaticSecurityTests(unittest.TestCase):
@@ -57,3 +60,41 @@ class FrontendResearchWorkflowTests(unittest.TestCase):
         self.assertIn('buildExportUrl("json"', app_source)
         self.assertIn('buildExportUrl("csv"', app_source)
         self.assertIn("renderResearchWindow(payload.meta)", app_source)
+
+
+class FrontendSearchAttentionTests(unittest.TestCase):
+    """Check the search-attention section the browser draws beside articles."""
+
+    def test_page_carries_the_attention_section_and_its_controls(self) -> None:
+        """The section needs its own geography, decision date, and trigger."""
+        html = INDEX_HTML_PATH.read_text(encoding="utf-8")
+
+        self.assertIn('id="trends-chart"', html)
+        self.assertIn('id="trends-geo"', html)
+        self.assertIn('id="trends-as-of"', html)
+        self.assertIn('id="trends-btn"', html)
+        self.assertIn("/static/scripts/trends.js", html)
+
+    def test_attention_reuses_the_search_query_and_window(self) -> None:
+        """A second set of query and date fields could silently drift apart."""
+        trends_source = TRENDS_JS_PATH.read_text(encoding="utf-8")
+
+        self.assertIn("readSearchForm", trends_source)
+        self.assertNotIn('getElementById("query")', trends_source)
+        self.assertNotIn('getElementById("start-date")', trends_source)
+
+    def test_chart_is_drawn_without_an_external_library(self) -> None:
+        """The page's security policy allows scripts only from this server."""
+        html = INDEX_HTML_PATH.read_text(encoding="utf-8")
+        trends_source = TRENDS_JS_PATH.read_text(encoding="utf-8")
+
+        self.assertNotIn("<script src=\"http", html)
+        self.assertIn("createElementNS", trends_source)
+
+    def test_relative_scale_is_explained_where_the_chart_is_read(self) -> None:
+        """A reader who takes 100 for "very high" misreads every chart."""
+        html = INDEX_HTML_PATH.read_text(encoding="utf-8")
+        trends_source = TRENDS_JS_PATH.read_text(encoding="utf-8")
+
+        self.assertIn("relative index from 0 to 100", html)
+        self.assertIn("not a number of searches", trends_source)

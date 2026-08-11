@@ -22,6 +22,17 @@ export async function fetchSearch(params, signal = null) {
     return fetchJson(`/api/search?${queryString}`, signal);
 }
 
+/**
+ * Fetch Google Trends search attention for the same query and window.
+ *
+ * The route takes the same `q`, `start`, and `end` as a search, so the caller
+ * passes the values already in the form rather than a second set of inputs.
+ */
+export async function fetchTrends(params, signal = null) {
+    const queryString = new URLSearchParams(params).toString();
+    return fetchJson(`/api/trends/interest?${queryString}`, signal);
+}
+
 async function fetchJson(path, signal = null) {
     const options = {};
     if (signal) {
