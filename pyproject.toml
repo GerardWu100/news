@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "Historical multi-source news search engine with a FastAPI backend and browser frontend"
 readme = "README.md"
 requires-python = ">=3.13"
+license = { file = "LICENSE" }
 dependencies = [
     "fastapi>=0.135.1",
     "httpx>=0.28.1",
