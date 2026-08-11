@@ -71,8 +71,8 @@ inside the container, which needs no account so that a signed-out container is
 still reported as healthy.
 
 The mounted data directory also holds the sign-in state: `.ui_credentials.json`
-(account name and hashed password), `.ui_sessions.json` (remembered browsers),
-and `.login_state.json` (failed-attempt counters).
+(each account name and its hashed password), `.ui_sessions.json` (remembered
+browsers), and `.login_state.json` (failed-attempt counters).
 
 Useful commands:
 
@@ -130,7 +130,7 @@ both to the `news-cli` service; outside Docker they come from `.env`.
 For a remote agent, still put a Transport Layer Security (TLS) reverse proxy or
 a private virtual private network (VPN) in front of the `news` container and
 point `NEWS_SERVER_URL` at that address. The account protects the data, but it
-travels in plain text without TLS, and a single shared account is not an
+travels in plain text without TLS, and up to three equal accounts are not an
 access-control system. Set `security.trust_forwarded_headers = true` in
 `config.toml` when a proxy you control sits in front, so failed-attempt limits
 count the real client address.

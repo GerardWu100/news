@@ -73,8 +73,9 @@ The exact tree is maintained in `docs/reference/PROJECT_STRUCTURE.md`.
 
 1. The `news-server` command loads credentials, reads bind options, and asks
    the application factory to build the FastAPI app.
-2. Startup hashes the sign-in password, checks the hash against it, and stores
-   only the hash. A missing account leaves every data route closed.
+2. Startup hashes each configured sign-in password, checks the hash against it,
+   and stores only the hashes. Settings without one complete account leave
+   every data route closed.
 3. Startup combines the selected operator settings with the packaged defaults,
    validates them, and creates a process-local cache.
 4. The caller proves the account: a browser through the sign-in form, which
@@ -109,9 +110,11 @@ container without widening the host port.
 
 ### Sign-in model
 
-One shared account protects everything that returns news. The operator writes a
-plain account name and password into `.env`; startup turns the password into a
-PBKDF2 hash, stores only that, and re-verifies it on every boot. Failed
+Up to three accounts protect everything that returns news. The operator writes
+plain account names and passwords into `.env`, one required pair and two
+optional numbered pairs; startup turns each password into a PBKDF2 hash, stores
+only the hashes, and re-verifies them on every boot. The accounts separate
+people, not permissions: any of them opens every route. Failed
 attempts are counted per client address and a run of them refuses that address
 for a while, through both the form and the header. Sessions and counters live
 in files read and written under a lock, so a restart does not sign everyone out,
@@ -199,10 +202,11 @@ compare levels against a fixed threshold do not.
 - The Docker health check requests the open health route, so a container with
   no signed-in browser is still reported as healthy. Persistent configuration
   is copied from the repository defaults only on first boot.
-- Sign-in is one shared account with no second factor and no per-user
-  permissions. It protects the data and the provider quotas; it is not an
-  access-control system for several people.
-- The plain password stays in `.env` on disk. File permissions and a private
+- Sign-in allows at most three accounts, with no second factor and no
+  per-account permissions. They protect the data and the provider quotas and
+  let separate people hold separate passwords; they are not an access-control
+  system, because every account reaches everything.
+- The plain passwords stay in `.env` on disk. File permissions and a private
   data directory are the protection, and that is a deliberate trade-off for not
   needing a hashing command.
 
