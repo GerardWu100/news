@@ -7,38 +7,171 @@ This file describes the repository as it exists. Proposed changes belong in
 
 ```text
 .
-├── .agents/skills/news-cli/       AI-agent retrieval instructions
-├── .dockerignore                  Docker build exclusions
-├── .env.example                   account and provider-key template
-├── GUIDE_OVERVIEW.md              system overview
-├── GUIDE_ROOT.md                  root navigation
-├── Dockerfile                     image definition
-├── docker-compose.yml             container runtime
-├── docker-entrypoint.sh           container startup
-├── blog/index.md                  local article source
-├── config.toml                    local settings
-├── pyproject.toml                dependencies and commands
+├── .agents/
+│   └── skills/
+│       └── news-cli/
+│           ├── SKILL.md
+│           └── agents/openai.yaml
+├── .dockerignore
+├── .env.example
+├── .gitignore
+├── .python-version
+├── GUIDE_OVERVIEW.md
+├── GUIDE_ROOT.md
+├── LICENSE
+├── README.md
+├── Dockerfile
+├── docker-compose.yml
+├── docker-entrypoint.sh
+├── blog/
+│   └── index.md
+├── config.toml
+├── pyproject.toml
+├── uv.lock
 ├── src/
 │   ├── GUIDE_src.md
 │   └── news/
 │       ├── GUIDE_news.md
-│       ├── api/                   web routes and sign-in
-│       ├── cli/                   command-line workflows
-│       ├── exports/               CSV, JSON, and SQLite writers
-│       ├── search/                validation and result handling
-│       ├── sources/               provider adapters
-│       ├── trends/                Google Trends retrieval
-│       └── web/                   settings, auth state, and browser assets
-├── scripts/                       small credential/schema commands
-├── tests/                         offline regression tests
+│       ├── api/
+│       │   ├── app.py
+│       │   ├── auth.py
+│       │   ├── login_page.py
+│       │   ├── models.py
+│       │   ├── params.py
+│       │   └── trends_params.py
+│       ├── cli/
+│       │   ├── fetch.py
+│       │   ├── output.py
+│       │   ├── parser.py
+│       │   ├── trends.py
+│       │   └── workflow.py
+│       ├── exports/
+│       │   └── formats.py
+│       ├── search/
+│       │   ├── cache.py
+│       │   ├── deduplication.py
+│       │   ├── errors.py
+│       │   ├── filters.py
+│       │   ├── models.py
+│       │   ├── service.py
+│       │   └── validation.py
+│       ├── trends/
+│       │   ├── GUIDE_trends.md
+│       │   ├── google.py
+│       │   ├── keywords.py
+│       │   ├── models.py
+│       │   ├── pacing.py
+│       │   ├── rebase.py
+│       │   └── window.py
+│       ├── sources/
+│       │   ├── acled_oauth.py
+│       │   ├── base.py
+│       │   ├── common.py
+│       │   ├── registry.py
+│       │   ├── retry.py
+│       │   ├── settings.py
+│       │   └── providers/
+│       │       ├── acled.py
+│       │       ├── gdelt.py
+│       │       ├── guardian.py
+│       │       ├── mediacloud.py
+│       │       ├── newsapi.py
+│       │       └── nyt.py
+│       └── web/
+│           ├── auth_store.py
+│           ├── config.py
+│           ├── credentials.py
+│           ├── default_config.toml
+│           ├── file_locks.py
+│           ├── passwords.py
+│           ├── paths.py
+│           ├── security.py
+│           └── static/
+│               ├── docs.html
+│               ├── GUIDE_static.md
+│               ├── index.html
+│               ├── styles.css
+│               └── scripts/
+│                   ├── api.js
+│                   ├── app.js
+│                   ├── form.js
+│                   ├── render.js
+│                   ├── session.js
+│                   ├── state.js
+│                   └── trends.js
+├── scripts/
+│   ├── GUIDE_scripts.md
+│   ├── acled_oauth_token.py
+│   └── generate_openapi.py
+├── tests/
+│   ├── GUIDE_tests.md
+│   ├── test_docker_setup.py
+│   ├── api/
+│   │   ├── test_app.py
+│   │   ├── test_auth.py
+│   │   ├── test_config.py
+│   │   ├── test_openapi_contract.py
+│   │   ├── test_public_exports.py
+│   │   ├── test_server_cli.py
+│   │   ├── test_source_settings_config.py
+│   │   └── test_trends_endpoint.py
+│   ├── cli/
+│   │   ├── test_cli.py
+│   │   ├── test_cli_authentication.py
+│   │   ├── test_server_refusal_message.py
+│   │   ├── test_source_failure_warning.py
+│   │   └── test_trends_cli.py
+│   ├── exports/
+│   │   └── test_formats.py
+│   ├── fixtures/
+│   │   ├── authentication.py
+│   │   ├── search_results.py
+│   │   └── trends_results.py
+│   ├── search/
+│   │   ├── test_cache.py
+│   │   ├── test_deduplication.py
+│   │   ├── test_filters.py
+│   │   ├── test_service.py
+│   │   └── test_validation.py
+│   ├── trends/
+│   │   ├── test_google.py
+│   │   ├── test_keywords.py
+│   │   ├── test_pacing.py
+│   │   └── test_rebase.py
+│   ├── sources/
+│   │   ├── test_acled_oauth.py
+│   │   ├── test_failure_logging.py
+│   │   ├── test_retry.py
+│   │   ├── test_source_error_messages.py
+│   │   └── providers/
+│   │       ├── test_acled.py
+│   │       ├── test_article_date_contract.py
+│   │       ├── test_gdelt.py
+│   │       ├── test_guardian.py
+│   │       ├── test_mediacloud.py
+│   │       ├── test_mediacloud_collections.py
+│   │       ├── test_newsapi.py
+│   │       └── test_nyt.py
+│   └── web/
+│       ├── test_credentials.py
+│       ├── test_passwords.py
+│       ├── test_static.py
+│       └── test_wheel_installation.py
 └── docs/
-    ├── plans/                     proposed work
-    ├── reference/                 schema and this file
-    └── user/                      API, Docker, and sign-in guides
+    ├── plans/
+    │   └── PROJECT_REFACTOR_PLAN.md
+    ├── reference/
+    │   ├── PROJECT_STRUCTURE.md
+    │   └── openapi.json
+    └── user/
+        ├── API_REFERENCE.md
+        ├── DOCKER.md
+        └── SIGN_IN.md
 ```
 
-Package marker files named `__init__.py` are omitted. See the repository tree
-for the complete file list.
+Package marker files named `__init__.py` are omitted. Everything else is listed
+here on purpose: this file is the complete map, so a reader does not have to
+walk the repository to find something.
 
 ## Responsibility map
 
