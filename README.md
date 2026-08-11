@@ -1,66 +1,60 @@
-# News Search Engine
+# Historical News Search
 
-Search news from a chosen historical window through a browser, a
-command-line interface (CLI), or an HTTP API. It exists to retrieve
-time-limited news for two uses: studying markets as they looked at the time,
-and feeding an AI agent only the articles published inside a fixed window.
+Search news from a fixed historical window through a browser, a command-line
+interface (CLI), or an HTTP API. The project is for studying what information
+was available at a past date and for giving an AI agent only articles published
+inside a chosen window.
 
-The publication-date cutoff reduces **look-ahead bias** — using information
-that was not available when a historical decision was made — but does not
-remove it: archives are incomplete, timestamps may not match when
-information became tradable, articles change after publication, and a large
-language model may already know later events from training. A serious
-backtest must apply the cutoff to every input, not only the news, and delay
-signals until they could realistically have been traded.
+The publication cutoff reduces **look-ahead bias**: using information that was
+not available when a historical decision was made. It cannot remove that risk.
+Archives can be incomplete, timestamps may not match when information became
+tradable, articles can change after publication, and a language model may know
+later events from its training. A serious backtest applies the cutoff to every
+input and delays signals until they could have been traded.
 
-This repository retrieves and exports news. It does not calculate returns,
-simulate trades, report backtest performance, or summarize articles — there
-is no LLM call anywhere in the code.
+This project retrieves and exports data. It does not calculate returns,
+simulate trades, or summarize articles. It makes no language-model calls.
 
 ## What it does
 
-- Queries GDELT, MediaCloud, ACLED, The New York Times, The Guardian, and
-  NewsAPI for articles inside a start/end date window, in parallel, then
-  normalizes and deduplicates the results.
-- Serves three interfaces to the same search: a browser UI, a `news-search`
-  CLI (table, JSON, or JSON Lines output), and an HTTP API.
-- Reports per-source success/failure (`source_reports`) on every response, so
-  a source that returned zero articles is distinguishable from a source that
-  failed.
-- Reports Google Trends search interest for the same query and window, in the
-  browser, through `news-trends`, and at `GET /api/trends/interest`. A decision
-  date rescales the series to what was known then, since Google's own scaling
-  encodes a peak that had not yet happened.
+- Searches GDELT, MediaCloud, ACLED, The New York Times, The Guardian, and
+  NewsAPI in parallel, then normalizes and deduplicates the results.
+- Provides a browser, the `news-search` CLI, and an HTTP API for the same
+  search.
+- Includes a `source_reports` entry for every requested source, so zero matches
+  and a failed request are not confused.
+- Reports Google Trends search interest for the same query and dates in the
+  browser, through `news-trends`, and at `GET /api/trends/interest`.
 
 ```mermaid
 flowchart LR
     A[Choose historical window] --> B[Retrieve and normalize news]
-    B --> C{Research interface}
-    C --> D[Browser: practise market intuition]
-    C --> E[CLI JSON or JSONL: prompt an LLM]
+    B --> C{Choose an interface}
+    C --> D[Browser]
+    C --> E[CLI or HTTP API]
     E --> F[Timestamp and lag generated signals]
-    F --> G[Separate point-in-time backtest]
+    F --> G[Run a separate point-in-time backtest]
 ```
 
 ## Requirements
 
-- Python 3.13+
+- Python 3.13 or newer
 - `uv`
 - Docker, optional, for the packaged deployment
-- At least one complete sign-in account (`UI_USERNAME` / `UI_PASSWORD`); the
-  server refuses every data request without one
+- At least one account: `UI_USERNAME` and `UI_PASSWORD`
 
-Environment variables (set in `.env`, see `.env.example`):
+The server refuses data requests until an account is configured. Set these
+values in `.env` (see `.env.example`):
 
-- `UI_USERNAME` / `UI_PASSWORD`, plus optional `UI_USERNAME_2/3` and
-  `UI_PASSWORD_2/3`: sign-in accounts, up to three, all with equal access
-- `NEWS_SERVER_URL`: base URL `news-search` uses when `--server` is omitted
-- `NYT_API_KEY`, `MEDIACLOUD_API_KEY`, `NEWSAPI_API_KEY`, `GUARDIAN_API_KEY`:
-  per-source credentials — only needed for the sources you use; GDELT needs
-  none
-- `ACLED_OAUTH_TOKEN_URL`, `ACLED_OAUTH_GRANT_TYPE`, `ACLED_OAUTH_CLIENT_ID`,
-  `ACLED_USERNAME`, `ACLED_PASSWORD`, plus the `ACLED_BEARER_*` fields that
-  `scripts/acled_oauth_token.py` generates
+- `UI_USERNAME` / `UI_PASSWORD`, with optional `_2` and `_3` pairs for up to
+  three accounts
+- `NEWS_SERVER_URL`, the CLI's default server address
+- `NYT_API_KEY`, `MEDIACLOUD_API_KEY`, `NEWSAPI_API_KEY`, and
+  `GUARDIAN_API_KEY`, only for the providers you use; GDELT needs no key
+- ACLED's OAuth settings: `ACLED_OAUTH_TOKEN_URL`,
+  `ACLED_OAUTH_GRANT_TYPE`, `ACLED_OAUTH_CLIENT_ID`, `ACLED_USERNAME`,
+  `ACLED_PASSWORD`, and the `ACLED_BEARER_*` fields created by
+  `scripts/acled_oauth_token.py`
 
 ## Setup
 
@@ -70,40 +64,35 @@ cp .env.example .env   # set UI_USERNAME and UI_PASSWORD
 uv run news-server
 ```
 
-Open `http://127.0.0.1:8000`, sign in, choose the window, and search. The page
-has three sections: build the search, review the archive, and compare it with
-what people searched for over the same dates. `/docs` in the browser documents
-what the tool can do, the commands an AI agent should call, the HTTP routes,
-and the known limits.
+Open `http://127.0.0.1:8000`, sign in, choose a date window, and search. The
+`/docs` page explains the interfaces, commands, routes, and known limits.
 
 ## Usage
 
 ```bash
-# start the server (add --reload for live-reload development)
+# Start the server. Add --reload during development.
 uv run news-server
 
-# readable table
+# Readable table
 uv run news-search "inflation" -s 2025-01-01 -e 2025-03-01
 
-# every source page as one JSON response
+# One JSON response containing every page
 uv run news-search "inflation" -s 2025-01-01 -e 2025-03-01 --all-pages --format json
 
-# search attention (Google Trends) for the same query and window
+# Google Trends search interest for the same kind of window
 uv run news-trends "central bank" -s 2015-01-01 -e 2015-06-30 --geo US
 ```
 
-`uv run news-search --help` covers source filters, exact phrases, domain
-filters, pagination, and file exports. `--server URL` (or `NEWS_SERVER_URL`)
-points the CLI at a remote deployment; the CLI sends the sign-in account in a
-header on every request, so use it only over TLS or a private VPN, never a
-plain-HTTP public port.
+Run `uv run news-search --help` for source filters, phrase matching, domain
+filters, pagination, and exports. Use `--server URL` or `NEWS_SERVER_URL` for a
+remote deployment. The CLI sends the account in an HTTP header on every
+request, so use TLS or a private VPN; never expose a plain-HTTP public port.
 
-`.agents/skills/news-cli/SKILL.md` is a skill file to copy into an AI agent's
-own skills folder. It teaches the agent to sign in, run `news-search` and
-`news-trends`, and check which providers actually answered before trusting a
-result.
+`.agents/skills/news-cli/SKILL.md` is an optional skill file for an outside AI
+agent. It explains sign-in, both commands, and provider-coverage checks. The
+agent supplies its own model, prompt, and key.
 
-Run tests:
+Run the tests with:
 
 ```bash
 uv run python -m unittest discover -s tests -v
@@ -111,69 +100,65 @@ uv run python -m unittest discover -s tests -v
 
 ## Configuration
 
-The server resolves settings in this order: `news-server --config PATH`, the
-`NEWS_CONFIG` environment variable, `config.toml` in the current working
-directory, then packaged defaults. Unknown keys, unknown source names, and
-malformed TOML stop startup with a configuration error.
+The server reads settings in this order:
 
-Key `[sources]` settings:
+1. `news-server --config PATH`
+2. `NEWS_CONFIG`
+3. `config.toml` in the current directory
+4. Packaged defaults
+
+Unknown keys, source names, or malformed TOML stop startup.
+
+Useful `[sources]` settings:
 
 - `connect_timeout_seconds`: time to open a connection, including the TLS
-  handshake — GDELT alone can need over ten seconds
-- `read_timeout_seconds`: time to wait for a response once sent
-- `mediacloud_collections`: MediaCloud collection IDs searched together
-  (cannot be empty; `34412234` is "United States - National")
+  handshake; GDELT can need more than ten seconds
+- `read_timeout_seconds`: time to wait for a response after sending a request
+- `mediacloud_collections`: MediaCloud collection IDs; the list cannot be empty
 
 ## Docker
 
 ```bash
-docker network create single  # one time, if it does not already exist
+docker network create single  # one time, if needed
 docker compose up --build -d
 ```
 
-Builds on `python:3.13-slim`, uses `uv`, Toronto time, loopback-only
+The deployment uses `python:3.13-slim`, `uv`, Toronto time, loopback-only
 publishing on `127.0.0.1:50024`, and the external `single` reverse-proxy
-network. Configuration persists in `${HOME}/.containers/news`. Details in
+network. Settings persist in `${HOME}/.containers/news`. See
 [docs/user/DOCKER.md](docs/user/DOCKER.md).
 
 ## Layout
 
 ```text
-src/news/       package: api, cli, search, sources/providers, trends, web (browser static files)
-scripts/        one-off commands, e.g. ACLED OAuth token refresh
-docs/user/      API reference, sign-in, and Docker docs
-docs/reference/ generated OpenAPI schema and project structure reference
-.agents/skills/ news-cli skill file for AI agents
+src/news/       package: API, CLI, search, providers, trends, and browser files
+scripts/        small commands, including ACLED token refresh
+docs/user/      API, sign-in, and Docker documentation
+docs/reference/ generated OpenAPI schema and project structure
+.agents/skills/ news-cli instructions for AI agents
 ```
 
-See [GUIDE_ROOT.md](GUIDE_ROOT.md) and
-[docs/reference/PROJECT_STRUCTURE.md](docs/reference/PROJECT_STRUCTURE.md)
-for the full architecture.
+Start with [GUIDE_ROOT.md](GUIDE_ROOT.md) and
+[docs/reference/PROJECT_STRUCTURE.md](docs/reference/PROJECT_STRUCTURE.md).
 
 ## Output
 
-The API returns JSON; the CLI can also write CSV, JSON, or SQLite. Every
-response includes `source_reports` — per-source article counts and errors —
-so partial failures are visible rather than silently lowering the count.
+The API returns JSON. The CLI can also write a table, CSV, JSON, JSON Lines, or
+SQLite. Every response includes `source_reports`, which shows each provider's
+article count and any error.
 
 ## Roadmap
 
-**Fuzzy search.** Matching is exact today: a query for `Fed` misses `Federal
-Reserve`, and a misspelled name returns nothing. Planned as local scoring over
-what the providers return, not as a change to the provider queries — each
-source has its own query language, and rewriting six of them would make results
-harder to reproduce. The score, the threshold, and the matched terms belong in
-the response, so a low-confidence match is visible rather than silently mixed
-into the count.
+**Fuzzy search.** Current matching is exact: `Fed` does not match `Federal
+Reserve`, and misspellings return nothing. A future local matching pass should
+show its score, threshold, and matched terms instead of hiding low-confidence
+matches in the result count.
 
-**Better duplicate removal.** The current pass matches near-identical titles and
-addresses, which catches an article syndicated verbatim but not two outlets
-rewriting the same wire story. Planned as similarity over title and summary text
-within the date window, keeping the earliest publication as the representative
-and recording the ones it absorbed. Two things must hold: the merge has to stay
-inside the window so it cannot pull in later coverage, and `--no-dedupe` has to
-keep returning the raw set, since deciding what counts as the same story is a
-research judgment rather than a detail to hide.
+**Better duplicate removal.** Current matching catches near-identical titles
+and addresses, including verbatim syndication, but often keeps rewritten wire
+stories. A future text-similarity pass should keep the earliest article and
+record what it absorbed. It must stay inside the requested window, and
+`--no-dedupe` must continue to return the raw set.
 
 ## License
 

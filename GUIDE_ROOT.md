@@ -1,102 +1,75 @@
 # GUIDE_ROOT
 
-## Part 1 -- What the root contains
+## What the root contains
 
-The repository root ties together an installable historical news-retrieval
-product. The Python package owns the API, CLI, source adapters, search rules,
-search-attention retrieval, exports, validated settings, and browser files. Root files hold development
-configuration, user documentation, and local operator settings.
+This repository is an installable historical-news retrieval service. The
+Python package owns the API, CLI, provider adapters, search rules, Google
+Trends retrieval, exports, settings, and browser files. Root files cover
+configuration, deployment, tests, and documentation.
 
-### Runtime flow
+## Runtime flow
 
-1. `news-server` reads credentials, settings, and bind options, then hashes the
-   sign-in password and verifies the stored hash.
-2. The application factory creates a local cache, opens the stored sign-in
-   state, and connects the source request and status functions.
-3. A browser signs in through a form and keeps a session cookie; the CLI sends
-   the same account as an HTTP Basic header. Data routes refuse everything
-   else.
+1. `news-server` reads the account, settings, and bind options.
+2. The application creates its cache and opens the stored sign-in state.
+3. A browser uses a session cookie. The CLI sends the same account in an HTTP
+   Basic header. Data routes reject unauthenticated requests.
 4. Browser or CLI input becomes one validated search request.
-5. Selected sources are queried in parallel and their records are normalized.
-6. Local filtering, cautious duplicate removal, and stable sorting produce one
-   source page.
-7. The API returns JSON; the CLI can also write CSV, JSON, or SQLite.
-8. `news-trends` runs beside this rather than inside it: it takes the same
-   query and dates, fetches one search-attention series directly from the
-   package, and never contacts the server.
+5. Selected providers run in parallel. Their records are normalized, filtered,
+   optionally deduplicated, sorted, and returned as one page.
+6. The API returns JSON. The CLI also supports CSV, JSON, JSON Lines, and
+   SQLite.
+7. `news-trends` runs separately: it sends the query and dates directly to
+   Google Trends and does not contact the server.
 
-### Runtime files and generated files
+## Runtime and generated files
 
-- The data directory is `NEWS_DATA_DIR` when set and the process working
-  directory otherwise. Docker points it at the mounted `/data`.
-- `.env` in the data directory holds the sign-in accounts (up to three),
-  provider credentials, and the optional `NEWS_SERVER_URL` CLI default. It is
-  never tracked.
-- `.ui_credentials.json`, `.ui_sessions.json`, and `.login_state.json` in the
-  data directory hold the hashed account passwords, remembered browsers, and
-  failed-attempt counters. All three are owner-only and never tracked. The two
-  state files are read and written under a lock on every use, so several server
-  processes can serve one data directory.
-- External TOML settings override packaged defaults through `--config`,
-  `NEWS_CONFIG`, or `config.toml` in the current directory, in that order.
-- Docker seeds the repository defaults into `${HOME}/.containers/news` once and
-  keeps operator changes across image rebuilds.
-- Exports, environments, caches, logs, and build files are created only when
-  needed and remain ignored.
+- `NEWS_DATA_DIR` chooses the data directory. Without it, the process uses its
+  working directory; Docker maps it to `/data`.
+- `.env` stores accounts, provider credentials, and the optional CLI server
+  address. It is never tracked.
+- `.ui_credentials.json`, `.ui_sessions.json`, and `.login_state.json` store
+  password hashes, active sessions, and failed-attempt counters. They are
+  owner-only and updated under a file lock so several workers can share them.
+- Settings come from `--config`, `NEWS_CONFIG`, `config.toml`, or packaged
+  defaults, in that order.
+- Docker seeds defaults into `${HOME}/.containers/news` once and preserves
+  operator changes across image rebuilds.
+- Exports, caches, logs, environments, and build files are created only when
+  needed and are ignored by Git.
 - The checked-in OpenAPI schema is generated from the application and tested as
-  the public HTTP definition.
+  the public HTTP contract.
 
-The exact tree and responsibility table are in
-`docs/reference/PROJECT_STRUCTURE.md`. The system-level explanation is in
-`GUIDE_OVERVIEW.md`.
+See `docs/reference/PROJECT_STRUCTURE.md` for the exact tree and
+`GUIDE_OVERVIEW.md` for the system-level explanation.
 
-## Part 2 -- Code reference
+## Root file map
 
-- `README.md`: setup, normal commands, and documentation links.
-- `pyproject.toml`: dependencies, package discovery, package data, and the
-  `news-server`, `news-search`, and `news-trends` commands.
-- `config.toml`: local browser, cache, proxy-trust, search-attention, and
-  source-request settings. The `[trends]` table holds the minimum gap between
-  outgoing attention requests and the geography used when one is not named.
-  The `[sources]` table holds the connection and read timeouts every adapter
-  uses and the MediaCloud collections searched; MediaCloud refuses a search
-  that names no collection, so that list cannot be empty.
-- `.env.example`: secret-free sign-in accounts and credential template.
-- `Dockerfile`, `docker-compose.yml`, and `docker-entrypoint.sh`: self-hosted
-  image, deployment defaults, persistent settings, and Dockerized CLI use.
-- `.dockerignore`: files excluded from the image build context.
-- `.agents/skills/news-cli/`: retrieval instructions for an outside AI agent,
-  written to be copied into that agent's own skills folder. Retrieval and
-  coverage checking only; it does not ask for a summary.
-- `blog/`: local article source; it is not a website publish target.
-- `src/`: importable implementation and installed resources; start with
-  `src/GUIDE_src.md`.
+- `README.md`: setup and everyday commands.
+- `pyproject.toml`: dependencies, package discovery, and the three commands.
+- `config.toml`: browser, cache, proxy, Trends, and provider settings.
+- `.env.example`: account and provider-credential template.
+- `Dockerfile`, `docker-compose.yml`, and `docker-entrypoint.sh`: container
+  build and runtime behavior.
+- `.agents/skills/news-cli/`: retrieval and coverage instructions for an
+  outside AI agent.
+- `blog/`: local article source, not a publishing target.
+- `src/`: installed implementation; start with `src/GUIDE_src.md`.
 - `scripts/`: small local commands; see `scripts/GUIDE_scripts.md`.
-- `tests/`: deterministic tests by production responsibility; see
-  `tests/GUIDE_tests.md`.
+- `tests/`: offline tests by production responsibility.
 - `docs/user/`: user-facing API, Docker, and sign-in documentation.
-- `docs/reference/`: exact structure and generated OpenAPI definition.
-- `docs/plans/`: plans, with checkboxes for completed and outstanding work.
+- `docs/reference/`: project structure and generated OpenAPI definition.
+- `docs/plans/`: proposed work, not necessarily implemented.
 
-## Part 3 -- Short journal
+## Short journal
 
-- 2026-07-26: Removed obsolete research files and kept Git history as their recovery path.
-- 2026-07-26: Packaged browser assets and defaults so an installed wheel does not need to search above the package directory.
-- 2026-07-26: Replaced loose configuration dictionaries with validated settings and passed the cache explicitly.
-- 2026-07-26: Made package exports, application dependencies, and the generated OpenAPI schema explicit public definitions.
-- 2026-07-26: Kept API imports free of configuration reads so `news-server --config` is resolved before the application is built.
-- 2026-07-29: Settled the Docker operations pattern, keeping the unauthenticated API on loopback.
-- 2026-07-29: Made remote agent addresses configurable through `NEWS_SERVER_URL` and kept the summary skill local to this workspace.
-- 2026-08-08: Moved lint rules into `pyproject.toml` so ruff, rather than manual judgment, decides import order and modern-syntax rewrites.
-- 2026-08-08: Gave `Article` one accessor for source history so its fallback rule is applied in one place.
-- 2026-08-08: Made every browser display function announce its result because two error paths had previously stayed silent.
-- 2026-08-10: Moved to a sign-in model where the operator sets a plain account in `.env` and startup, not a separate command, produces the stored hash.
-- 2026-08-10: Moved session state out of process memory and behind the file lock, because the in-memory copy meant a browser signed in through one worker was refused by the next.
-- 2026-08-10: Attached browser protection headers in one middleware instead of route by route, after the search page turned out to be serving third-party article text with no Content Security Policy.
-- 2026-08-11: Moved the published host port from 50023 to 50024, because 50023 was already taken on the deployment host and Docker refuses a second binding for the same port.
-- 2026-08-11: Gave the container a read-only root filesystem and dropped capabilities, but no created account. Debian's base image already defines a system user and group named `news`, so creating one broke the build, and pinning the container to a host user id made the mounted directory an ownership problem for the operator to solve.
-- 2026-08-10: Stopped logging source exceptions verbatim, because the request address in an HTTP error carries the provider key that travels in the query string.
-- 2026-08-10: Required the direct peer to be local or private before believing `X-Forwarded-For`, so the setting alone can no longer be used to bypass the failed-attempt limit.
-- 2026-08-10: Gave the command line HTTP Basic against the same account rather than a second token, because one secret is easier to rotate than two and the CLI already reads `.env`.
-- 2026-08-10: Left `WWW-Authenticate` off the 401 responses so the browser shows this application's sign-in page instead of its own native password box.
-- 2026-08-11: Replaced the bundled summarize-and-retrieve skill with a retrieval-only one, `.agents/skills/news-cli/`. The product summarizes nothing; the skill exists to be copied into an outside agent's skills folder so that agent can sign in, drive both commands, and audit provider coverage while bringing its own model, prompt, and key.
+- 2026-07-26: Packaged browser assets and defaults so installed wheels do not need the repository root.
+- 2026-07-26: Replaced loose configuration dictionaries with validated settings and explicit cache passing.
+- 2026-07-26: Made package exports, application dependencies, and the OpenAPI schema explicit.
+- 2026-07-29: Kept the Docker API on loopback and made remote agent addresses configurable.
+- 2026-08-08: Moved lint rules into `pyproject.toml` and centralized `Article` source history.
+- 2026-08-08: Made browser display functions announce their results for screen readers.
+- 2026-08-10: Made startup derive stored password hashes from `.env` accounts, and moved sessions behind a shared file lock.
+- 2026-08-10: Centralized browser security headers, removed secrets from logged provider errors, and restricted trusted forwarded addresses.
+- 2026-08-10: Used the same account for CLI HTTP Basic authentication and left `WWW-Authenticate` off 401 responses.
+- 2026-08-11: Changed the Docker host port to 50024 and hardened the container without creating a new account.
+- 2026-08-11: Replaced the bundled summary skill with retrieval-only instructions for outside agents.
