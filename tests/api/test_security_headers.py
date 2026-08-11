@@ -147,15 +147,22 @@ class DocumentationPageHeaderTests(SecurityHeaderTestCase):
 
 
 class StaticAssetHeaderTests(SecurityHeaderTestCase):
-    """Verify that package-owned files stay cacheable but still protected."""
+    """Verify that package-owned files may be stored but must be revalidated."""
 
-    def test_static_files_keep_their_protections_without_no_store(self) -> None:
-        """These files hold no account data, so caching them is wanted."""
+    def test_static_files_are_stored_but_never_reused_unchecked(self) -> None:
+        """A cache holding an old stylesheet makes a new page look broken.
+
+        The page markup is never cached, so an intermediate cache that keeps
+        yesterday's stylesheet pairs today's markup with styles that do not
+        describe it. ``no-cache`` still stores the file; it only requires a
+        check before reuse, which an unchanged file answers with a 304.
+        """
         response = self.client.get("/static/favicon.svg")
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.headers["X-Content-Type-Options"], "nosniff")
-        self.assertNotIn("Cache-Control", response.headers)
+        self.assertEqual(response.headers["Cache-Control"], "no-cache")
+        self.assertNotIn("no-store", response.headers["Cache-Control"])
 
 
 class StrictTransportSecurityTests(SecurityHeaderTestCase):

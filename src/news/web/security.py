@@ -105,10 +105,18 @@ def data_response_headers(*, connection_is_secure: bool = False) -> dict[str, st
 def static_asset_headers(*, connection_is_secure: bool = False) -> dict[str, str]:
     """Return response headers for the package-owned browser files.
 
-    These files hold no account data and no search results, so they stay
-    cacheable. Only the content-type and framing protections apply.
+    These files hold no account data, so they may be stored. They must not be
+    served without checking first. The page markup is never cached, so a cache
+    that keeps an old stylesheet after a deployment pairs new markup with old
+    styling, which looks broken rather than merely out of date.
+
+    ``no-cache`` does not mean "do not store". It means "ask before reusing",
+    which the stored validator answers with an empty ``304 Not Modified`` when
+    the file has not changed. The cost is one small request per file per load;
+    what it buys is that a deployment can never be half applied.
     """
     headers = dict(_BASE_HEADERS)
+    headers["Cache-Control"] = "no-cache"
     if connection_is_secure:
         headers["Strict-Transport-Security"] = STRICT_TRANSPORT_SECURITY_VALUE
     return headers
