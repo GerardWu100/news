@@ -25,9 +25,19 @@ The visual hierarchy follows the research workflow. The editorial masthead
 states the purpose and the information-set rule; the numbered search workspace
 collects inputs; the numbered archive section presents evidence. Before the
 first search, that archive section teaches a short cutoff-read-record routine
-instead of appearing empty. On wider screens, the first returned article is
-featured and later articles use a two-column grid; the layout collapses to one
-column on smaller screens.
+instead of appearing empty. The first returned article is featured and later
+articles fill as many columns as the window allows, collapsing to one column on
+smaller screens.
+
+The masthead is kept short on purpose. The search form is the reason to open
+the page, so a tall introduction that pushes the form below the fold costs a
+scroll on every single use. The masthead states the purpose and the cutoff rule
+in a band that leaves the whole form visible on a laptop screen.
+
+No band has a fixed width. Every full-width section is `width: 100%` with side
+padding from the `--page-gutter` variable, which scales with the window. A fixed
+maximum width in pixels would leave large empty margins on a wide screen and on
+any zoomed-out view, where the reported viewport grows but the column does not.
 
 The hero feature badges use explicit list and list-item semantics so assistive
 technology receives the same grouping visible in the layout.
@@ -96,6 +106,10 @@ static/
   information boundary, result actions, and dialog styling.
 - Provides visible keyboard focus, reduced-motion behavior, two responsive
   breakpoints, and one-column fallbacks for forms, instructions, and results.
+- Sizes every layout band with `--page-gutter` and percentages rather than a
+  fixed pixel column, and lets the result grid choose its own column count with
+  `repeat(auto-fit, minmax(min(100%, 24rem), 1fr))`. The inner `min()` keeps a
+  single column on narrow screens, where a fixed track would overflow.
 
 ### `scripts/api.js`
 
@@ -175,3 +189,6 @@ never hears.
   research sequence—not decoration—the basis of the page hierarchy.
 - 2026-08-10: Kept the sign-in page server-rendered instead of adding it here,
   because a static file cannot carry the one-time token the form must return.
+- 2026-08-11: Shortened the masthead so the search form is visible without
+  scrolling, and replaced the fixed 1240-pixel column with fluid full-width
+  bands so the page fills the window at any size or zoom level.
