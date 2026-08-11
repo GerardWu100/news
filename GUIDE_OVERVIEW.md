@@ -4,7 +4,9 @@
 
 This project searches several news sources over a chosen date range, turns their
 records into one common article format, optionally removes repeated articles,
-and makes the results available through a browser, a JSON API, and a CLI.
+and makes the results available through a browser, a JSON API, and a CLI. It
+also returns one signal alongside the articles: how much the public searched
+for the same keywords during the same days.
 
 The product focuses on retrieval. It does not rank articles with a proprietary
 relevance model, fetch full article pages, calculate market statistics, or run
@@ -24,7 +26,7 @@ interface creates a trading signal.
 ├── blog/           -- Local article source.
 ├── Dockerfile      -- Python 3.13 application image.
 ├── docker-compose.yml -- Self-hosted server and optional CLI client.
-├── src/news/       -- Installable API, CLI, search, source, export, and browser package.
+├── src/news/       -- Installable API, CLI, search, source, trends, export, and browser package.
 ├── scripts/        -- Credential and OpenAPI generation commands.
 ├── tests/          -- Offline tests grouped by production responsibility.
 └── docs/           -- Plans, reference material, and user documentation.
@@ -42,6 +44,8 @@ The exact tree is maintained in `docs/reference/PROJECT_STRUCTURE.md`.
 - Optional language, duplicate-removal, exact-phrase, excluded-term, and
   included/excluded-domain filters.
 - Optional source ranking and source-specific section filters.
+- For search attention, the same query and dates, an optional geography, and an
+  optional decision date inside the window.
 - Sign-in accounts (at most three) and provider credentials from `.env` in the
   data directory, created from `.env.example`. The data directory is
   `NEWS_DATA_DIR` when set and the working directory otherwise.
@@ -61,6 +65,9 @@ The exact tree is maintained in `docs/reference/PROJECT_STRUCTURE.md`.
 - CSV, JSON, or SQLite files for later work.
 - Browser downloads for the exact visible source page and CLI JSONL with one
   normalized article per line.
+- A search-attention series for the same window: dated points, one value per
+  keyword, the point spacing that arrived, and the window and anchor date those
+  values are scaled against.
 
 ## Architecture and data flow
 
@@ -86,6 +93,14 @@ The exact tree is maintained in `docs/reference/PROJECT_STRUCTURE.md`.
 11. The final source page is sorted and returned through the API.
 12. The browser displays the active date boundary and download links. The CLI
     can print a table, JSON, or JSONL and write export files.
+
+Search attention runs on a separate, simpler path. The same query is reduced to
+plain keywords, because the attention source accepts no boolean operators, and
+the same start and end dates become the requested window. One request goes out,
+spaced from the previous one so the unofficial endpoints do not refuse a burst,
+and the result is optionally rescaled to a chosen decision date before it is
+returned. There is no cache, no duplicate removal, and no merging across
+sources, because none of those apply to a single time series.
 
 In Docker, the server listens on all container interfaces on port 8000, while
 Compose publishes it only on host loopback at port 50023. The optional Docker
@@ -116,6 +131,23 @@ than route by route. Article text comes from outside sources and is rendered as
 inert text, and the Content Security Policy allows no inline script or style,
 so injected markup has nothing to execute.
 
+### What the attention numbers are, and are not
+
+They are a relative index from 0 to 100, never counts. The value 100 marks the
+busiest moment inside the window that was requested, and everything else is
+scaled against it, so the same day can read very differently depending on how
+far past it the request reached. Two series fetched over different windows are
+not comparable, and a zero can mean the term was too rare to report rather than
+unsearched.
+
+That scaling hides a form of look-ahead bias the project's date filter cannot
+catch: the divisor is the peak of the whole window, including days after the
+one being read, so a long window tells its early days about a spike that had
+not happened yet. Supplying a decision date drops the later points and rescales
+to what was known then. Features built on ratios or changes survive the
+original scaling because it is a single constant multiplier; features that
+compare levels against a fixed threshold do not.
+
 ## Reliability and operations
 
 - Temporary connection errors, read timeouts, and HTTP 5xx responses are
@@ -123,6 +155,9 @@ so injected markup has nothing to execute.
 - A source that returns HTTP 429 keeps a short local cooldown so repeated
   requests fail quickly instead of sending more requests immediately.
 - Every outbound request has explicit connection and read timeouts.
+- Attention requests are spaced by a configured minimum gap and retried once
+  after a rate-limit refusal, because those endpoints are unofficial and
+  answer a burst with a refusal that lasts.
 - A source failure is isolated; other sources can still return results.
 - Invalid dates, unknown source names, and overly long date ranges are rejected
   before any network request begins.
@@ -144,6 +179,14 @@ so injected markup has nothing to execute.
   article meaning.
 - Sources support different filters, so some advanced options apply only to
   some sources.
+- The attention source is reached through an unmaintained third-party library
+  calling private endpoints. It works today and could stop without warning, so
+  it sits behind a one-method interface that can be swapped in one file. Only
+  the window-based capability is used; everything describing the present moment
+  is out of scope and has been removed by the provider in any case.
+- A fetch of a past window today is not what the same request would have
+  returned then, because the provider recomputes from its current sample. A
+  decision date fixes the scaling, not that revision risk.
 - Missing credentials do not crash the app; unavailable sources appear in the
   source status and search reports.
 - Browser assets and baseline settings ship in the wheel, so runtime files do

@@ -2,7 +2,9 @@
 
 ## Purpose
 
-The `news` package implements historical news retrieval from several sources.
+The `news` package implements historical news retrieval from several sources,
+plus one matching signal: how much the public searched for the same keywords
+during the same window.
 
 ## Subpackages
 
@@ -12,8 +14,12 @@ The `news` package implements historical news retrieval from several sources.
   removal, sorting, and search details.
 - `sources/`: source registry, parallel requests, retries, source adapters, and
   reusable ACLED OAuth setup.
+- `trends/`: Google Trends retrieval for one explicit past window, conversion
+  from a search query to plain keywords, request spacing, and as-of rescaling.
+  See `trends/GUIDE_trends.md`.
 - `exports/`: CSV, JSON, and SQLite writers.
-- `cli/`: command parser, fetch paths, table/JSON/JSONL output, and command flow.
+- `cli/`: command parsers, fetch paths, table/JSON/JSONL output, command flow,
+  and the separate `news-trends` command.
 - `web/`: installed browser files, packaged defaults, settings-path helpers,
   validated settings, password hashing, stored sign-in state, and
   request-security helpers.
@@ -112,6 +118,34 @@ otherwise uses `http://localhost:8000`. An explicit `--server` remains the
 one-call override. This keeps the same structured retrieval workflow usable
 against a local process, Docker Compose service, or protected remote server.
 
+## Search attention alongside articles
+
+`trends/` is a separate package rather than another source adapter. The source
+registry converts records into one common article format, filters them, and
+removes duplicates; a relative 0-100 time series fits none of that, so putting
+it in the registry would corrupt both abstractions. The two share the inputs
+that matter instead: the trends route and command take the same query string
+and the same start and end dates as an article search, and the query is reduced
+to plain keywords because Google Trends accepts no operators.
+
+Only one Trends capability is wired in, attention over an explicit past window.
+Anything describing the present moment is out of scope for a project that
+studies past windows, and Google has removed those endpoints in any case.
+
+The values carry a trap worth knowing before changing anything in that package:
+Google divides every value by the peak of the whole window that was requested,
+so a series fetched for a long window tells its early days about a spike that
+had not happened yet. The `as_of` parameter drops later points and rescales to
+what was known on a chosen date. `trends/GUIDE_trends.md` has the measured
+example and the reasoning.
+
+`api/app.py` builds one Trends client per application so its request pacer is
+shared, and serves the route with a plain synchronous handler: the library
+blocks on HTTP and also sleeps to space requests out, so FastAPI runs it in the
+worker thread pool and the event loop stays free for article searches. Unlike
+`news-search`, the `news-trends` command never calls the server, because Trends
+needs no stored credentials and no coordination between sources.
+
 ## Public Imports
 
 - `news.search` exports validated request/result types, the executor type, the
@@ -119,5 +153,8 @@ against a local process, Docker Compose service, or protected remote server.
 - `news.sources` exports shared source models and parallel-search entry points,
   not individual adapters.
 - `news.exports` exports CSV, JSON, and SQLite format functions.
+- `news.trends` exports the result type, the one-method client interface, both
+  error types, the live client, the window builder, the query-to-keyword
+  conversion, the request pacer, and the as-of rescaling function.
 - Root, API, CLI, and web package initializers intentionally export nothing;
   callers use explicit module paths for those boundaries.

@@ -17,10 +17,28 @@ This repository retrieves and exports news. It does not calculate returns, simul
 
 Planned work would make the browser a broader historical research workspace:
 
-- Add historical Google Trends data for the selected period.
 - Add macroeconomic data that was available during the selected period.
 - Add an AI-agent news summary, produced through an LLM API call, to the browser and optionally to the CLI.
 - Show the next configurable number of days of major financial and economic data releases in the browser.
+
+## Search attention for the same window
+
+`news-trends` and `GET /api/trends/interest` return how much the public
+searched for the same keywords during the same dates as an article search.
+Articles say what was published; this says what people were looking for,
+including things the press had not covered yet.
+
+```bash
+uv run news-trends "central bank" -s 2015-01-01 -e 2015-06-30 --geo US
+```
+
+The values are Google's relative index from 0 to 100, never absolute counts,
+and Google divides them by the peak of the whole window you asked for. That
+means a series fetched for a long window tells its early days about a spike
+that had not happened yet. Passing `--as-of 2015-03-01` drops the later points
+and rescales to what was known on that date. `docs/html/google_trends_capabilities.html`
+explains the measured example behind this and which Google functions still
+work.
 
 ## Interfaces
 
@@ -28,6 +46,7 @@ Planned work would make the browser a broader historical research workspace:
 |---|---|---|
 | Browser | Person | Exploring a fixed historical window, reading source context, and practising market intuition |
 | CLI | LLM, script, or researcher | Repeatable searches, structured JavaScript Object Notation (JSON), JSON Lines (JSONL), and multi-page collection |
+| `news-trends` CLI | Researcher or script | Search attention during the same window, as a table, JSON, or CSV |
 | HTTP API | Application | Adding news retrieval to another research system |
 
 The browser keeps the inclusive start and end dates visible as the information boundary. It can download the current source page as JSON or comma-separated values (CSV). The CLI supports a readable table for people, a complete JSON response for programs, and one article per line in JSONL for streaming workflows.

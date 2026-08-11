@@ -22,3 +22,14 @@ max_entries = 100
 # Tunnel. Set false when clients reach this server directly, because any
 # client can otherwise forge these headers.
 trust_forwarded_headers = false
+
+[trends]
+# Shortest gap in seconds between two Google Trends requests. Google rate
+# limits these unofficial endpoints hard, so requests are spaced instead of
+# sent in a burst. Raise it if HTTP 429 still appears.
+seconds_between_requests = 4.0
+
+# Geography used when a trends request does not name one.
+# Empty string means worldwide; otherwise a country code such as US, CA, GB,
+# optionally with a region suffix such as US-NY.
+default_geo = ""

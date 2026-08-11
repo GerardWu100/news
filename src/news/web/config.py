@@ -7,6 +7,7 @@ non-positive cache limits fail before the application starts.
 
 from __future__ import annotations
 
+import re
 import tomllib
 from collections.abc import Mapping
 from dataclasses import dataclass
@@ -17,10 +18,13 @@ from typing import Any
 from news.sources.registry import source_names
 from news.web.paths import config_path
 
-ROOT_SETTING_KEYS = frozenset({"frontend", "cache", "security"})
+ROOT_SETTING_KEYS = frozenset({"frontend", "cache", "security", "trends"})
 FRONTEND_SETTING_KEYS = frozenset({"default_english_only", "default_sources"})
 CACHE_SETTING_KEYS = frozenset({"ttl_seconds", "max_entries"})
 SECURITY_SETTING_KEYS = frozenset({"trust_forwarded_headers"})
+TRENDS_SETTING_KEYS = frozenset({"seconds_between_requests", "default_geo"})
+# Two-letter country code, optionally followed by a region suffix.
+GEOGRAPHY_CODE_PATTERN = re.compile(r"[A-Z]{2}(-[A-Z0-9]{1,3})?")
 
 
 class SettingsError(ValueError):
@@ -83,12 +87,33 @@ class SecuritySettings:
 
 
 @dataclass(frozen=True, slots=True)
+class TrendsSettings:
+    """Google Trends retrieval limits.
+
+    Attributes
+    ----------
+    seconds_between_requests : float
+        Shortest gap between two outgoing Google Trends requests. The
+        endpoints are unofficial and rate limit bursts with HTTP 429, so
+        requests are spaced rather than sent together.
+    default_geo : str
+        Geography used when a request does not name one. The empty string
+        means worldwide; otherwise a country code such as ``US``, optionally
+        with a region suffix such as ``US-NY``.
+    """
+
+    seconds_between_requests: float
+    default_geo: str
+
+
+@dataclass(frozen=True, slots=True)
 class AppSettings:
     """Complete application settings."""
 
     frontend: FrontendSettings
     cache: CacheSettings
     security: SecuritySettings
+    trends: TrendsSettings
 
 
 def load_settings(path: Path | str | None = None) -> AppSettings:
@@ -156,6 +181,7 @@ def _validate_known_keys(config: Mapping[str, Any], *, source: str) -> None:
         ("frontend", FRONTEND_SETTING_KEYS),
         ("cache", CACHE_SETTING_KEYS),
         ("security", SECURITY_SETTING_KEYS),
+        ("trends", TRENDS_SETTING_KEYS),
     ):
         table = config.get(table_name, {})
         if not isinstance(table, Mapping):
@@ -200,6 +226,7 @@ def _parse_settings(config: Mapping[str, Any]) -> AppSettings:
     frontend = config["frontend"]
     cache = config["cache"]
     security = config["security"]
+    trends = config["trends"]
 
     default_english_only = frontend["default_english_only"]
     if not isinstance(default_english_only, bool):
@@ -245,7 +272,36 @@ def _parse_settings(config: Mapping[str, Any]) -> AppSettings:
             ),
         ),
         security=SecuritySettings(trust_forwarded_headers=trust_forwarded_headers),
+        trends=TrendsSettings(
+            seconds_between_requests=_non_negative_number(
+                trends["seconds_between_requests"],
+                "trends.seconds_between_requests",
+            ),
+            default_geo=_geography_code(trends["default_geo"]),
+        ),
     )
+
+
+def _non_negative_number(value: object, field_name: str) -> float:
+    """Validate a setting that may be zero but never negative or boolean."""
+    if isinstance(value, bool) or not isinstance(value, int | float) or value < 0:
+        raise SettingsError(f"{field_name} must be a number of zero or more")
+    return float(value)
+
+
+def _geography_code(value: object) -> str:
+    """Validate the optional geography code and normalize its capitalization."""
+    if not isinstance(value, str):
+        raise SettingsError("trends.default_geo must be a string")
+    cleaned = value.strip().upper()
+    # Empty means worldwide. Anything else is a country code, optionally with
+    # a region suffix, for example US or US-NY.
+    if cleaned and not GEOGRAPHY_CODE_PATTERN.fullmatch(cleaned):
+        raise SettingsError(
+            "trends.default_geo must be empty for worldwide, or a code such "
+            "as US or US-NY"
+        )
+    return cleaned
 
 
 def _positive_integer(value: object, field_name: str) -> int:

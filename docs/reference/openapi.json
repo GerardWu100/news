@@ -355,6 +355,86 @@
         "title": "SourceStatusResponse",
         "type": "object"
       },
+      "TrendsInterestResponse": {
+        "description": "Search-attention series returned by ``GET /api/trends/interest``.\n\nValues are Google's relative index: 100 is the highest point on or before\n``anchor_date``, and everything else is scaled against it. There are no\nabsolute search counts, and a 0 can mean \"below Google's reporting\nthreshold\" rather than \"nobody searched it\".",
+        "properties": {
+          "anchor_date": {
+            "description": "Last date that could contribute to the 0-100 scale. Equals end_date for a raw fetch, or the as_of date after rebasing.",
+            "title": "Anchor Date",
+            "type": "string"
+          },
+          "dates": {
+            "description": "Point labels, oldest first",
+            "items": {
+              "type": "string"
+            },
+            "title": "Dates",
+            "type": "array"
+          },
+          "end_date": {
+            "description": "Inclusive window end (YYYY-MM-DD)",
+            "title": "End Date",
+            "type": "string"
+          },
+          "fetched_at": {
+            "description": "UTC fetch time in ISO format",
+            "title": "Fetched At",
+            "type": "string"
+          },
+          "geo": {
+            "description": "Geography code; empty means worldwide",
+            "title": "Geo",
+            "type": "string"
+          },
+          "granularity": {
+            "description": "Point spacing Google returned: hourly, daily, weekly, monthly",
+            "title": "Granularity",
+            "type": "string"
+          },
+          "is_partial": {
+            "description": "True marks a still-accumulating period, aligned with dates",
+            "items": {
+              "type": "boolean"
+            },
+            "title": "Is Partial",
+            "type": "array"
+          },
+          "keywords": {
+            "description": "Keywords extracted from the query; all share one scale",
+            "items": {
+              "type": "string"
+            },
+            "title": "Keywords",
+            "type": "array"
+          },
+          "start_date": {
+            "description": "Inclusive window start (YYYY-MM-DD)",
+            "title": "Start Date",
+            "type": "string"
+          },
+          "values": {
+            "additionalProperties": {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            "description": "Keyword to its series, aligned with dates",
+            "title": "Values",
+            "type": "object"
+          }
+        },
+        "required": [
+          "start_date",
+          "end_date",
+          "geo",
+          "granularity",
+          "anchor_date",
+          "fetched_at"
+        ],
+        "title": "TrendsInterestResponse",
+        "type": "object"
+      },
       "ValidationError": {
         "properties": {
           "ctx": {
@@ -1211,6 +1291,94 @@
           }
         },
         "summary": "Sources"
+      }
+    },
+    "/api/trends/interest": {
+      "get": {
+        "description": "Return search attention for the same keywords and window as a search.\n\nDeclared as a plain function rather than an async one on purpose. The\nGoogle Trends library blocks on HTTP and also sleeps to space requests\nout, so FastAPI runs this in its worker thread pool and the event loop\nstays free for article searches.",
+        "operationId": "trends_interest_api_trends_interest_get",
+        "parameters": [
+          {
+            "description": "The same keyword query used for article search. Boolean operators and excluded terms are removed, quoted phrases are kept whole, and at most 5 keywords are used.",
+            "in": "query",
+            "name": "q",
+            "required": true,
+            "schema": {
+              "description": "The same keyword query used for article search. Boolean operators and excluded terms are removed, quoted phrases are kept whole, and at most 5 keywords are used.",
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Inclusive window start (YYYY-MM-DD)",
+            "in": "query",
+            "name": "start",
+            "required": true,
+            "schema": {
+              "description": "Inclusive window start (YYYY-MM-DD)",
+              "title": "Start",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Inclusive window end (YYYY-MM-DD)",
+            "in": "query",
+            "name": "end",
+            "required": true,
+            "schema": {
+              "description": "Inclusive window end (YYYY-MM-DD)",
+              "title": "End",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Geography code such as US or US-NY. Empty uses the configured default, which is worldwide unless changed.",
+            "in": "query",
+            "name": "geo",
+            "required": false,
+            "schema": {
+              "default": "",
+              "description": "Geography code such as US or US-NY. Empty uses the configured default, which is worldwide unless changed.",
+              "title": "Geo",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Optional decision date (YYYY-MM-DD) inside the window. When given, later points are dropped and the series is rescaled to the highest value up to that date, removing the future peak that Google's own scaling would otherwise encode.",
+            "in": "query",
+            "name": "as_of",
+            "required": false,
+            "schema": {
+              "default": "",
+              "description": "Optional decision date (YYYY-MM-DD) inside the window. When given, later points are dropped and the series is rescaled to the highest value up to that date, removing the future peak that Google's own scaling would otherwise encode.",
+              "title": "As Of",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrendsInterestResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Trends Interest"
       }
     }
   }

@@ -90,3 +90,40 @@ class SearchResponse(BaseModel):
 
     results: list[SearchArticleResponse] = Field(default_factory=list)
     meta: SearchMetaResponse
+
+
+class TrendsInterestResponse(BaseModel):
+    """Search-attention series returned by ``GET /api/trends/interest``.
+
+    Values are Google's relative index: 100 is the highest point on or before
+    ``anchor_date``, and everything else is scaled against it. There are no
+    absolute search counts, and a 0 can mean "below Google's reporting
+    threshold" rather than "nobody searched it".
+    """
+
+    keywords: list[str] = Field(
+        default_factory=list,
+        description="Keywords extracted from the query; all share one scale",
+    )
+    start_date: str = Field(description="Inclusive window start (YYYY-MM-DD)")
+    end_date: str = Field(description="Inclusive window end (YYYY-MM-DD)")
+    geo: str = Field(description="Geography code; empty means worldwide")
+    granularity: str = Field(
+        description="Point spacing Google returned: hourly, daily, weekly, monthly"
+    )
+    dates: list[str] = Field(default_factory=list, description="Point labels, oldest first")
+    is_partial: list[bool] = Field(
+        default_factory=list,
+        description="True marks a still-accumulating period, aligned with dates",
+    )
+    values: dict[str, list[float]] = Field(
+        default_factory=dict,
+        description="Keyword to its series, aligned with dates",
+    )
+    anchor_date: str = Field(
+        description=(
+            "Last date that could contribute to the 0-100 scale. Equals "
+            "end_date for a raw fetch, or the as_of date after rebasing."
+        )
+    )
+    fetched_at: str = Field(description="UTC fetch time in ISO format")

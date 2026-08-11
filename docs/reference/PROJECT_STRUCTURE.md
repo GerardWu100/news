@@ -37,11 +37,13 @@ This file records the repository as it exists. Proposed changes belong in
 │       │   ├── auth.py
 │       │   ├── login_page.py
 │       │   ├── models.py
-│       │   └── params.py
+│       │   ├── params.py
+│       │   └── trends_params.py
 │       ├── cli/
 │       │   ├── fetch.py
 │       │   ├── output.py
 │       │   ├── parser.py
+│       │   ├── trends.py
 │       │   └── workflow.py
 │       ├── exports/
 │       │   └── formats.py
@@ -53,6 +55,14 @@ This file records the repository as it exists. Proposed changes belong in
 │       │   ├── models.py
 │       │   ├── service.py
 │       │   └── validation.py
+│       ├── trends/
+│       │   ├── GUIDE_trends.md
+│       │   ├── google.py
+│       │   ├── keywords.py
+│       │   ├── models.py
+│       │   ├── pacing.py
+│       │   ├── rebase.py
+│       │   └── window.py
 │       ├── sources/
 │       │   ├── acled_oauth.py
 │       │   ├── base.py
@@ -99,21 +109,29 @@ This file records the repository as it exists. Proposed changes belong in
 │   │   ├── test_config.py
 │   │   ├── test_openapi_contract.py
 │   │   ├── test_public_exports.py
-│   │   └── test_server_cli.py
+│   │   ├── test_server_cli.py
+│   │   └── test_trends_endpoint.py
 │   ├── cli/
 │   │   ├── test_cli.py
-│   │   └── test_cli_authentication.py
+│   │   ├── test_cli_authentication.py
+│   │   └── test_trends_cli.py
 │   ├── exports/
 │   │   └── test_formats.py
 │   ├── fixtures/
 │   │   ├── authentication.py
-│   │   └── search_results.py
+│   │   ├── search_results.py
+│   │   └── trends_results.py
 │   ├── search/
 │   │   ├── test_cache.py
 │   │   ├── test_deduplication.py
 │   │   ├── test_filters.py
 │   │   ├── test_service.py
 │   │   └── test_validation.py
+│   ├── trends/
+│   │   ├── test_google.py
+│   │   ├── test_keywords.py
+│   │   ├── test_pacing.py
+│   │   └── test_rebase.py
 │   ├── sources/
 │   │   ├── test_acled_oauth.py
 │   │   ├── test_retry.py
@@ -154,6 +172,7 @@ readability.
 | `src/news/exports/` | CSV, JSON, and SQLite serialization |
 | `src/news/search/` | Validated search behavior, cache, filters, duplicate removal, and search details |
 | `src/news/sources/` | Source access, ACLED OAuth setup, retries and pauses, registry, and parallel requests |
+| `src/news/trends/` | Google Trends retrieval for one explicit past window, query-to-keyword conversion, request spacing, and as-of rescaling |
 | `src/news/web/` | Typed configuration validation, package defaults, path lookup, password hashing, stored sign-in state, and installed browser assets |
 | `.agents/skills/summarize-news-cli/` | Workspace-local AI-agent retrieval, coverage audit, and summary procedure |
 | `blog/` | Local-only article source about the deployment and agent workflow |

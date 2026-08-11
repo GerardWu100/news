@@ -189,6 +189,84 @@ curl -OJ "http://127.0.0.1:8000/api/export/json?q=inflation&start=2025-01-01&end
 Response: `application/json` with an attachment disposition and a JSON array of
 normalized article objects.
 
+## `GET /api/trends/interest`
+
+Returns how much the public searched for the same keywords during the same
+window the article search uses. This is the only Google Trends route: the
+project studies past windows, so live "what is popular now" data is out of
+scope, and Google has removed those endpoints anyway.
+
+### Parameters
+
+| Name | Type | Default | Meaning |
+|---|---|---|---|
+| `q` | string | required | The same query used for article search |
+| `start` | string | required | Inclusive window start `YYYY-MM-DD` |
+| `end` | string | required | Inclusive window end `YYYY-MM-DD` |
+| `geo` | string | `""` | Geography code such as `US` or `US-NY`; empty uses `trends.default_geo` |
+| `as_of` | string | `""` | Optional decision date inside the window |
+
+`q` is reduced to plain search terms before it reaches Google, which accepts no
+operators. Quoted phrases stay whole, `AND`/`OR`/`NOT` are dropped, excluded
+terms (`-crypto`) are removed because Trends cannot express exclusion, repeats
+are collapsed, and at most five terms are used. So
+`"central bank" AND (inflation OR Inflation) -crypto` becomes the two keywords
+`central bank` and `inflation`.
+
+### Reading the values
+
+Values are a relative index from 0 to 100, never absolute search counts. 100 is
+the highest point on or before `anchor_date` and everything else is scaled
+against it, so two series fetched over different windows are not comparable. A
+0 can mean the term was below Google's reporting threshold rather than
+unsearched. `granularity` reports the point spacing Google chose from the
+window length: up to about 7 days gives `hourly`, up to 9 months `daily`, up to
+5 years `weekly`, and longer `monthly`.
+
+### Why `as_of` exists
+
+Google divides every value by the peak of the whole requested window, including
+days after the one being read. A series fetched for all of 2017 therefore tells
+every January value where the May peak sat, which is look-ahead bias arriving
+through the scaling rather than through the choice of data. Passing `as_of`
+drops points after that date and rescales what remains to the highest value up
+to it, giving the scale a researcher standing on that date could have seen.
+
+Measured example for `bitcoin` in the United States: 2017-01-05 reads 100 when
+fetched with the window ending 2017-03-31 and 30 when fetched with the window
+ending 2017-09-15.
+
+### Example
+
+```bash
+curl -u "$UI_USERNAME:$UI_PASSWORD" \
+  "http://127.0.0.1:8000/api/trends/interest?q=bitcoin&start=2017-01-01&end=2017-09-15&as_of=2017-01-05&geo=US"
+```
+
+```json
+{
+  "keywords": ["bitcoin"],
+  "start_date": "2017-01-01",
+  "end_date": "2017-01-05",
+  "geo": "US",
+  "granularity": "daily",
+  "dates": ["2017-01-01", "2017-01-02", "2017-01-03", "2017-01-04", "2017-01-05"],
+  "is_partial": [false, false, false, false, false],
+  "values": {"bitcoin": [42.86, 78.57, 71.43, 82.14, 100.0]},
+  "anchor_date": "2017-01-05",
+  "fetched_at": "2026-08-10T23:05:01+00:00"
+}
+```
+
+### Failures
+
+- HTTP 422 when the query holds no searchable term, the dates are malformed or
+  reversed, the start predates Google's 2004 archive, or `as_of` falls outside
+  the window.
+- HTTP 502 when Google rejects the request, rate limits it (HTTP 429), or the
+  network fails. Requests are already spaced by
+  `trends.seconds_between_requests`; raise that setting if 502 keeps appearing.
+
 ## Error responses
 
 ### Validation failure

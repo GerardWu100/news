@@ -7,6 +7,7 @@ requires-python = ">=3.13"
 dependencies = [
     "fastapi>=0.135.1",
     "httpx>=0.28.1",
+    "pytrends>=4.9.2",
     "python-dotenv>=1.2.2",
     "python-multipart>=0.0.32",
     "uvicorn>=0.41.0",
@@ -15,6 +16,7 @@ dependencies = [
 [project.scripts]
 news-server = "news.api.app:main"
 news-search = "news.cli.workflow:main"
+news-trends = "news.cli.trends:main"
 
 [build-system]
 requires = ["setuptools>=68"]

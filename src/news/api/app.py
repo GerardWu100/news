@@ -32,14 +32,25 @@ from news.api.models import (
     FrontendConfigResponse,
     SearchResponse,
     SourceStatusResponse,
+    TrendsInterestResponse,
 )
 from news.api.params import SearchQueryParams
+from news.api.trends_params import TrendsQueryParams
 from news.exports.formats import format_csv, format_json
 from news.search import SearchExecutor, run_search
 from news.search.cache import SearchResultCache, build_search_cache
 from news.search.errors import SearchValidationError
 from news.search.models import SearchResult
 from news.sources import get_source_status, search_all_detailed
+from news.trends.google import GoogleTrendsClient
+from news.trends.keywords import keywords_from_query
+from news.trends.models import (
+    InterestOverTime,
+    TrendsClient,
+    TrendsFetchError,
+    TrendsValidationError,
+)
+from news.trends.rebase import rebase_as_of
 from news.web.auth_store import AuthStore
 from news.web.config import AppSettings, load_settings
 from news.web.credentials import sync_ui_credentials
@@ -80,6 +91,7 @@ def create_app(
     search_executor: SearchExecutor = search_all_detailed,
     source_status_provider: SourceStatusProvider = get_source_status,
     login_sessions: LoginSessions | None = None,
+    trends_client: TrendsClient | None = None,
 ) -> FastAPI:
     """Build an application from validated settings and supplied dependencies.
 
@@ -96,6 +108,9 @@ def create_app(
     login_sessions : LoginSessions | None, optional
         Sign-in state supplied by a caller or test. ``None`` reads the account
         and session files from the data directory.
+    trends_client : TrendsClient | None, optional
+        Google Trends source supplied by a caller or test. ``None`` builds the
+        live client with the configured gap between requests.
 
     Returns
     -------
@@ -107,6 +122,15 @@ def create_app(
     )
     active_sessions = (
         _build_login_sessions(settings) if login_sessions is None else login_sessions
+    )
+    # One client per application, so its request pacer is shared by every
+    # browser request instead of each one starting its own gap.
+    active_trends_client = (
+        GoogleTrendsClient(
+            seconds_between_requests=settings.trends.seconds_between_requests
+        )
+        if trends_client is None
+        else trends_client
     )
     static_assets = static_dir()
     # The interactive documentation and schema routes are switched off because
@@ -125,6 +149,7 @@ def create_app(
     application.state.settings = settings
     application.state.search_cache = active_cache
     application.state.login_sessions = active_sessions
+    application.state.trends_client = active_trends_client
     application.mount(
         "/static",
         StaticFiles(directory=str(static_assets)),
@@ -244,7 +269,55 @@ def create_app(
             headers={"Content-Disposition": 'attachment; filename="news_export.json"'},
         )
 
+    @application.get(
+        "/api/trends/interest",
+        response_model=TrendsInterestResponse,
+        dependencies=[Depends(require_signed_in)],
+    )
+    def trends_interest(params: TrendsQueryParams = Depends()) -> dict[str, object]:
+        """Return search attention for the same keywords and window as a search.
+
+        Declared as a plain function rather than an async one on purpose. The
+        Google Trends library blocks on HTTP and also sleeps to space requests
+        out, so FastAPI runs this in its worker thread pool and the event loop
+        stays free for article searches.
+        """
+        return _run_trends_request(
+            params,
+            client=active_trends_client,
+            default_geo=settings.trends.default_geo,
+        ).to_dict()
+
     return application
+
+
+def _run_trends_request(
+    params: TrendsQueryParams,
+    *,
+    client: TrendsClient,
+    default_geo: str,
+) -> InterestOverTime:
+    """Validate trends parameters, fetch the series, and rebase when asked.
+
+    Errors are mapped by whose fault they are: a bad query, window, or
+    as-of date is the caller's and returns HTTP 422, while a Google outage or
+    rate limit is upstream and returns HTTP 502.
+    """
+    try:
+        keywords = keywords_from_query(params.q)
+        series = client.interest_over_time(
+            list(keywords),
+            start_date=params.start,
+            end_date=params.end,
+            geo=params.geo.strip() or default_geo,
+        )
+        if params.as_of.strip():
+            series = rebase_as_of(series, params.as_of.strip())
+    except TrendsValidationError as exc:
+        raise HTTPException(status_code=422, detail=exc.message) from exc
+    except TrendsFetchError as exc:
+        raise HTTPException(status_code=502, detail=exc.message) from exc
+    return series
 
 
 def _build_login_sessions(settings: AppSettings) -> LoginSessions:

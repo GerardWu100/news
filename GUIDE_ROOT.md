@@ -4,7 +4,7 @@
 
 The repository root ties together an installable historical news-retrieval
 product. The Python package owns the API, CLI, source adapters, search rules,
-exports, validated settings, and browser files. Root files hold development
+search-attention retrieval, exports, validated settings, and browser files. Root files hold development
 configuration, user documentation, and local operator settings.
 
 ### Runtime flow
@@ -21,6 +21,9 @@ configuration, user documentation, and local operator settings.
 6. Local filtering, cautious duplicate removal, and stable sorting produce one
    source page.
 7. The API returns JSON; the CLI can also write CSV, JSON, or SQLite.
+8. `news-trends` runs beside this rather than inside it: it takes the same
+   query and dates, fetches one search-attention series directly from the
+   package, and never contacts the server.
 
 ### Runtime files and generated files
 
@@ -50,8 +53,11 @@ The exact tree and responsibility table are in
 ## Part 2 -- Code reference
 
 - `README.md`: setup, normal commands, and documentation links.
-- `pyproject.toml`: dependencies, package discovery, package data, and commands.
-- `config.toml`: local browser, cache, and proxy-trust settings.
+- `pyproject.toml`: dependencies, package discovery, package data, and the
+  `news-server`, `news-search`, and `news-trends` commands.
+- `config.toml`: local browser, cache, proxy-trust, and search-attention
+  settings. The `[trends]` table holds the minimum gap between outgoing
+  attention requests and the geography used when one is not named.
 - `.env.example`: secret-free sign-in accounts and credential template.
 - `Dockerfile`, `docker-compose.yml`, and `docker-entrypoint.sh`: self-hosted
   image, deployment defaults, persistent settings, and Dockerized CLI use.
