@@ -45,7 +45,11 @@ services:
       ACLED_REFRESH_TOKEN: ${ACLED_REFRESH_TOKEN:-}
       ACLED_BEARER_OBTAINED_AT_UTC: ${ACLED_BEARER_OBTAINED_AT_UTC:-}
     volumes:
-      - ${HOME}/.containers/news:/data
+      # Left of the colon is the folder on your machine, set by
+      # NEWS_DATA_HOST_DIR in .env and defaulting to ${HOME}/.containers/news.
+      # Right of the colon is the path inside the container, which the
+      # application reads through NEWS_DATA_DIR above and must stay /data.
+      - ${NEWS_DATA_HOST_DIR:-${HOME}/.containers/news}:/data
     networks:
       - single
     healthcheck:

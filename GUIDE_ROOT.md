@@ -39,7 +39,8 @@ configuration, user documentation, and local operator settings.
   processes can serve one data directory.
 - External TOML settings override packaged defaults through `--config`,
   `NEWS_CONFIG`, or `config.toml` in the current directory, in that order.
-- Docker seeds the repository defaults into `${HOME}/.containers/news` once and
+- Docker seeds the repository defaults into the mounted host folder, which is
+  `NEWS_DATA_HOST_DIR` when set and `${HOME}/.containers/news` otherwise, once and
   keeps operator changes across image rebuilds.
 - Exports, environments, caches, logs, and build files are created only when
   needed and remain ignored.
