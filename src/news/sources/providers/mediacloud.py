@@ -21,11 +21,11 @@ from news.sources.common import (
     raise_if_cooling,
 )
 from news.sources.retry import build_timeout, get_with_retry
+from news.sources.settings import current_source_settings
 
 DEFAULT_RATE_LIMIT_COOLDOWN_SECONDS = 60
 MEDIACLOUD_TOKEN_TTL_SECONDS = 900
 MEDIACLOUD_TOKEN_MAX_KEYS = 200
-MEDIACLOUD_READ_TIMEOUT_SECONDS = 20.0
 MEDIACLOUD_PAGE_SIZE = 50
 
 
@@ -139,13 +139,24 @@ class MediaCloudSource(BaseSource):
         raise_if_cooling(self._cooldown, "MediaCloud")
         api_key = os.getenv("MEDIACLOUD_API_KEY", "")
 
+        collections = current_source_settings().mediacloud_collections
+        if not collections:
+            raise RuntimeError(
+                "MediaCloud needs at least one collection identifier. "
+                "Set sources.mediacloud_collections in the configuration file."
+            )
+
         headers = {"Authorization": f"Token {api_key}"}
-        params = {
+        # "cs" repeats once per collection and is required: the story-list
+        # endpoint answers HTTP 422 when a search names neither a collection
+        # ("cs") nor an individual outlet ("ss").
+        params: dict[str, str | list[str]] = {
             "q": options.query,
             "start": options.start_date,
             "end": options.end_date,
             "platform": "onlinenews-mediacloud",
             "page_size": str(MEDIACLOUD_PAGE_SIZE),
+            "cs": [str(collection_id) for collection_id in collections],
         }
 
         # Page tokens belong to one query and exist only after the previous page
@@ -180,15 +191,11 @@ class MediaCloudSource(BaseSource):
     async def _fetch_story_list(
         self,
         headers: dict[str, str],
-        params: dict[str, str],
+        params: dict[str, str | list[str]],
     ) -> dict:
         """Fetch JSON and turn 429 responses into a local pause."""
         try:
-            async with httpx.AsyncClient(
-                timeout=build_timeout(
-                    read_timeout_seconds=MEDIACLOUD_READ_TIMEOUT_SECONDS
-                )
-            ) as client:
+            async with httpx.AsyncClient(timeout=build_timeout()) as client:
                 response = await get_with_retry(
                     client,
                     self._BASE_URL,
@@ -229,7 +236,12 @@ class MediaCloudSource(BaseSource):
 
 
 def _build_pagination_key(options: SourceSearchOptions) -> tuple[object, ...]:
-    """Build a stable key for MediaCloud page tokens."""
+    """Build a stable key for MediaCloud page tokens.
+
+    The searched collections are part of the key because changing them changes
+    the result set, which would make a cached page token point into a different
+    sequence of stories.
+    """
     return (
         options.query,
         options.start_date,
@@ -238,4 +250,5 @@ def _build_pagination_key(options: SourceSearchOptions) -> tuple[object, ...]:
         options.provider_sort,
         options.include_domains,
         options.exclude_domains,
+        current_source_settings().mediacloud_collections,
     )

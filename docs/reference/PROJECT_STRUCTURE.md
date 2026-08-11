@@ -69,6 +69,7 @@ This file records the repository as it exists. Proposed changes belong in
 │       │   ├── common.py
 │       │   ├── registry.py
 │       │   ├── retry.py
+│       │   ├── settings.py
 │       │   └── providers/
 │       │       ├── acled.py
 │       │       ├── gdelt.py
@@ -134,13 +135,16 @@ This file records the repository as it exists. Proposed changes belong in
 │   │   └── test_rebase.py
 │   ├── sources/
 │   │   ├── test_acled_oauth.py
+│   │   ├── test_failure_logging.py
 │   │   ├── test_retry.py
+│   │   ├── test_source_error_messages.py
 │   │   └── providers/
 │   │       ├── test_acled.py
 │   │       ├── test_article_date_contract.py
 │   │       ├── test_gdelt.py
 │   │       ├── test_guardian.py
 │   │       ├── test_mediacloud.py
+│   │       ├── test_mediacloud_collections.py
 │   │       ├── test_newsapi.py
 │   │       └── test_nyt.py
 │   └── web/
@@ -171,7 +175,7 @@ readability.
 | `src/news/cli/` | Command parsing, fetch modes, terminal output, and exports |
 | `src/news/exports/` | CSV, JSON, and SQLite serialization |
 | `src/news/search/` | Validated search behavior, cache, filters, duplicate removal, and search details |
-| `src/news/sources/` | Source access, ACLED OAuth setup, retries and pauses, registry, and parallel requests |
+| `src/news/sources/` | Source access, ACLED OAuth setup, retries and pauses, shared request settings, registry, and parallel requests |
 | `src/news/trends/` | Google Trends retrieval for one explicit past window, query-to-keyword conversion, request spacing, and as-of rescaling |
 | `src/news/web/` | Typed configuration validation, package defaults, path lookup, password hashing, stored sign-in state, and installed browser assets |
 | `.agents/skills/news-cli/` | Retrieval and coverage-check instructions for an outside AI agent, made to be copied into that agent's own skills folder |
@@ -185,7 +189,8 @@ readability.
 
 ## Important Root Files
 
-- `config.toml`: documented browser, cache, and proxy-trust settings.
+- `config.toml`: documented browser, cache, proxy-trust, search-attention, and
+  source-request settings.
 - `pyproject.toml`: dependencies, package discovery, and executable commands.
 - `README.md`: setup, normal commands, and documentation links.
 - `.env.example`: secret-free sign-in account and provider credential template.

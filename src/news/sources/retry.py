@@ -7,23 +7,29 @@ from collections.abc import Callable
 
 import httpx
 
-DEFAULT_CONNECT_TIMEOUT_SECONDS = 5.0
-DEFAULT_READ_TIMEOUT_SECONDS = 15.0
+from news.sources.settings import current_source_settings
+
 DEFAULT_RETRY_ATTEMPTS = 2
 DEFAULT_RETRY_DELAY_SECONDS = 1.0
 
 
-def build_timeout(
-    *,
-    connect_timeout_seconds: float = DEFAULT_CONNECT_TIMEOUT_SECONDS,
-    read_timeout_seconds: float = DEFAULT_READ_TIMEOUT_SECONDS,
-) -> httpx.Timeout:
-    """Build a consistent ``httpx.Timeout`` for adapters."""
+def build_timeout() -> httpx.Timeout:
+    """Build an ``httpx.Timeout`` from the configured source settings.
+
+    Returns
+    -------
+    httpx.Timeout
+        Connection and pool limits taken from ``connect_timeout_seconds``, read
+        and write limits taken from ``read_timeout_seconds``. The values are
+        read on every call so a configuration change applies without restarting
+        the adapters.
+    """
+    settings = current_source_settings()
     return httpx.Timeout(
-        connect=connect_timeout_seconds,
-        read=read_timeout_seconds,
-        write=read_timeout_seconds,
-        pool=connect_timeout_seconds,
+        connect=settings.connect_timeout_seconds,
+        read=settings.read_timeout_seconds,
+        write=settings.read_timeout_seconds,
+        pool=settings.connect_timeout_seconds,
     )
 
 

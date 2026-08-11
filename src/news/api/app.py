@@ -42,6 +42,7 @@ from news.search.cache import SearchResultCache, build_search_cache
 from news.search.errors import SearchValidationError
 from news.search.models import SearchResult
 from news.sources import get_source_status, search_all_detailed
+from news.sources.settings import configure_sources
 from news.trends.google import GoogleTrendsClient
 from news.trends.keywords import keywords_from_query
 from news.trends.models import (
@@ -117,6 +118,9 @@ def create_app(
     FastAPI
         Application with routes and packaged browser files.
     """
+    # Adapters are module-level singletons, so their deployment settings are
+    # installed once here rather than passed through every search call.
+    configure_sources(settings.sources)
     active_cache = (
         build_search_cache(settings.cache) if search_cache is None else search_cache
     )

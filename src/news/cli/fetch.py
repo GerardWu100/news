@@ -11,6 +11,8 @@ import httpx
 from dotenv import load_dotenv
 
 from news.search.validation import split_csv_values
+from news.sources.settings import configure_sources
+from news.web.config import load_settings
 from news.web.credentials import ENV_PASSWORD_KEY, ENV_USERNAME_KEY
 from news.web.paths import env_path
 
@@ -118,8 +120,11 @@ async def fetch_direct_page(
 
     The direct path loads ``.env`` from the current working directory and skips
     HTTP while using the same validation and search process as the FastAPI app.
+    Source settings are installed here for the same reason the server installs
+    them at startup: adapters read them instead of receiving them per call.
     """
     load_dotenv(env_path())
+    configure_sources(load_settings(args.config).sources)
 
     from news.search import build_search_request, run_search
 

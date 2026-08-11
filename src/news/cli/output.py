@@ -47,6 +47,10 @@ def format_table(articles: list[dict[str, Any]], meta: dict[str, Any]) -> str:
         ),
         "",
     ]
+    failure_lines = format_source_failures(meta)
+    if failure_lines:
+        lines.extend([*failure_lines, ""])
+
     if not articles:
         lines.append("No results found.")
         return "\n".join(lines)
@@ -89,6 +93,38 @@ def format_table(articles: list[dict[str, Any]], meta: dict[str, Any]) -> str:
         )
 
     return "\n".join(lines)
+
+
+def format_source_failures(meta: dict[str, Any]) -> list[str]:
+    """List the requested sources that contributed nothing and explain why.
+
+    Without this, a search across six sources where four failed looks identical
+    to a search where four simply had no matching articles. For research on a
+    fixed historical window that difference decides whether the result can be
+    trusted, so failures are stated rather than left in the response details.
+
+    Parameters
+    ----------
+    meta : dict[str, Any]
+        Search details containing ``source_reports``.
+
+    Returns
+    -------
+    list[str]
+        Lines to print, or an empty list when every requested source answered.
+    """
+    reports = meta.get("source_reports") or []
+    failed = [report for report in reports if report.get("error")]
+    if not failed:
+        return []
+
+    answered = len(reports) - len(failed)
+    lines = [
+        f"Warning: {len(failed)} of {len(reports)} requested sources returned "
+        f"nothing. Results below come from {answered} source(s).",
+    ]
+    lines.extend(f"  {report['name']}: {report['error']}" for report in failed)
+    return lines
 
 
 def write_export(

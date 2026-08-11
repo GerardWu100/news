@@ -114,6 +114,23 @@ The server resolves configuration in this order:
 
 An external file can override only the settings it needs. Unknown keys, unknown source names, malformed TOML, and non-positive cache limits stop startup with a configuration error.
 
+The `[sources]` table controls how adapters talk to providers:
+
+| Setting | Meaning |
+|---|---|
+| `connect_timeout_seconds` | Time allowed to open a connection, including the Transport Layer Security (TLS) handshake. Some hosts need over ten seconds to negotiate TLS with GDELT, and a short limit fails the request before any data moves. |
+| `read_timeout_seconds` | Time allowed to wait for a response once the request has been sent. |
+| `mediacloud_collections` | MediaCloud collection identifiers searched together. A collection is a curated group of outlets. MediaCloud refuses a search that names none, so this list cannot be empty. `34412234` is "United States - National"; `34412476` is the United Kingdom, `34412118` India, `34412282` Australia. |
+
+## When a source returns nothing
+
+A search across six sources where four failed produces the same article count as a search where four simply had no matching articles. The two mean very different things for research on a fixed window, so failures are reported rather than hidden:
+
+- Every response carries `source_reports`, one entry per requested source, with the number returned and any error.
+- The CLI table prints a warning above the rows naming each failed source.
+- JSON, JSON Lines, and file exports send the same warning to standard error, so the data stays parseable. `--quiet` turns it off.
+- The message repeats what the provider said. NewsAPI names the earliest date the current plan allows; MediaCloud names the parameter it wanted; GDELT states its rate limit. Configured credentials are removed from that text before it is shown.
+
 ## Research workflow
 
 ```mermaid

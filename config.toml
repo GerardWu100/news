@@ -33,3 +33,19 @@ seconds_between_requests = 4.0
 # Empty string means worldwide; otherwise a country code such as US, CA, GB,
 # optionally with a region suffix such as US-NY.
 default_geo = ""
+
+[sources]
+# Seconds allowed to open a connection to a provider, including the TLS
+# handshake. GDELT in particular can take over ten seconds to negotiate TLS
+# from some hosts, and a short limit fails the request before any data moves.
+connect_timeout_seconds = 25.0
+
+# Seconds allowed to wait for a provider response once the request is sent.
+read_timeout_seconds = 20.0
+
+# MediaCloud collection identifiers searched together. A collection is a
+# curated group of outlets; the story-list endpoint rejects a search that names
+# none. 34412234 is "United States - National".
+# Other published collections: 34412476 United Kingdom - National,
+# 34412118 India - National, 34412282 Australia - National.
+mediacloud_collections = [34412234]

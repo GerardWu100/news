@@ -146,6 +146,22 @@ worker thread pool and the event loop stays free for article searches. Unlike
 `news-search`, the `news-trends` command never calls the server, because Trends
 needs no stored credentials and no coordination between sources.
 
+## Source Request Settings
+
+Adapters are built once into `sources/registry.py` and reused, so they cannot
+take deployment settings as constructor arguments. `sources/settings.py` instead
+holds one `SourceSettings` value that adapters read when they build a request.
+`api/app.py` installs it while creating the application, and the CLI's direct
+path installs it in `cli/fetch.py`, both from the `[sources]` configuration
+table. Nothing needs to be installed for a test: the module defaults are usable
+on their own.
+
+Two settings matter in practice. `connect_timeout_seconds` covers the TLS
+handshake, which is slow enough with GDELT from some hosts to fail every request
+on its own. `mediacloud_collections` is required rather than optional, because
+the MediaCloud story-list endpoint answers HTTP 422 when a search names neither
+a collection nor an individual outlet.
+
 ## Public Imports
 
 - `news.search` exports validated request/result types, the executor type, the

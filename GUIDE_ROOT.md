@@ -55,9 +55,12 @@ The exact tree and responsibility table are in
 - `README.md`: setup, normal commands, and documentation links.
 - `pyproject.toml`: dependencies, package discovery, package data, and the
   `news-server`, `news-search`, and `news-trends` commands.
-- `config.toml`: local browser, cache, proxy-trust, and search-attention
-  settings. The `[trends]` table holds the minimum gap between outgoing
-  attention requests and the geography used when one is not named.
+- `config.toml`: local browser, cache, proxy-trust, search-attention, and
+  source-request settings. The `[trends]` table holds the minimum gap between
+  outgoing attention requests and the geography used when one is not named.
+  The `[sources]` table holds the connection and read timeouts every adapter
+  uses and the MediaCloud collections searched; MediaCloud refuses a search
+  that names no collection, so that list cannot be empty.
 - `.env.example`: secret-free sign-in accounts and credential template.
 - `Dockerfile`, `docker-compose.yml`, and `docker-entrypoint.sh`: self-hosted
   image, deployment defaults, persistent settings, and Dockerized CLI use.

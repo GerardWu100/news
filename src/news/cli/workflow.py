@@ -15,7 +15,12 @@ from news.search.errors import SearchValidationError
 from news.web.paths import env_path
 
 from .fetch import fetch_page
-from .output import format_table, resolve_output_path, write_export
+from .output import (
+    format_source_failures,
+    format_table,
+    resolve_output_path,
+    write_export,
+)
 from .parser import build_arg_parser
 
 
@@ -44,20 +49,42 @@ def run_cli(args: argparse.Namespace) -> None:
     if args.export:
         output_path = resolve_output_path(args)
         write_export(args, payload["results"], output_path, payload["meta"])
+        warn_about_failed_sources(args, payload["meta"])
         if not args.quiet:
             print(f"Exported {len(payload['results'])} articles to {output_path}")
         return
 
     if args.output_format == "json":
+        warn_about_failed_sources(args, payload["meta"])
         print(json.dumps(payload, indent=2, ensure_ascii=False))
         return
 
     if args.output_format == "jsonl":
+        warn_about_failed_sources(args, payload["meta"])
         for article in payload["results"]:
             print(json.dumps(article, ensure_ascii=False, separators=(",", ":")))
         return
 
+    # The table prints its own warning inline so it stays next to the counts.
     print(format_table(payload["results"], payload["meta"]))
+
+
+def warn_about_failed_sources(
+    args: argparse.Namespace,
+    meta: dict[str, Any],
+) -> None:
+    """Report failed sources on the error stream for machine-readable output.
+
+    JSON, JSON Lines, and file exports must stay parseable, so the warning goes
+    to standard error instead of into the data. ``--quiet`` suppresses it
+    because a script that asked for silence already has ``source_reports`` in
+    the payload.
+    """
+    if args.quiet:
+        return
+
+    for line in format_source_failures(meta):
+        print(line, file=sys.stderr)
 
 
 def collect_results(args: argparse.Namespace) -> dict[str, Any]:

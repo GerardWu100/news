@@ -155,6 +155,14 @@ def build_arg_parser() -> argparse.ArgumentParser:
         help="Skip the server and call the search code directly",
     )
     parser.add_argument(
+        "--config",
+        default=None,
+        help=(
+            "TOML settings path used by --direct. "
+            "Overrides NEWS_CONFIG and ./config.toml."
+        ),
+    )
+    parser.add_argument(
         "-q", "--quiet", action="store_true", help="Suppress progress messages"
     )
     return parser

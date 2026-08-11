@@ -13,7 +13,6 @@ logger = logging.getLogger(__name__)
 
 _GDELT_DATE_LEN = 8
 GDELT_PAGE_SIZE = 50
-GDELT_READ_TIMEOUT_SECONDS = 20.0
 GDELT_SORT_DATE_ASC = "DateAsc"
 GDELT_SORT_DATE_DESC = "DateDesc"
 
@@ -56,9 +55,7 @@ class GdeltSource(BaseSource):
             "enddatetime": gdelt_end,
         }
 
-        async with httpx.AsyncClient(
-            timeout=build_timeout(read_timeout_seconds=GDELT_READ_TIMEOUT_SECONDS)
-        ) as client:
+        async with httpx.AsyncClient(timeout=build_timeout()) as client:
             resp = await get_with_retry(
                 client,
                 self._BASE_URL,
@@ -67,12 +64,16 @@ class GdeltSource(BaseSource):
 
             content_type = resp.headers.get("content-type", "")
             if "json" not in content_type:
+                # GDELT reports refused queries as plain text with HTTP 200,
+                # for example the one-request-every-five-seconds rate limit.
+                # Returning an empty page here would look like "no articles
+                # matched", so raise and let the source report carry the text.
                 logger.warning(
                     "GDELT returned non-JSON (%s): %s",
                     content_type,
                     resp.text[:200],
                 )
-                return SourcePageResult(articles=[], has_more=False)
+                raise RuntimeError(f"GDELT refused this query: {_first_line(resp.text)}")
 
             data = resp.json()
 
@@ -92,6 +93,15 @@ class GdeltSource(BaseSource):
             domain=raw.get("domain", ""),
             language=raw.get("language", ""),
         )
+
+
+def _first_line(text: str, max_characters: int = 200) -> str:
+    """Return the first non-empty line of a provider message, trimmed."""
+    for line in text.splitlines():
+        cleaned = line.strip()
+        if cleaned:
+            return cleaned[:max_characters]
+    return "no explanation returned"
 
 
 def _format_gdelt_date(seen_date: str) -> str:

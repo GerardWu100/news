@@ -16,13 +16,21 @@ from pathlib import Path
 from typing import Any
 
 from news.sources.registry import source_names
+from news.sources.settings import SourceSettings
 from news.web.paths import config_path
 
-ROOT_SETTING_KEYS = frozenset({"frontend", "cache", "security", "trends"})
+ROOT_SETTING_KEYS = frozenset({"frontend", "cache", "security", "trends", "sources"})
 FRONTEND_SETTING_KEYS = frozenset({"default_english_only", "default_sources"})
 CACHE_SETTING_KEYS = frozenset({"ttl_seconds", "max_entries"})
 SECURITY_SETTING_KEYS = frozenset({"trust_forwarded_headers"})
 TRENDS_SETTING_KEYS = frozenset({"seconds_between_requests", "default_geo"})
+SOURCES_SETTING_KEYS = frozenset(
+    {
+        "connect_timeout_seconds",
+        "read_timeout_seconds",
+        "mediacloud_collections",
+    }
+)
 # Two-letter country code, optionally followed by a region suffix.
 GEOGRAPHY_CODE_PATTERN = re.compile(r"[A-Z]{2}(-[A-Z0-9]{1,3})?")
 
@@ -114,6 +122,7 @@ class AppSettings:
     cache: CacheSettings
     security: SecuritySettings
     trends: TrendsSettings
+    sources: SourceSettings
 
 
 def load_settings(path: Path | str | None = None) -> AppSettings:
@@ -182,6 +191,7 @@ def _validate_known_keys(config: Mapping[str, Any], *, source: str) -> None:
         ("cache", CACHE_SETTING_KEYS),
         ("security", SECURITY_SETTING_KEYS),
         ("trends", TRENDS_SETTING_KEYS),
+        ("sources", SOURCES_SETTING_KEYS),
     ):
         table = config.get(table_name, {})
         if not isinstance(table, Mapping):
@@ -227,6 +237,7 @@ def _parse_settings(config: Mapping[str, Any]) -> AppSettings:
     cache = config["cache"]
     security = config["security"]
     trends = config["trends"]
+    sources = config["sources"]
 
     default_english_only = frontend["default_english_only"]
     if not isinstance(default_english_only, bool):
@@ -279,7 +290,46 @@ def _parse_settings(config: Mapping[str, Any]) -> AppSettings:
             ),
             default_geo=_geography_code(trends["default_geo"]),
         ),
+        sources=SourceSettings(
+            connect_timeout_seconds=_positive_number(
+                sources["connect_timeout_seconds"],
+                "sources.connect_timeout_seconds",
+            ),
+            read_timeout_seconds=_positive_number(
+                sources["read_timeout_seconds"],
+                "sources.read_timeout_seconds",
+            ),
+            mediacloud_collections=_collection_ids(
+                sources["mediacloud_collections"],
+                "sources.mediacloud_collections",
+            ),
+        ),
     )
+
+
+def _positive_number(value: object, field_name: str) -> float:
+    """Validate a setting that must be greater than zero, rejecting booleans."""
+    if isinstance(value, bool) or not isinstance(value, int | float) or value <= 0:
+        raise SettingsError(f"{field_name} must be a number greater than zero")
+    return float(value)
+
+
+def _collection_ids(value: object, field_name: str) -> tuple[int, ...]:
+    """Validate a list of provider collection identifiers.
+
+    The list must contain at least one positive whole number because the
+    MediaCloud story-list endpoint rejects a search that names no collection.
+    """
+    if not isinstance(value, list) or not value:
+        raise SettingsError(f"{field_name} must be a non-empty array of whole numbers")
+    if any(
+        isinstance(entry, bool) or not isinstance(entry, int) or entry <= 0
+        for entry in value
+    ):
+        raise SettingsError(f"{field_name} entries must be whole numbers above zero")
+    if len(set(value)) != len(value):
+        raise SettingsError(f"{field_name} cannot contain duplicates")
+    return tuple(value)
 
 
 def _non_negative_number(value: object, field_name: str) -> float:
