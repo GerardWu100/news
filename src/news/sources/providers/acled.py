@@ -103,23 +103,19 @@ def _expired_token_message() -> str:
     """
     expiry = _recorded_token_expiry()
     if expiry is None:
-        return (
-            "ACLED refused this token. Generate a new one with: "
-            f"{ACLED_TOKEN_COMMAND}"
+        reason = "ACLED refused this token."
+    elif expiry <= datetime.now(UTC):
+        reason = f"The ACLED token expired on {expiry.date().isoformat()}."
+    else:
+        # ACLED answers a refused request with a web page rather than a reason,
+        # so a token that has not expired yet leaves two candidates worth
+        # naming.
+        reason = (
+            "ACLED refused this token even though it is recorded as valid "
+            f"until {expiry.date().isoformat()}. The account request limit may "
+            "be reached, or the token may have been replaced."
         )
-    if expiry <= datetime.now(UTC):
-        return (
-            f"The ACLED token expired on {expiry.date().isoformat()}. "
-            f"Generate a new one with: {ACLED_TOKEN_COMMAND}"
-        )
-    # ACLED answers a refused request with a web page rather than a reason, so
-    # a token that has not expired yet leaves two candidates worth naming.
-    return (
-        "ACLED refused this token even though it is recorded as valid until "
-        f"{expiry.date().isoformat()}. The account request limit may be "
-        "reached, or the token may have been replaced. Generate a new one "
-        f"with: {ACLED_TOKEN_COMMAND}"
-    )
+    return f"{reason} Generate a new one with: {ACLED_TOKEN_COMMAND}"
 
 
 def _recorded_token_expiry() -> datetime | None:

@@ -8,7 +8,6 @@ status code followed by the full request address.
 from __future__ import annotations
 
 import unittest
-from types import SimpleNamespace
 from unittest.mock import patch
 
 import httpx
@@ -149,16 +148,10 @@ class _RefusingClient:
     def __exit__(self, *_exception_details: object) -> bool:
         return False
 
-    def get(self, *_args: object, **_keyword_args: object) -> SimpleNamespace:
+    def get(self, *_args: object, **_keyword_args: object) -> httpx.Response:
         """Answer with the refusal the search route sends for a bad window."""
-        response = _json_response(
+        return _json_response(
             422, {"detail": "Start date must be on or before end date"}
-        )
-        return SimpleNamespace(
-            status_code=response.status_code,
-            is_error=True,
-            text=response.text,
-            json=response.json,
         )
 
 

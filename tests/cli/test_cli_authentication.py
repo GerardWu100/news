@@ -3,13 +3,18 @@
 from __future__ import annotations
 
 import unittest
-from types import SimpleNamespace
 from unittest.mock import patch
+
+import httpx
 
 from news.cli.fetch import api_credentials, fetch_api_page
 from news.cli.output import download_api_export
 from news.cli.parser import build_arg_parser
 from news.web.credentials import ENV_PASSWORD_KEY, ENV_USERNAME_KEY
+
+# Every stand-in response needs the request it answers, and the address itself
+# is never inspected.
+_REQUEST = httpx.Request("GET", "https://news.example.com/api/search")
 
 
 class ApiCredentialTests(unittest.TestCase):
@@ -101,9 +106,9 @@ class _RefusingClient:
     def __exit__(self, *_exception_details: object) -> bool:
         return False
 
-    def get(self, *_args: object, **_keyword_args: object) -> SimpleNamespace:
-        """Return the smallest response the caller inspects."""
-        return SimpleNamespace(status_code=401)
+    def get(self, *_args: object, **_keyword_args: object) -> httpx.Response:
+        """Answer the way a server does when it does not accept the account."""
+        return httpx.Response(401, request=_REQUEST)
 
 
 class _RecordingClientFactory:
@@ -127,14 +132,9 @@ class _RecordingClient:
     def __exit__(self, *_exception_details: object) -> bool:
         return False
 
-    def get(self, *_args: object, **_keyword_args: object) -> SimpleNamespace:
+    def get(self, *_args: object, **_keyword_args: object) -> httpx.Response:
         """Return a successful response for both the search and export routes."""
-        return SimpleNamespace(
-            status_code=200,
-            is_error=False,
-            text="title,url\n",
-            json=lambda: {"results": [], "meta": {}},
-        )
+        return httpx.Response(200, request=_REQUEST, json={"results": [], "meta": {}})
 
 
 if __name__ == "__main__":

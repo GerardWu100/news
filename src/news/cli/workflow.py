@@ -44,29 +44,34 @@ def main(argv: list[str] | None = None) -> int:
 
 
 def run_cli(args: argparse.Namespace) -> None:
-    """Execute the parsed CLI request."""
+    """Execute the parsed CLI request.
+
+    The table is handled first because it is the one output a person reads, and
+    it carries its own failure warning inline next to the counts. Every other
+    output is meant for a program, so its warning goes to the error stream.
+    """
     payload = collect_results(args)
+
+    if not args.export and args.output_format == "table":
+        print(format_table(payload["results"], payload["meta"]))
+        return
+
+    warn_about_failed_sources(args, payload["meta"])
+
     if args.export:
         output_path = resolve_output_path(args)
         write_export(args, payload["results"], output_path, payload["meta"])
-        warn_about_failed_sources(args, payload["meta"])
         if not args.quiet:
             print(f"Exported {len(payload['results'])} articles to {output_path}")
         return
 
     if args.output_format == "json":
-        warn_about_failed_sources(args, payload["meta"])
         print(json.dumps(payload, indent=2, ensure_ascii=False))
         return
 
-    if args.output_format == "jsonl":
-        warn_about_failed_sources(args, payload["meta"])
-        for article in payload["results"]:
-            print(json.dumps(article, ensure_ascii=False, separators=(",", ":")))
-        return
-
-    # The table prints its own warning inline so it stays next to the counts.
-    print(format_table(payload["results"], payload["meta"]))
+    # The parser accepts only table, json, and jsonl, so this is jsonl.
+    for article in payload["results"]:
+        print(json.dumps(article, ensure_ascii=False, separators=(",", ":")))
 
 
 def warn_about_failed_sources(

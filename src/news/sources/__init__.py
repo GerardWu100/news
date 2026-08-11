@@ -302,11 +302,9 @@ def _provider_explanation(response: httpx.Response, max_characters: int = 300) -
         The provider's message, or the empty string when the body holds no
         readable explanation.
     """
-    try:
-        body = response.text
-    except Exception:  # noqa: BLE001 - a body that cannot be decoded is not fatal
-        return ""
-
+    # Every caller passes a response from a completed request, so the body is
+    # already in memory and decoding it replaces bad bytes rather than raising.
+    body = response.text
     if not body.strip():
         return ""
 

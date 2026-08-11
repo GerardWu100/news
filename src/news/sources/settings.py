@@ -11,7 +11,7 @@ adapter in a test needs no setup.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 # Seconds allowed to open a connection, including the Transport Layer Security
 # (TLS) handshake. Some providers are slow to negotiate TLS from a given host:
@@ -47,9 +47,7 @@ class SourceSettings:
 
     connect_timeout_seconds: float = DEFAULT_CONNECT_TIMEOUT_SECONDS
     read_timeout_seconds: float = DEFAULT_READ_TIMEOUT_SECONDS
-    mediacloud_collections: tuple[int, ...] = field(
-        default=DEFAULT_MEDIACLOUD_COLLECTIONS
-    )
+    mediacloud_collections: tuple[int, ...] = DEFAULT_MEDIACLOUD_COLLECTIONS
 
 
 _current_settings = SourceSettings()
