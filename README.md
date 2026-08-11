@@ -72,7 +72,9 @@ uv run news-server
 
 Open `http://127.0.0.1:8000`, sign in, choose the window, and search. The page
 has three sections: build the search, review the archive, and compare it with
-what people searched for over the same dates.
+what people searched for over the same dates. `/docs` in the browser documents
+what the tool can do, the commands an AI agent should call, the HTTP routes,
+and the known limits.
 
 ## Usage
 
@@ -153,6 +155,25 @@ for the full architecture.
 The API returns JSON; the CLI can also write CSV, JSON, or SQLite. Every
 response includes `source_reports` — per-source article counts and errors —
 so partial failures are visible rather than silently lowering the count.
+
+## Roadmap
+
+**Fuzzy search.** Matching is exact today: a query for `Fed` misses `Federal
+Reserve`, and a misspelled name returns nothing. Planned as local scoring over
+what the providers return, not as a change to the provider queries — each
+source has its own query language, and rewriting six of them would make results
+harder to reproduce. The score, the threshold, and the matched terms belong in
+the response, so a low-confidence match is visible rather than silently mixed
+into the count.
+
+**Better duplicate removal.** The current pass matches near-identical titles and
+addresses, which catches an article syndicated verbatim but not two outlets
+rewriting the same wire story. Planned as similarity over title and summary text
+within the date window, keeping the earliest publication as the representative
+and recording the ones it absorbed. Two things must hold: the merge has to stay
+inside the window so it cannot pull in later coverage, and `--no-dedupe` has to
+keep returning the raw set, since deciding what counts as the same story is a
+research judgment rather than a detail to hide.
 
 ## License
 

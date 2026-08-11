@@ -16,6 +16,9 @@ Login page and data responses
     inline stylesheet on the login page is the single exception.
 Search page
     Its own scripts and stylesheet, plus the web font files it links to.
+Documentation page
+    The stylesheet and fonts only. The page is plain markup with no script of
+    its own, so it is not allowed to run one.
 
 Strict Transport Security
 -------------------------
@@ -60,6 +63,15 @@ _SEARCH_PAGE_POLICY = (
     f"font-src {FONT_FILE_HOST}",
 )
 
+# The documentation page reads like a printed page: styles and fonts, no
+# behaviour. Leaving script-src out means an injected script has nothing to run
+# from even if markup ever reached the page from outside.
+_DOCUMENTATION_PAGE_POLICY = (
+    *_SHARED_POLICY_DIRECTIVES,
+    f"style-src 'self' {FONT_STYLESHEET_HOST}",
+    f"font-src {FONT_FILE_HOST}",
+)
+
 # JSON, CSV, and redirect responses need no resources at all.
 _DATA_RESPONSE_POLICY = _SHARED_POLICY_DIRECTIVES
 
@@ -78,6 +90,11 @@ def login_page_headers(*, connection_is_secure: bool = False) -> dict[str, str]:
 def search_page_headers(*, connection_is_secure: bool = False) -> dict[str, str]:
     """Return response headers for the browser search page."""
     return _build_headers(_SEARCH_PAGE_POLICY, connection_is_secure)
+
+
+def documentation_page_headers(*, connection_is_secure: bool = False) -> dict[str, str]:
+    """Return response headers for the browser documentation page."""
+    return _build_headers(_DOCUMENTATION_PAGE_POLICY, connection_is_secure)
 
 
 def data_response_headers(*, connection_is_secure: bool = False) -> dict[str, str]:

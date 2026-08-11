@@ -1099,6 +1099,181 @@ select:focus {
     line-height: 1.55;
 }
 
+/* ---- Documentation page ----
+   Two columns on a wide screen, with the contents list sticking beside the
+   text; one column on anything narrower. */
+
+.docs-layout {
+    align-items: start;
+    grid-template-columns: minmax(0, 15rem) minmax(0, 1fr);
+    gap: clamp(1rem, 2vw, 1.75rem);
+}
+
+.docs-contents {
+    position: sticky;
+    top: 1rem;
+    padding: 1.25rem;
+}
+
+.docs-contents ul {
+    margin: 0.75rem 0 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 0.5rem;
+}
+
+.docs-contents a,
+.page-link {
+    color: var(--page-ink);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+}
+
+.docs-contents a:hover,
+.page-link:hover {
+    color: var(--page-accent-dark);
+    border-bottom-color: currentColor;
+}
+
+.page-link {
+    padding: 0.5rem 0.85rem;
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-pill);
+    color: var(--page-muted);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+}
+
+/* min-width: 0 is required, not cosmetic. A grid item is sized by its
+   min-content width by default, so a long command line inside <pre> would
+   widen this column past the screen even though the <pre> scrolls on its
+   own. */
+.docs-body {
+    display: grid;
+    gap: 2rem;
+    min-width: 0;
+    line-height: 1.7;
+}
+
+.docs-body > section {
+    min-width: 0;
+}
+
+.docs-body h2 {
+    margin: 0 0 0.75rem;
+    font-family: "Fraunces", Georgia, serif;
+    font-size: clamp(1.45rem, 2.2vw, 1.95rem);
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+}
+
+.docs-body h3 {
+    margin: 1.75rem 0 0.6rem;
+    font-size: 1rem;
+    letter-spacing: 0.02em;
+}
+
+.docs-body p {
+    margin: 0 0 0.9rem;
+    color: var(--page-muted);
+}
+
+.docs-body strong {
+    color: var(--page-ink);
+}
+
+.docs-body ul {
+    margin: 0 0 0.9rem;
+    padding-left: 1.15rem;
+    color: var(--page-muted);
+}
+
+.docs-body li {
+    margin-bottom: 0.45rem;
+}
+
+.docs-body section + section {
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--hairline);
+}
+
+.docs-callout {
+    padding: 0.9rem 1.1rem;
+    border-left: 4px solid var(--page-accent);
+    border-radius: 4px var(--radius-md) var(--radius-md) 4px;
+    background: rgba(193, 85, 56, 0.08);
+}
+
+.docs-body code {
+    padding: 0.1rem 0.35rem;
+    border-radius: 5px;
+    background: rgba(23, 32, 46, 0.07);
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.88em;
+    color: var(--page-ink);
+}
+
+.docs-body pre {
+    margin: 0 0 0.9rem;
+    padding: 1rem 1.1rem;
+    overflow-x: auto;
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-md);
+    background: rgba(255, 255, 255, 0.55);
+}
+
+.docs-body pre code {
+    padding: 0;
+    background: none;
+    font-size: 0.85rem;
+    line-height: 1.6;
+    color: var(--page-ink);
+}
+
+/* A wide table scrolls inside its own box so the page itself never scrolls
+   sideways. */
+.docs-table-scroll {
+    overflow-x: auto;
+    margin-bottom: 0.9rem;
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-md);
+}
+
+.docs-body table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.92rem;
+}
+
+.docs-body th,
+.docs-body td {
+    padding: 0.7rem 0.9rem;
+    text-align: left;
+    vertical-align: top;
+    border-bottom: 1px solid var(--hairline);
+}
+
+.docs-body th {
+    color: var(--page-accent);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.docs-body td {
+    color: var(--page-muted);
+}
+
+.docs-body tbody tr:last-child th,
+.docs-body tbody tr:last-child td {
+    border-bottom: 0;
+}
+
 /* ---- Article dialog ---- */
 
 .article-dialog {
@@ -1176,6 +1351,14 @@ select:focus {
 /* ---- Narrow screens ---- */
 
 @media (max-width: 820px) {
+    .docs-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .docs-contents {
+        position: static;
+    }
+
     .hero-grid {
         display: grid;
         align-items: start;

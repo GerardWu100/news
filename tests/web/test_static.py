@@ -15,6 +15,7 @@ RENDER_JS_PATH = (
 TRENDS_JS_PATH = (
     PROJECT_ROOT / "src" / "news" / "web" / "static" / "scripts" / "trends.js"
 )
+DOCS_HTML_PATH = PROJECT_ROOT / "src" / "news" / "web" / "static" / "docs.html"
 
 
 class FrontendStaticSecurityTests(unittest.TestCase):
@@ -98,3 +99,38 @@ class FrontendSearchAttentionTests(unittest.TestCase):
 
         self.assertIn("relative index from 0 to 100", html)
         self.assertIn("not a number of searches", trends_source)
+
+
+class DocumentationPageTests(unittest.TestCase):
+    """Check the in-browser documentation page."""
+
+    def test_search_page_links_to_the_documentation(self) -> None:
+        """A page nobody can reach documents nothing."""
+        html = INDEX_HTML_PATH.read_text(encoding="utf-8")
+
+        self.assertIn('href="/docs"', html)
+
+    def test_documentation_carries_the_commands_an_agent_needs(self) -> None:
+        """The page is the reference an agent is pointed at."""
+        docs = DOCS_HTML_PATH.read_text(encoding="utf-8")
+
+        self.assertIn("news-search", docs)
+        self.assertIn("news-trends", docs)
+        self.assertIn("NEWS_SERVER_URL", docs)
+        self.assertIn("UI_USERNAME", docs)
+        self.assertIn("--format json", docs)
+        self.assertIn("source_reports", docs)
+
+    def test_documentation_states_the_limits_that_change_a_conclusion(self) -> None:
+        """Coverage and scaling caveats decide whether a result can be used."""
+        docs = DOCS_HTML_PATH.read_text(encoding="utf-8")
+
+        self.assertIn("look-ahead bias", docs)
+        self.assertIn("relative index from 0 to 100", docs)
+        self.assertIn("Known limits", docs)
+
+    def test_documentation_runs_no_script_of_its_own(self) -> None:
+        """Its security policy leaves script-src out, so a script would break."""
+        docs = DOCS_HTML_PATH.read_text(encoding="utf-8")
+
+        self.assertNotIn("<script", docs)

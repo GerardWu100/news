@@ -124,6 +124,28 @@ class SearchPageHeaderTests(SecurityHeaderTestCase):
         self.assertNotIn("unsafe-eval", policy)
 
 
+class DocumentationPageHeaderTests(SecurityHeaderTestCase):
+    """Verify the narrower policy the documentation page needs."""
+
+    def test_documentation_page_loads_styles_and_fonts_but_runs_nothing(self) -> None:
+        """The page is plain markup, so it has no reason to run a script."""
+        response = self.client.get("/docs", headers=self.account_headers)
+        policy = response.headers["Content-Security-Policy"]
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(f"style-src 'self' {FONT_STYLESHEET_HOST}", policy)
+        self.assertIn(f"font-src {FONT_FILE_HOST}", policy)
+        self.assertNotIn("script-src", policy)
+        self.assertNotIn("unsafe-inline", policy)
+
+    def test_documentation_page_needs_an_account(self) -> None:
+        """It names this deployment's routes, sources, and options."""
+        response = self.client.get("/docs", follow_redirects=False)
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.headers["location"], "/login")
+
+
 class StaticAssetHeaderTests(SecurityHeaderTestCase):
     """Verify that package-owned files stay cacheable but still protected."""
 

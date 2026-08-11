@@ -72,12 +72,20 @@ browser client is static and cannot carry a server-issued token.
 `api/app.py` attaches protection headers in a middleware rather than route by
 route, so a route added later cannot quietly serve data without them. Routes
 that need a wider policy set their own first, and the middleware fills in only
-what is missing. Three policies exist because the responses load different
+what is missing. Four policies exist because the responses load different
 things: the search page needs its own scripts and the linked web fonts, the
+documentation page needs the stylesheet and fonts but never a script, the
 sign-in page needs only its inline stylesheet, and JSON, CSV, and redirect
-responses need nothing at all. Neither page allows inline scripts or inline
-styles, so the browser code sets the result-card animation delay through the
-style property rather than through a `style` attribute in the markup.
+responses need nothing at all. No page allows inline scripts or inline styles,
+so the browser code sets the result-card animation delay and the chart legend
+colour through the style property rather than through a `style` attribute in
+the markup.
+
+Two pages are served from routes rather than from `/static`: the search page at
+`/` and the documentation page at `/docs`. Both redirect a signed-out browser
+to the sign-in page. The documentation page is guarded because it names this
+deployment's routes, configured sources, and command-line options, which is
+more than an unauthenticated caller needs.
 
 The factory accepts a `LoginSessions`, so tests point sign-in state at a
 temporary directory instead of the operator's data directory.

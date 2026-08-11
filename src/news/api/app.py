@@ -66,6 +66,7 @@ from news.web.paths import (
 )
 from news.web.security import (
     data_response_headers,
+    documentation_page_headers,
     request_is_secure,
     search_page_headers,
     static_asset_headers,
@@ -200,6 +201,29 @@ def create_app(
         return FileResponse(
             str(static_assets / "index.html"),
             headers=search_page_headers(
+                connection_is_secure=request_is_secure(
+                    request,
+                    settings.security.trust_forwarded_headers,
+                )
+            ),
+        )
+
+    @application.get("/docs", include_in_schema=False)
+    async def documentation(request: Request) -> Response:
+        """Serve the documentation page, or the sign-in page when signed out.
+
+        The address is free because the generated OpenAPI pages are switched
+        off in the application above.
+
+        Guarded like the search page rather than left in ``/static``. The page
+        names the routes, the source list, and the command-line options of this
+        particular deployment, which is more than a signed-out caller needs.
+        """
+        if not request_is_signed_in(request):
+            return RedirectResponse(url=LOGIN_PATH, status_code=302)
+        return FileResponse(
+            str(static_assets / "docs.html"),
+            headers=documentation_page_headers(
                 connection_is_secure=request_is_secure(
                     request,
                     settings.security.trust_forwarded_headers,

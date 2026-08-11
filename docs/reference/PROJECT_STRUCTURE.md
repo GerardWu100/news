@@ -87,6 +87,7 @@ This file records the repository as it exists. Proposed changes belong in
 │           ├── paths.py
 │           ├── security.py
 │           └── static/
+│               ├── docs.html
 │               ├── GUIDE_static.md
 │               ├── index.html
 │               ├── styles.css

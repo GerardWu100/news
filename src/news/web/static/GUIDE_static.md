@@ -101,6 +101,7 @@ like, sends the reader to the sign-in page instead of showing a search error.
 static/
 ├── favicon.svg           -- Packaged browser-tab mark matching the masthead.
 ├── GUIDE_static.md       -- This documentation file.
+├── docs.html             -- Documentation page: capabilities, CLI commands for agents, API routes, limits.
 ├── index.html            -- HTML shell for the search interface, results area, and attention chart.
 ├── styles.css            -- Shared editorial theme, layout, cards, chart, and dialog styles.
 └── scripts/
@@ -125,6 +126,17 @@ static/
 - Holds the masthead account label and the sign-out form, whose token is filled
   in by script rather than written into the file.
 - Loads the packaged SVG favicon, stylesheet, and both JavaScript entrypoints.
+
+### `docs.html`
+
+- Explains the purpose, the three interfaces, the sources and what each needs,
+  how to read `source_reports`, the command-line calls an agent makes, the HTTP
+  routes, the search-attention caveats, and the known limits.
+- Served at `/docs` by `api/app.py`, guarded by sign-in like the search page
+  rather than left in `/static`, because it names this deployment's routes,
+  source list, and options.
+- Carries no script tag. Its Content Security Policy leaves `script-src` out
+  entirely, so adding one would silently stop working; a test fixes that.
 
 ### `styles.css`
 

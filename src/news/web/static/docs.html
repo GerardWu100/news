@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#f1ede4">
+    <title>Documentation - News Search Engine</title>
+    <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <header class="hero">
+        <div class="topline">
+            <div class="brand">
+                <span class="brand-mark" aria-hidden="true">N</span>
+                <span>Historical News</span>
+            </div>
+            <div class="session-controls">
+                <a class="page-link" href="/">Back to search</a>
+            </div>
+        </div>
+
+        <div class="hero-grid">
+            <div class="hero-message">
+                <p class="eyebrow">Documentation</p>
+                <h1>What this does, and how to drive it.</h1>
+                <p class="hero-copy">
+                    Written for two readers: a person deciding whether a result can be
+                    trusted, and an AI agent that has to call the commands correctly.
+                </p>
+            </div>
+        </div>
+    </header>
+
+    <main class="layout docs-layout">
+        <nav class="glass-panel docs-contents" aria-label="Contents">
+            <p class="control-label">On this page</p>
+            <ul>
+                <li><a href="#purpose">What it is for</a></li>
+                <li><a href="#interfaces">Three ways in</a></li>
+                <li><a href="#sources">Sources and credentials</a></li>
+                <li><a href="#coverage">Reading coverage honestly</a></li>
+                <li><a href="#cli">Commands for agents</a></li>
+                <li><a href="#api">HTTP API</a></li>
+                <li><a href="#attention">Search attention</a></li>
+                <li><a href="#limits">Known limits</a></li>
+            </ul>
+        </nav>
+
+        <article class="glass-panel docs-body">
+            <section id="purpose">
+                <h2>What it is for</h2>
+                <p>
+                    Retrieve news published inside an exact date window, so you can
+                    read what was available at the time without later coverage
+                    leaking in. Both dates are inclusive, and the end date is the
+                    cutoff: nothing published after it is returned.
+                </p>
+                <p>
+                    That reduces <strong>look-ahead bias</strong>, which means using
+                    information that was not available when a historical decision was
+                    made. It does not remove it. Archives are incomplete, a
+                    publication timestamp is not the moment information became
+                    tradable, articles are edited after publication, and a language
+                    model may already know what happened next from its training. A
+                    serious backtest applies the cutoff to every input, not only the
+                    news.
+                </p>
+                <p class="docs-callout">
+                    This tool retrieves and exports. It does not calculate returns,
+                    simulate trades, or summarize articles. There is no language model
+                    call anywhere in the code.
+                </p>
+            </section>
+
+            <section id="interfaces">
+                <h2>Three ways in</h2>
+                <div class="docs-table-scroll">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Interface</th>
+                                <th>Best for</th>
+                                <th>Output</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Browser</td>
+                                <td>Exploring one window, reading source context</td>
+                                <td>Cards, plus JSON or CSV download of the visible page</td>
+                            </tr>
+                            <tr>
+                                <td><code>news-search</code></td>
+                                <td>Agents, scripts, repeatable retrieval</td>
+                                <td>Table, JSON, JSON Lines, CSV, SQLite</td>
+                            </tr>
+                            <tr>
+                                <td>HTTP API</td>
+                                <td>Another application</td>
+                                <td>JSON, CSV</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <p>
+                    The browser page runs in three steps: build the search, review the
+                    archive, then compare it with what people searched for over the
+                    same dates.
+                </p>
+            </section>
+
+            <section id="sources">
+                <h2>Sources and credentials</h2>
+                <p>
+                    Six sources are queried in parallel, then normalized into one
+                    article shape and deduplicated. A source with no configured key is
+                    shown dimmed in the browser and cannot be selected.
+                </p>
+                <div class="docs-table-scroll">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Source</th>
+                                <th>Needs</th>
+                                <th>Worth knowing</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>GDELT</td>
+                                <td>Nothing</td>
+                                <td>Rate limited to roughly one request every 5 seconds</td>
+                            </tr>
+                            <tr>
+                                <td>MediaCloud</td>
+                                <td><code>MEDIACLOUD_API_KEY</code></td>
+                                <td>Searches the collections named in <code>[sources]</code></td>
+                            </tr>
+                            <tr>
+                                <td>ACLED</td>
+                                <td>OAuth login, then a bearer token</td>
+                                <td>Conflict and protest events; tokens last 24 hours</td>
+                            </tr>
+                            <tr>
+                                <td>The New York Times</td>
+                                <td><code>NYT_API_KEY</code></td>
+                                <td>Publisher archive with consistent article details</td>
+                            </tr>
+                            <tr>
+                                <td>The Guardian</td>
+                                <td><code>GUARDIAN_API_KEY</code></td>
+                                <td>Publisher archive with consistent article details</td>
+                            </tr>
+                            <tr>
+                                <td>NewsAPI</td>
+                                <td><code>NEWSAPI_API_KEY</code></td>
+                                <td>The free plan reaches back about one month only</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <p>
+                    More sources improve coverage but do not remove selection,
+                    geographic, editorial, survivorship, or language bias. Every
+                    normalized article keeps its source name so later work can measure
+                    or filter those differences.
+                </p>
+            </section>
+
+            <section id="coverage">
+                <h2>Reading coverage honestly</h2>
+                <p>
+                    A search across six sources where four failed returns the same
+                    article count as a search where four simply had nothing matching.
+                    Those mean very different things, so failures are always stated.
+                </p>
+                <ul>
+                    <li>
+                        Every response carries <code>source_reports</code>: one entry
+                        per requested source, with how many articles it returned and
+                        any error.
+                    </li>
+                    <li>
+                        The browser shows one status chip per source under the result
+                        summary.
+                    </li>
+                    <li>
+                        The command line prints a warning naming each failed source,
+                        inline for the table and on the error stream for JSON, JSON
+                        Lines, and file exports, so the data stays parseable.
+                    </li>
+                    <li>
+                        The message repeats what the provider said, with configured
+                        credentials removed from that text first.
+                    </li>
+                </ul>
+                <p class="docs-callout">
+                    Before trusting a result, check <code>source_reports</code>. A
+                    count alone cannot tell you whether the window was covered.
+                </p>
+            </section>
+
+            <section id="cli">
+                <h2>Commands for agents</h2>
+                <p>
+                    Inside a checkout of this project, prefix every command with
+                    <code>uv run</code>. With the package installed elsewhere, call it
+                    directly. The examples below omit the prefix.
+                </p>
+
+                <h3>Sign in</h3>
+                <p>
+                    Every route that returns news needs an account. The command line
+                    sends it as an HTTP Basic header on each request.
+                </p>
+                <pre><code>export NEWS_SERVER_URL="https://news.example.com"
+export UI_USERNAME="the-account-name"
+export UI_PASSWORD="the-account-password"
+
+curl -s "$NEWS_SERVER_URL/healthz"</code></pre>
+                <p>
+                    The health route needs no account and answers
+                    <code>{"status":"ok"}</code>. The command line reads
+                    <code>.env</code> from the current working directory, so run it
+                    from the project folder or set <code>NEWS_DATA_DIR</code>.
+                </p>
+                <p class="docs-callout">
+                    The password travels in plain text. Use it only over HTTPS or a
+                    private network, never a plain-HTTP public port. Never write it
+                    into a file, a commit, or visible output.
+                </p>
+
+                <h3>Retrieve articles</h3>
+                <pre><code># readable table
+news-search "inflation" -s 2025-01-01 -e 2025-03-01
+
+# structured, for a model or a script
+news-search "central bank policy" \
+  --start 2026-01-01 --end 2026-01-31 \
+  --english --format json --quiet
+
+# one compact article per line
+news-search "central bank" -s 2025-01-01 -e 2025-01-31 --format jsonl
+
+# every available page, combined
+news-search "inflation" -s 2025-01-01 -e 2025-03-01 --all-pages --format json
+
+# write a file instead of printing
+news-search "inflation" -s 2025-01-01 -e 2025-03-01 --export csv -o out.csv</code></pre>
+
+                <h3>Options worth knowing</h3>
+                <div class="docs-table-scroll">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Option</th>
+                                <th>Effect</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><code>--sources a,b</code></td><td>Restrict to named sources</td></tr>
+                            <tr><td><code>--english</code></td><td>English articles only</td></tr>
+                            <tr><td><code>--exact-phrase</code></td><td>Require a phrase verbatim</td></tr>
+                            <tr><td><code>--exclude</code></td><td>Comma-separated terms to drop</td></tr>
+                            <tr><td><code>--domain</code> / <code>--exclude-domains</code></td><td>Keep or drop outlets</td></tr>
+                            <tr><td><code>--scope title</code></td><td>Match the title only</td></tr>
+                            <tr><td><code>--no-dedupe</code></td><td>Keep duplicate articles</td></tr>
+                            <tr><td><code>--all-pages</code></td><td>Fetch and combine every page</td></tr>
+                            <tr><td><code>--format</code></td><td><code>table</code>, <code>json</code>, or <code>jsonl</code></td></tr>
+                            <tr><td><code>--export</code></td><td><code>csv</code>, <code>json</code>, or <code>sqlite</code></td></tr>
+                            <tr><td><code>--quiet</code></td><td>Suppress the failed-source warning</td></tr>
+                            <tr><td><code>--server URL</code></td><td>Override <code>NEWS_SERVER_URL</code></td></tr>
+                            <tr><td><code>--direct</code></td><td>Skip the server and call the sources locally</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <p>
+                    <code>news-search --help</code> lists every option, including the
+                    source-specific filters for sections, New York Times desks,
+                    Guardian tags, and NewsAPI field scopes.
+                </p>
+
+                <h3>Search attention</h3>
+                <pre><code># attention over the same window as a search
+news-trends "central bank" -s 2015-01-01 -e 2015-06-30 --geo US
+
+# only what was knowable on one decision date
+news-trends "bitcoin" -s 2017-01-01 -e 2017-09-15 --as-of 2017-01-31
+
+# machine-readable
+news-trends "inflation, recession" -s 2020-01-01 -e 2020-06-30 --format json</code></pre>
+                <p>
+                    <code>news-trends</code> calls Google directly rather than this
+                    server, so it needs no account and takes no
+                    <code>--server</code>.
+                </p>
+
+                <h3>Rules for an agent</h3>
+                <ul>
+                    <li>
+                        Retrieval is the deliverable. Do not summarize the news unless
+                        the user asks for a summary.
+                    </li>
+                    <li>
+                        Never invent a hostname, an account name, or a password. Ask
+                        for what you were not given.
+                    </li>
+                    <li>
+                        Read <code>source_reports</code> before reporting coverage,
+                        and say which sources answered.
+                    </li>
+                    <li>
+                        Do not claim what an article says beyond the title and summary
+                        actually returned. Full bodies are usually not included.
+                    </li>
+                </ul>
+                <p>
+                    <code>.agents/skills/news-cli/SKILL.md</code> in the repository is
+                    a skill file to copy into an agent's own skills folder. It carries
+                    these same rules in the form an agent loads directly.
+                </p>
+            </section>
+
+            <section id="api">
+                <h2>HTTP API</h2>
+                <div class="docs-table-scroll">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Route</th>
+                                <th>Returns</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><code>GET /api/search</code></td><td>Articles plus search details and <code>source_reports</code></td></tr>
+                            <tr><td><code>GET /api/sources</code></td><td>Source names, descriptions, and whether each is configured</td></tr>
+                            <tr><td><code>GET /api/config</code></td><td>Browser defaults</td></tr>
+                            <tr><td><code>GET /api/trends/interest</code></td><td>Search attention for the same query and window</td></tr>
+                            <tr><td><code>GET /api/export/csv</code></td><td>One page as comma-separated values</td></tr>
+                            <tr><td><code>GET /api/export/json</code></td><td>One page as JSON</td></tr>
+                            <tr><td><code>GET /healthz</code></td><td>Process health; the only route needing no account</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <pre><code>curl -u "$UI_USERNAME:$UI_PASSWORD" \
+  "$NEWS_SERVER_URL/api/search?q=inflation&start=2025-01-01&end=2025-03-01"</code></pre>
+                <p>
+                    A refused request explains itself: a reversed window answers with
+                    the sentence naming the problem, and an unknown source name
+                    answers with the list of valid names. The full schema is in
+                    <code>docs/reference/openapi.json</code>.
+                </p>
+            </section>
+
+            <section id="attention">
+                <h2>Search attention</h2>
+                <p>
+                    Articles say what was published. Search attention says what people
+                    were looking for, including subjects the press had not covered
+                    yet. The third section of the search page draws it for the query
+                    and window already in the form.
+                </p>
+                <p>
+                    Two facts decide whether the numbers mean anything. The value is a
+                    relative index from 0 to 100, never a count of searches. And
+                    Google scales every value to the peak of the whole window
+                    requested, so a series fetched for six months tells its first week
+                    about a spike that had not happened yet.
+                </p>
+                <p class="docs-callout">
+                    Set a decision date to drop the later points and rescale to the
+                    highest value up to that date. Without it, an attention series
+                    carries exactly the look-ahead bias the rest of this tool exists
+                    to avoid.
+                </p>
+            </section>
+
+            <section id="limits">
+                <h2>Known limits</h2>
+                <ul>
+                    <li>
+                        Google Trends rate limits aggressively. Raise
+                        <code>seconds_between_requests</code> in
+                        <code>config.toml</code> if refusals are frequent.
+                    </li>
+                    <li>
+                        GDELT allows roughly one request every 5 seconds and refuses
+                        the rest.
+                    </li>
+                    <li>
+                        The NewsAPI free plan cannot serve windows older than about a
+                        month, whatever dates are requested.
+                    </li>
+                    <li>
+                        ACLED bearer tokens expire after 24 hours and must be
+                        regenerated.
+                    </li>
+                    <li>
+                        Duplicate removal currently matches near-identical titles and
+                        addresses. Two outlets rewriting the same wire story are often
+                        kept as separate articles.
+                    </li>
+                </ul>
+            </section>
+        </article>
+    </main>
+</body>
+</html>
