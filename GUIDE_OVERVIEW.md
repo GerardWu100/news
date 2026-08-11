@@ -104,7 +104,7 @@ returned. There is no cache, no duplicate removal, and no merging across
 sources, because none of those apply to a single time series.
 
 In Docker, the server listens on all container interfaces on port 8000, while
-Compose publishes it only on host loopback at port 50023. The optional Docker
+Compose publishes it only on host loopback at port 50024. The optional Docker
 CLI service and a reverse proxy on the external `single` network can reach the
 container without widening the host port.
 

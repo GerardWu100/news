@@ -9,13 +9,13 @@ publishing, and an external reverse-proxy network named `single`.
 | Setting | Default | Reason |
 |---|---|---|
 | Container port | `8000` | Matches the application server |
-| Host address and port | `127.0.0.1:50023` | Avoids public exposure and the podcast service’s `50022` port |
+| Host address and port | `127.0.0.1:50024` | Avoids public exposure; change it if the port is already in use |
 | Time zone | `America/Toronto` | Matches the operator’s local time |
 | Restart policy | `unless-stopped` | Restarts after failure or host reboot |
 | Persistent data | `${HOME}/.containers/news` | Keeps settings outside the image |
 | Docker network | external `single` | Lets an existing reverse proxy reach the container |
 | Browser defaults | English; Guardian and NYT selected | Copied from `config.toml` on first boot |
-| Container account | none created; matches the podcast service | The container owns the mounted directory, so nothing to align on the host |
+| Container account | none created | The container owns the mounted directory, so nothing to align on the host |
 | Root filesystem | read-only, with a `/tmp` in memory | The application writes only to the mounted data directory |
 | Privileges | all capabilities dropped, `no-new-privileges` | Nothing here needs any of them |
 
@@ -39,8 +39,7 @@ add a second and third account; Compose passes all of them to the container. See
 `docs/user/SIGN_IN.md` for what the server does with them.
 
 No host preparation is needed for the data directory. The container creates
-`${HOME}/.containers/news` on first boot and owns what it writes there, the
-same arrangement as the podcast service.
+`${HOME}/.containers/news` on first boot and owns what it writes there.
 
 Compose reads the root `.env` and passes the account and provider settings to
 the container. Create the shared network once if the reverse-proxy stack has not
@@ -57,7 +56,7 @@ docker compose up --build -d news
 docker compose ps
 ```
 
-Open `http://127.0.0.1:50023` and sign in. The health check requests `/healthz`
+Open `http://127.0.0.1:50024` and sign in. The health check requests `/healthz`
 inside the container, which needs no account so that a signed-out container is
 still reported as healthy.
 

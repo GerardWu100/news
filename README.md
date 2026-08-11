@@ -137,7 +137,7 @@ docker network create single  # one time, if it does not already exist
 docker compose up --build -d news
 ```
 
-Open `http://127.0.0.1:50023`. Host port `50023` avoids the podcast service’s `50022` default. On first boot, the container copies the repository `config.toml` into the persistent data directory. Later rebuilds preserve operator changes.
+Open `http://127.0.0.1:50024`. Change the host port in `docker-compose.yml` if something else already uses it. On first boot, the container copies the repository `config.toml` into the persistent data directory. Later rebuilds preserve operator changes.
 
 The container creates `${HOME}/.containers/news` itself on first boot, so there is nothing to prepare beforehand.
 

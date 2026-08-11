@@ -15,7 +15,7 @@ class DockerDeploymentTests(unittest.TestCase):
         """Compose should bind loopback and mount operator-owned configuration."""
         compose = (PROJECT_ROOT / "docker-compose.yml").read_text(encoding="utf-8")
 
-        self.assertIn('"127.0.0.1:50023:8000"', compose)
+        self.assertIn('"127.0.0.1:50024:8000"', compose)
         self.assertIn("restart: unless-stopped", compose)
         self.assertIn("TZ: America/Toronto", compose)
         self.assertIn("${HOME}/.containers/news:/data", compose)

@@ -55,7 +55,7 @@ operational boundary around it:
 - A mounted data directory owns the editable `config.toml`.
 - A health check confirms that the configuration endpoint responds.
 - `restart: unless-stopped` brings the service back after a host restart.
-- The host publishes only `127.0.0.1:50023`, so the API is not accidentally
+- The host publishes only `127.0.0.1:50024`, so the API is not accidentally
   exposed to the internet.
 
 The container seeds `${HOME}/.containers/news/config.toml` only on first boot.

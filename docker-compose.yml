@@ -4,7 +4,7 @@ services:
     image: local/news:latest
     container_name: news
     ports:
-      - "127.0.0.1:50023:8000"
+      - "127.0.0.1:50024:8000"
     restart: unless-stopped
     # The application writes only to the mounted data directory.
     read_only: true

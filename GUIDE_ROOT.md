@@ -82,15 +82,16 @@ The exact tree and responsibility table are in
 - 2026-07-26: Replaced loose configuration dictionaries with validated settings and passed the cache explicitly.
 - 2026-07-26: Made package exports, application dependencies, and the generated OpenAPI schema explicit public definitions.
 - 2026-07-26: Kept API imports free of configuration reads so `news-server --config` is resolved before the application is built.
-- 2026-07-29: Followed the Docker operations pattern used by the podcast downloader while keeping the unauthenticated API on loopback and reserving port 50023.
+- 2026-07-29: Settled the Docker operations pattern, keeping the unauthenticated API on loopback.
 - 2026-07-29: Made remote agent addresses configurable through `NEWS_SERVER_URL` and kept the summary skill local to this workspace.
 - 2026-08-08: Moved lint rules into `pyproject.toml` so ruff, rather than manual judgment, decides import order and modern-syntax rewrites.
 - 2026-08-08: Gave `Article` one accessor for source history so its fallback rule is applied in one place.
 - 2026-08-08: Made every browser display function announce its result because two error paths had previously stayed silent.
-- 2026-08-10: Adopted the podcast downloader's sign-in model, so the operator sets a plain account in `.env` and startup, not a separate command, produces the stored hash.
+- 2026-08-10: Moved to a sign-in model where the operator sets a plain account in `.env` and startup, not a separate command, produces the stored hash.
 - 2026-08-10: Moved session state out of process memory and behind the file lock, because the in-memory copy meant a browser signed in through one worker was refused by the next.
 - 2026-08-10: Attached browser protection headers in one middleware instead of route by route, after the search page turned out to be serving third-party article text with no Content Security Policy.
-- 2026-08-11: Gave the container a read-only root filesystem and dropped capabilities, but no created account, matching the podcast downloader. Debian's base image already defines a system user and group named `news`, so creating one broke the build, and pinning the container to a host user id made the mounted directory an ownership problem for the operator to solve.
+- 2026-08-11: Moved the published host port from 50023 to 50024, because 50023 was already taken on the deployment host and Docker refuses a second binding for the same port.
+- 2026-08-11: Gave the container a read-only root filesystem and dropped capabilities, but no created account. Debian's base image already defines a system user and group named `news`, so creating one broke the build, and pinning the container to a host user id made the mounted directory an ownership problem for the operator to solve.
 - 2026-08-10: Stopped logging source exceptions verbatim, because the request address in an HTTP error carries the provider key that travels in the query string.
 - 2026-08-10: Required the direct peer to be local or private before believing `X-Forwarded-For`, so the setting alone can no longer be used to bypass the failed-attempt limit.
 - 2026-08-10: Gave the command line HTTP Basic against the same account rather than a second token, because one secret is easier to rotate than two and the CLI already reads `.env`.
