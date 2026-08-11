@@ -111,10 +111,13 @@ This file records the repository as it exists. Proposed changes belong in
 │   │   ├── test_openapi_contract.py
 │   │   ├── test_public_exports.py
 │   │   ├── test_server_cli.py
+│   │   ├── test_source_settings_config.py
 │   │   └── test_trends_endpoint.py
 │   ├── cli/
 │   │   ├── test_cli.py
 │   │   ├── test_cli_authentication.py
+│   │   ├── test_server_refusal_message.py
+│   │   ├── test_source_failure_warning.py
 │   │   └── test_trends_cli.py
 │   ├── exports/
 │   │   └── test_formats.py

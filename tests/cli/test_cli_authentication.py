@@ -131,9 +131,9 @@ class _RecordingClient:
         """Return a successful response for both the search and export routes."""
         return SimpleNamespace(
             status_code=200,
+            is_error=False,
             text="title,url\n",
             json=lambda: {"results": [], "meta": {}},
-            raise_for_status=lambda: None,
         )
 
 

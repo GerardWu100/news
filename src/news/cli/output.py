@@ -9,7 +9,12 @@ from typing import Any
 
 from news.exports.formats import format_csv, format_json, write_sqlite
 
-from .fetch import UNAUTHORIZED_STATUS, build_api_client, rejected_credentials_error
+from .fetch import (
+    UNAUTHORIZED_STATUS,
+    build_api_client,
+    rejected_credentials_error,
+    rejected_request_error,
+)
 from .parser import build_api_params
 
 
@@ -176,7 +181,7 @@ def download_api_export(args: argparse.Namespace) -> str:
     Raises
     ------
     RuntimeError
-        If the server rejects the credentials.
+        If the server rejects the credentials or refuses the export.
     """
     export_path = f"/api/export/{args.export}"
     with build_api_client() as client:
@@ -186,7 +191,8 @@ def download_api_export(args: argparse.Namespace) -> str:
         )
         if response.status_code == UNAUTHORIZED_STATUS:
             raise rejected_credentials_error(args.server)
-        response.raise_for_status()
+        if response.is_error:
+            raise rejected_request_error(response)
         return response.text
 
 

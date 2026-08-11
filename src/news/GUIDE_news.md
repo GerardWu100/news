@@ -146,6 +146,19 @@ worker thread pool and the event loop stays free for article searches. Unlike
 `news-search`, the `news-trends` command never calls the server, because Trends
 needs no stored credentials and no coordination between sources.
 
+## Failures the command line reports
+
+Two different failures reach a command-line reader, and both used to arrive as
+a bare status number.
+
+A source that fails inside an otherwise successful search is reported per
+source in `source_reports`, and `sources/__init__.py` turns the provider's own
+response body into the reason. A request the server refuses outright never
+reaches the sources at all; `cli/fetch.py` reads the server's `detail` field
+and reports that sentence. The server already names the wrong date or the
+unknown source, so repeating the status code and the request address instead
+would discard the only useful part of the answer.
+
 ## Source Request Settings
 
 Adapters are built once into `sources/registry.py` and reused, so they cannot

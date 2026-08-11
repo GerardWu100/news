@@ -127,6 +127,7 @@ The `[sources]` table controls how adapters talk to providers:
 A search across six sources where four failed produces the same article count as a search where four simply had no matching articles. The two mean very different things for research on a fixed window, so failures are reported rather than hidden:
 
 - Every response carries `source_reports`, one entry per requested source, with the number returned and any error.
+- A request the server refuses outright, such as a reversed date window or an unknown source name, reports the server's own sentence rather than the status code.
 - The CLI table prints a warning above the rows naming each failed source.
 - JSON, JSON Lines, and file exports send the same warning to standard error, so the data stays parseable. `--quiet` turns it off.
 - The message repeats what the provider said. NewsAPI names the earliest date the current plan allows; MediaCloud names the parameter it wanted; GDELT states its rate limit. Configured credentials are removed from that text before it is shown.
