@@ -108,8 +108,10 @@ window: you give a start date and an end date and see only what existed inside
 them. This page inventories every function the <code>pytrends</code> library
 exposes, says which ones still work, marks which ones can be pointed at a past
 window, and recommends building exactly one of them. Every status below was
-re-tested against the live endpoints from this machine on 2026-08-10. Nothing
-is implemented in the project yet.
+re-tested against the live endpoints from this machine on 2026-08-10. That one
+function is now built, as <code>src/news/trends/</code>, the
+<code>news-trends</code> command, and <code>GET /api/trends/interest</code>;
+section 9 lists what shipped and what was left out.
 </p>
 
 <div class="callout">
@@ -547,39 +549,40 @@ Because only one function is in scope, that interface is a single method.
 
 <h2>9. Build List</h2>
 <p>
-Item 1 is the feature. Item 2 is what makes item 1 usable more than a handful
-of times. Items 3 to 5 are conditional on a study actually needing them.
+Items 1, 2, and 4 are built and in use. Items 3 and 5 are conditional on a
+study actually needing them and are not built.
 </p>
 <div class="scroll">
 <table>
   <tr><th>#</th><th>Item</th><th>What it gives you</th><th>Effort</th></tr>
   <tr>
     <td>1</td>
-    <td>Interest over time for an explicit date window (CLI and/or API route)</td>
+    <td><strong>Built.</strong> Interest over time for an explicit date window, as
+    <code>GET /api/trends/interest</code> and the <code>news-trends</code> command</td>
     <td>The series for the same start and end dates the news search uses, up to 5 keywords, table/JSON/CSV output, with the window and the received granularity stored beside the values</td>
     <td>Small</td>
   </tr>
   <tr>
     <td>2</td>
-    <td>Caching and request spacing</td>
-    <td>A cache keyed by the full request plus a delay between calls, so repeated and stitched use stops hitting HTTP 429</td>
+    <td><strong>Built, spacing only.</strong> Request spacing</td>
+    <td>A shared pacer holds a lock while it waits, so requests arriving together queue one gap apart instead of bursting. The gap is <code>trends.seconds_between_requests</code>. A response cache was deliberately left out: spacing is what the feature needs to work at all, while caching only reduces the cost of repeats.</td>
     <td>Small</td>
   </tr>
   <tr>
     <td>3</td>
-    <td>As-of rescaling helper</td>
-    <td>A pure function: given a fetched series and a decision date, return it rebased to the running maximum up to that date, so level-dependent features stop reading the future peak (section 5)</td>
+    <td><strong>Built.</strong> As-of rescaling, as the <code>as_of</code> parameter and the <code>--as-of</code> option</td>
+    <td>Given a fetched series and a decision date, returns it rebased to the running maximum up to that date, so level-dependent features stop reading the future peak (section 5). One divisor is shared across every keyword, which keeps the keywords comparable with each other.</td>
     <td>Small</td>
   </tr>
   <tr>
     <td>4</td>
-    <td>Window stitching for long daily history</td>
+    <td>Not built. Window stitching for long daily history</td>
     <td>Daily values across multiple years from overlapping 9-month fetches (section 6). Build only when a study needs a window that long.</td>
     <td>Medium</td>
   </tr>
   <tr>
     <td>5</td>
-    <td>Browser panel for the selected window</td>
+    <td>Not built. Browser panel for the selected window</td>
     <td>A chart beside the search results covering exactly the dates already chosen in the search form -- the roadmap item</td>
     <td>Medium</td>
   </tr>
@@ -673,14 +676,23 @@ Dropped from the original build: <code>/api/trends/regions</code>,
   should be an explicit choice, never a default.</li>
 </ol>
 
-<h3>How to restore</h3>
-<ul>
-  <li>Bring the files back, then delete what is out of scope:
-  <code>git checkout 38ff678 -- src/news/trends/</code>, then remove the region
-  and related-query models, routes, and CLI subcommands.</li>
-  <li><code>git revert 3a70fac</code> restores all three functions, so it is the
-  wrong starting point unless the scope decision changes.</li>
-</ul>
+<h3>What was actually built</h3>
+<p>
+The subset above was written fresh rather than restored, because the scope
+changed from three functions to one and three interface decisions had to change
+with it. The package is <code>src/news/trends/</code>: the library is isolated
+in <code>google.py</code>, the window builder in <code>window.py</code> can only
+produce an explicit-date timeframe, <code>keywords.py</code> converts a news
+search query into plain terms, <code>pacing.py</code> keeps the gap between
+requests, and <code>rebase.py</code> performs the as-of rescaling. Its own
+guide, <code>src/news/trends/GUIDE_trends.md</code>, records the reasoning.
+</p>
+<p>
+The reverted commit is still the reference for the two dropped functions.
+<code>git checkout 38ff678 -- src/news/trends/</code> brings back the region and
+related-query models if that scope decision is ever revisited; a plain
+<code>git revert 3a70fac</code> would conflict with what exists now.
+</p>
 
 <h2>TL;DR</h2>
 <p>
@@ -699,8 +711,9 @@ long window's peak sits in May. Scale-invariant features survive that; level
 thresholds do not. Fix it by ending the window on the decision date or rebasing
 to a running maximum, and always store the window next to the values. Free
 access rides on an archived library, so keep it behind a one-method interface.
-Section 9 is the build list; section 10 shows how to restore the matching
-subset from git history and the three changes it needs first.
+Section 9 is the build list, with items 1, 2, and 4 now built as
+<code>src/news/trends/</code>, the <code>news-trends</code> command, and
+<code>GET /api/trends/interest</code>.
 </p>
 
 </main>

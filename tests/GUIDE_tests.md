@@ -26,6 +26,8 @@ The suite protects:
 - CLI parsing and output;
 - export formats and local database cleanup;
 - request validation, filtering, duplicate removal, caching, and coordination;
+- search-attention retrieval: query-to-keyword conversion, window validation,
+  frame conversion, request spacing, and as-of rescaling;
 - OAuth, retry code, and individual source adapters;
 - browser link safety and wheel-installed runtime assets.
 - Docker build, bind, persistence, and entrypoint contracts.
@@ -48,15 +50,18 @@ tests/
 │   ├── test_public_exports.py
 │   ├── test_security_headers.py
 │   ├── test_server_cli.py
-│   └── test_sessions_across_processes.py
+│   ├── test_sessions_across_processes.py
+│   └── test_trends_endpoint.py
 ├── cli/
 │   ├── test_cli.py
-│   └── test_cli_authentication.py
+│   ├── test_cli_authentication.py
+│   └── test_trends_cli.py
 ├── exports/
 │   └── test_formats.py
 ├── fixtures/
 │   ├── authentication.py
-│   └── search_results.py
+│   ├── search_results.py
+│   └── trends_results.py
 ├── search/
 │   ├── test_cache.py
 │   ├── test_concurrent_searches.py
@@ -64,6 +69,11 @@ tests/
 │   ├── test_filters.py
 │   ├── test_service.py
 │   └── test_validation.py
+├── trends/
+│   ├── test_google.py
+│   ├── test_keywords.py
+│   ├── test_pacing.py
+│   └── test_rebase.py
 ├── sources/
 │   ├── test_acled_oauth.py
 │   ├── test_failure_logging.py
@@ -153,6 +163,41 @@ Package marker files are omitted from the tree.
   availability, pagination, or pause checks for the source in its
   filename.
 
+### Search attention
+
+Live behavior here is even less deterministic than a news source: the index is
+sampled, so identical requests differ slightly, and the endpoints refuse
+bursts. Every test therefore runs offline against fake sessions and fake
+frames.
+
+- `trends/test_keywords.py` checks the conversion from a boolean article query
+  to plain search terms: quoted phrases stay whole, operators disappear,
+  excluded terms are dropped because the source cannot express exclusion,
+  repeats collapse ignoring capitalization, and a long query is trimmed to five
+  terms instead of failing.
+- `trends/test_google.py` checks frame conversion, the rule that only exact
+  dates are accepted so a today-anchored shorthand cannot reach the network,
+  the five-keyword limit, granularity read back from the returned timestamps,
+  an empty result treated as an answer rather than an error, one retry after a
+  rate-limit refusal, and that pacing runs before the request.
+- `trends/test_pacing.py` checks the minimum gap with a fake clock, so the
+  suite never sleeps, including that concurrent callers are serialized one gap
+  apart rather than released together.
+- `trends/test_rebase.py` checks the as-of rescaling: later points dropped, the
+  highest known value becoming the top of the scale, ratios between days
+  preserved, one divisor shared across keywords, and the original left
+  unmodified. Its key test rebases a real long-window fetch and compares it
+  with a real short-window fetch of the same days, which is the evidence that
+  local rescaling can stand in for one request per decision date.
+- `api/test_trends_endpoint.py` checks that the route passes the search query
+  and window through, rebases when a decision date is given, requires an
+  account, and maps a caller mistake to HTTP 422 and an upstream failure to
+  HTTP 502.
+- `cli/test_trends_cli.py` checks table, JSON, and CSV output, that the header
+  states the window and anchor the values depend on, that an empty result is
+  stated in words, and that a decision date is applied locally rather than by
+  refetching.
+
 ### Web and fixtures
 
 - `web/test_static.py` checks security-sensitive article-link display plus
@@ -177,6 +222,10 @@ Package marker files are omitted from the tree.
   reusing one password hash per test process.
 - `fixtures/search_results.py` builds schema-complete results and provider
   responses shared across boundary and cache tests.
+- `fixtures/trends_results.py` holds two real fetches of the same five days
+  that differ only in the requested end date, plus recording and failing client
+  stand-ins. The two fetches are what make the rescaling test meaningful: they
+  are the measured proof that the window changes every value.
 - `test_docker_setup.py` protects the loopback host port, Toronto time,
   persistent data mount, external network, image command, unprivileged
   container account, dropped privileges, read-only root filesystem, and
@@ -202,3 +251,4 @@ uv run python -m unittest discover -s tests -v
 - 2026-08-10: Added a test that the export download sends the account, after the command-line export path was found sending an anonymous request that every protected server refused.
 - 2026-08-10: Added protection-header tests covering each kind of response, because the header set had been applied only to the sign-in page.
 - 2026-08-10: Wrote the shared-session tests against two instances pointed at one directory, which is the cheapest way to reproduce what two worker processes see.
+- 2026-08-10: Built the search-attention fixtures from two real fetches of the same days rather than invented numbers, so the rescaling test proves the local calculation reproduces a narrower fetch instead of only checking arithmetic.
