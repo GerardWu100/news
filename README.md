@@ -18,8 +18,22 @@ This repository retrieves and exports news. It does not calculate returns, simul
 Planned work would make the browser a broader historical research workspace:
 
 - Add macroeconomic data that was available during the selected period.
-- Add an AI-agent news summary, produced through an LLM API call, to the browser and optionally to the CLI.
 - Show the next configurable number of days of major financial and economic data releases in the browser.
+
+### Not planned for now: built-in AI
+
+This project has no artificial intelligence (AI) support built in, and none is
+planned at the moment. There is no large language model (LLM) API call, no
+bundled agent skill, and no generated summary anywhere in the code.
+
+The intended arrangement is the other way around. An agent receives its
+instructions from outside this repository and calls `news-search` the way any
+other program would, reading the structured JSON output. That keeps the model
+choice, the prompt, and the API key with whoever runs the agent rather than in
+this codebase, and it keeps this project to one job: retrieval.
+
+Revisit this only if something is needed that the structured CLI output cannot
+already support.
 
 ## Search attention for the same window
 
@@ -144,7 +158,7 @@ uv run news-search "central bank" \
 
 The explicit `--server URL` option overrides `NEWS_SERVER_URL`. The command line signs in with `UI_USERNAME` and `UI_PASSWORD`, the first configured account, on every request, so those credentials travel in a header. Send them only over an encrypted connection: put remote access behind a Transport Layer Security (TLS) reverse proxy or a private virtual private network (VPN), never a publicly exposed container port on plain HTTP.
 
-See `docs/user/DOCKER.md` for configuration, operations, Dockerized CLI use, and the security boundary. The workspace-only `.agents/skills/summarize-news-cli/` skill teaches an AI agent how to retrieve, audit, and summarize CLI results. The accompanying local article is `blog/index.md`; it is not copied into the website repository.
+See `docs/user/DOCKER.md` for configuration, operations, Dockerized CLI use, and the security boundary. The accompanying local article is `blog/index.md`; it is not copied into the website repository.
 
 ## Configuration
 

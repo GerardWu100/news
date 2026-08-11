@@ -1,4 +1,0 @@
-interface:
-  display_name: "Summarize News CLI"
-  short_description: "Retrieve and summarize point-in-time news"
-  default_prompt: "Use $summarize-news-cli to retrieve news through the project CLI and produce an evidence-bounded summary."

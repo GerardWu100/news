@@ -22,7 +22,6 @@ interface creates a trading signal.
 
 ```text
 .
-├── .agents/skills/ -- Workspace-only agent retrieval and summary instructions.
 ├── blog/           -- Local article source.
 ├── Dockerfile      -- Python 3.13 application image.
 ├── docker-compose.yml -- Self-hosted server and optional CLI client.

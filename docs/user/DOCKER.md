@@ -135,9 +135,9 @@ access-control system. Set `security.trust_forwarded_headers = true` in
 `config.toml` when a proxy you control sits in front, so failed-attempt limits
 count the real client address.
 
-The workspace-local skill at `.agents/skills/summarize-news-cli/SKILL.md`
-teaches agents to retrieve, check, and summarize the structured result without
-bringing later information into a historical study.
+Nothing about the agent's behavior lives in this repository. It calls the
+command like any other program and reads the structured output; the
+instructions, the model, and the key stay with whoever runs it.
 
 ## Configuration precedence
 

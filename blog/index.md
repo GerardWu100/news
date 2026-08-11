@@ -98,25 +98,24 @@ large, expensive inputs for an LLM. A page limit makes the retrieval budget
 visible and prevents an agent from turning a vague request into an unbounded
 collection job.
 
-## A local skill turns mechanics into a research habit
+## The agent's instructions live outside the service
 
-The project includes a workspace-only skill named `summarize-news-cli`. A skill
-is a short set of operating instructions that an AI coding agent loads when a
-matching task appears. Keeping it inside `.agents/skills/` makes the workflow
-available in this repository without changing the user's global agent setup.
+The service contains no AI of its own. There is no model call, no prompt, and no
+generated summary in the code. An agent reads the same JSON any other program
+would and does its own work with it.
 
-The skill teaches a sequence rather than a writing style:
+That split is deliberate rather than a gap waiting to be filled. Retrieval and
+interpretation fail in different ways and are best fixed separately: a missing
+source is a retrieval bug, while an overconfident paragraph is a prompt problem.
+Keeping them apart means the model choice, the wording, and the API key belong
+to whoever runs the agent, and this project stays responsible for one thing.
 
-1. Retrieve JSON through the CLI.
-2. Inspect `meta` before reading the articles.
-3. Check source errors, missing dates, duplicate removal, and page navigation.
-4. Summarize only claims supported by returned headlines or provider snippets.
-5. Link useful evidence and state the date boundary.
-6. Preserve the raw JSON and exact command for reproducibility.
-
-This ordering prevents a common agent failure: writing a confident narrative
-first and treating the search as decoration afterward. Here, coverage determines
-what can responsibly be said.
+What the service does provide is the material an honest summary needs. Every
+response carries a `meta` block naming the date boundary, which sources answered,
+which failed, how many duplicates were removed, and whether more pages exist. An
+agent that reads that block before the articles can tell the difference between
+"nothing was published" and "two sources timed out", which is the distinction a
+confident narrative usually hides.
 
 ## What the service still does not prove
 
