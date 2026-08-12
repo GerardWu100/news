@@ -55,14 +55,11 @@ Repeating this exercise makes mistakes visible: one memorable headline received 
 
 For each historical decision date, save the query, returned articles, source reports, model, prompt, and forecast. Trade only after a realistic collection and processing delay. The news service supplies evidence; the outside agent forecasts; the separate backtest handles positions, costs, and returns.
 
-The date cutoff reduces look-ahead bias, but it cannot prove when an article became tradable information. Articles may be revised, archives may be incomplete, and a model may know later events from training.
-
 ## Roadmap
 
 - **Key asset movement:** show the relevant asset's price during the search window and afterward. Keep the post-cutoff move hidden until the human forecast is saved, and keep it out of AI inputs.
 - **Built-in AI summary:** summarize only the returned articles, link every claim to its sources, and save the window, provider failures, model, prompt, and output.
 - **Macroeconomic context:** add policy rates, inflation, unemployment, gross domestic product growth, and yield-curve levels for the searched period. Use only figures released by the decision date and preserve historical vintages when later revisions exist.
-- **Fuzzy search:** match related forms such as `Fed` and `Federal Reserve`, tolerate misspellings, and show the match score and terms.
-- **Stronger duplicate detection:** identify rewritten versions of the same wire story, keep the earliest record, and report which articles were merged.
+- **Better search results:** match related terms such as `Fed` and `Federal Reserve`, tolerate misspellings, show the match score, and merge rewritten versions of the same wire story while keeping the earliest article.
 
 Historical Market News Search retrieves and exports the evidence. It does not summarize articles, call a language model, or run the strategy backtest.

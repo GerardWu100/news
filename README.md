@@ -171,16 +171,10 @@ unemployment, gross domestic product growth, and yield-curve levels for the
 searched period. Use the release available at each decision date, including
 historical vintages when data were revised later.
 
-**Fuzzy search.** Current matching is exact: `Fed` does not match `Federal
-Reserve`, and misspellings return nothing. A future local matching pass should
-show its score, threshold, and matched terms instead of hiding low-confidence
-matches in the result count.
-
-**Better duplicate removal.** Current matching catches near-identical titles
-and addresses, including verbatim syndication, but often keeps rewritten wire
-stories. A future text-similarity pass should keep the earliest article and
-record what it absorbed. It must stay inside the requested window, and
-`--no-dedupe` must continue to return the raw set.
+**Better search results.** Match related terms such as `Fed` and `Federal
+Reserve`, tolerate misspellings, and show the match score and terms. Detect
+rewritten versions of the same wire story, keep the earliest article, and
+report which records were merged.
 
 ## License
 

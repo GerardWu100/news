@@ -55,14 +55,11 @@ La répétition rend les erreurs visibles : un titre marquant a reçu trop de po
 
 Pour chaque date de décision historique, conserver la requête, les articles, les rapports de sources, le modèle, le prompt et la prévision. Exécuter la transaction seulement après un délai réaliste de collecte et de traitement. Le service fournit les données; l'agent externe prévoit; le backtest séparé gère les positions, les coûts et les rendements.
 
-La date limite réduit le biais d'anticipation, mais elle ne prouve pas le moment où un article est devenu exploitable. Les articles peuvent être révisés, les archives incomplètes et le modèle peut connaître les événements ultérieurs grâce à ses données d'entraînement.
-
 ## Feuille de route
 
 - **Mouvement des actifs clés :** afficher le prix de l'actif pertinent pendant la période recherchée et après celle-ci. Masquer le mouvement postérieur à la date limite jusqu'à l'enregistrement de la prévision humaine et l'exclure des données fournies à l'agent IA.
 - **Résumé IA intégré :** résumer uniquement les articles renvoyés, relier chaque affirmation à ses sources et conserver la période, les pannes de fournisseurs, le modèle, le prompt et la sortie.
 - **Contexte macroéconomique :** ajouter les taux directeurs, l'inflation, le chômage, la croissance du produit intérieur brut et les niveaux de la courbe des taux pour la période recherchée. Utiliser uniquement les chiffres publiés à la date de décision et conserver les versions historiques lorsque les données ont été révisées.
-- **Recherche approximative :** rapprocher des formes liées comme `Fed` et `Federal Reserve`, tolérer les fautes et afficher le score et les termes correspondants.
-- **Meilleure détection des doublons :** reconnaître les versions réécrites d'une même dépêche, conserver la première publication et indiquer les articles regroupés.
+- **Meilleurs résultats de recherche :** rapprocher des termes liés comme `Fed` et `Federal Reserve`, tolérer les fautes, afficher le score de correspondance et regrouper les versions réécrites d'une même dépêche en conservant la première publication.
 
 Historical Market News Search récupère et exporte les données. Il ne résume pas les articles, n'appelle pas de modèle de langage et n'exécute pas le backtest de stratégie.
