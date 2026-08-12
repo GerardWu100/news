@@ -2,7 +2,7 @@
 
 ## What the root contains
 
-This repository is an installable historical-news retrieval service. The
+This repository is the installable Historical Market News Search service. The
 Python package owns the API, CLI, provider adapters, search rules, Google
 Trends retrieval, exports, settings, and browser files. Root files cover
 configuration, deployment, tests, and documentation.
@@ -62,6 +62,7 @@ See `docs/reference/PROJECT_STRUCTURE.md` for the exact tree and
 
 ## Short journal
 
+- 2026-08-12: Renamed the product to Historical Market News Search so its market scope and search function are explicit.
 - 2026-07-26: Packaged browser assets and defaults so installed wheels do not need the repository root.
 - 2026-07-26: Replaced loose configuration dictionaries with validated settings and explicit cache passing.
 - 2026-07-26: Made package exports, application dependencies, and the OpenAPI schema explicit.

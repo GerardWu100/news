@@ -46,7 +46,9 @@ class FrontendResearchWorkflowTests(unittest.TestCase):
         html = INDEX_HTML_PATH.read_text(encoding="utf-8")
         styles = STYLES_CSS_PATH.read_text(encoding="utf-8")
 
-        self.assertIn("Set the cutoff before you form a view", html)
+        self.assertIn("Train a person. Test an AI agent.", html)
+        self.assertIn("Human forecast practice", html)
+        self.assertIn("AI backtest inputs", html)
         self.assertIn('class="research-steps"', html)
         self.assertIn('class="results-heading"', html)
         self.assertIn('href="/static/favicon.svg"', html)

@@ -81,7 +81,7 @@ class WheelInstallationTests(unittest.TestCase):
                 "assert signed_out.headers['location'] == '/login'\n"
                 f"response = client.get('/', auth=('{ACCOUNT_NAME}', '{ACCOUNT_PASSWORD}'))\n"
                 "assert response.status_code == 200, response.text\n"
-                "assert 'Historical News' in response.text\n"
+                "assert 'Historical Market News Search' in response.text\n"
                 "favicon = client.get('/static/favicon.svg')\n"
                 "assert favicon.status_code == 200, favicon.text\n"
                 "assert favicon.headers['content-type'].startswith('image/svg+xml')\n"

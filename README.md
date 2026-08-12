@@ -1,9 +1,15 @@
-# Historical News Search
+# Historical Market News Search
 
-Search news from a fixed historical window through a browser, a command-line
-interface (CLI), or an HTTP API. The project is for studying what information
-was available at a past date and for giving an AI agent only articles published
-inside a chosen window.
+This project has two purposes:
+
+1. Help a person train market intuition by making a forecast from only the news
+   that was available during a chosen historical window.
+2. Give an artificial intelligence (AI) agent date-limited news for a separate
+   strategy backtest, so the agent cannot retrieve articles published after its
+   decision date.
+
+The same search is available through a browser, a command-line interface (CLI),
+and an HTTP application programming interface (API).
 
 The publication cutoff reduces **look-ahead bias**: using information that was
 not available when a historical decision was made. It cannot remove that risk.

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#f1ede4">
-    <title>Documentation - News Search Engine</title>
+    <title>Documentation - Historical Market News Search</title>
     <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,7 +16,7 @@
         <div class="topline">
             <div class="brand">
                 <span class="brand-mark" aria-hidden="true">N</span>
-                <span>Historical News</span>
+                <span>Historical Market News Search</span>
             </div>
             <div class="session-controls">
                 <a class="page-link" href="/">Back to search</a>
@@ -26,9 +26,9 @@
         <div class="hero-grid">
             <div class="hero-message">
                 <p class="eyebrow">Documentation</p>
-                <h1>What it does and how to use it.</h1>
+                <h1>Search historical market news.</h1>
                 <p class="hero-copy">
-                    For people judging a result and AI agents calling the commands.
+                    For human forecast practice and AI-agent strategy backtests.
                 </p>
             </div>
         </div>
@@ -53,8 +53,15 @@
             <section id="purpose">
                 <h2>Purpose</h2>
                 <p>
-                    Retrieve news published inside an exact date window. Both dates
-                    are inclusive; nothing published after the end date is returned.
+                    Historical Market News Search has two purposes:
+                </p>
+                <ol>
+                    <li>Help a person practise making a market forecast from only the news available in a chosen historical window.</li>
+                    <li>Supply the same date-limited news to an AI agent for a separate strategy backtest.</li>
+                </ol>
+                <p>
+                    Both dates are inclusive; nothing published after the end date is
+                    returned.
                 </p>
                 <p>
                     This reduces <strong>look-ahead bias</strong>: using information

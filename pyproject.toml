@@ -1,7 +1,7 @@
 [project]
 name = "news"
 version = "0.1.0"
-description = "Historical multi-source news search engine with a FastAPI backend and browser frontend"
+description = "Historical market news search for human forecast practice and AI-agent backtests"
 readme = "README.md"
 requires-python = ">=3.13"
 license = { file = "LICENSE" }

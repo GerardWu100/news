@@ -2,7 +2,12 @@
 
 ## Purpose
 
-This project searches several news sources over a chosen date range, turns their
+Historical Market News Search has two purposes. First, it lets a person practise
+forming a market view using only news published in a chosen historical window.
+Second, it supplies the same date-limited evidence to an AI agent for a separate
+strategy backtest.
+
+The project searches several news sources over the chosen dates, turns their
 records into one common article format, optionally removes repeated articles,
 and makes the results available through a browser, a JSON API, and a CLI. It
 also returns one signal alongside the articles: how much the public searched

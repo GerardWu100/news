@@ -478,8 +478,8 @@
     }
   },
   "info": {
-    "description": "Search GDELT, MediaCloud, ACLED, The New York Times, The Guardian, and NewsAPI by keyword and date range.",
-    "title": "Historical News Search Engine",
+    "description": "Retrieve date-bounded market news from GDELT, MediaCloud, ACLED, The New York Times, The Guardian, and NewsAPI for human forecast practice and AI-agent backtests.",
+    "title": "Historical Market News Search API",
     "version": "0.1.0"
   },
   "openapi": "3.1.0",

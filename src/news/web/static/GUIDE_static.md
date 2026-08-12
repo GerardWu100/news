@@ -2,9 +2,12 @@
 
 ## Purpose
 
-`static/` is the complete browser client: one HTML shell, one stylesheet, and
-small JavaScript modules. The files are packaged so the browser works from a
-checkout and from an installed wheel.
+`static/` is the complete Historical Market News Search browser client: one
+HTML shell, one stylesheet, and small JavaScript modules. The files are
+packaged so the browser works from a checkout and from an installed wheel.
+
+The opening copy states the product's two purposes: human market-forecast
+practice and date-limited news retrieval for AI-agent strategy backtests.
 
 The client lets a reader:
 
@@ -111,6 +114,7 @@ overflow.
 
 ## Short journal
 
+- 2026-08-12: Replaced the abstract outcome-focused name and hero copy with Historical Market News Search and its two explicit uses.
 - 2026-07-26: Packaged browser assets so installed wheels can serve them without the repository root.
 - 2026-07-26: Kept the dependency-free editorial theme and made the research sequence drive the layout.
 - 2026-08-10: Kept sign-in server-rendered because the form needs a one-time server token.

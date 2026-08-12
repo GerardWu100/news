@@ -72,10 +72,11 @@ from news.web.security import (
     static_asset_headers,
 )
 
-APP_TITLE = "Historical News Search Engine"
+APP_TITLE = "Historical Market News Search API"
 APP_DESCRIPTION = (
-    "Search GDELT, MediaCloud, ACLED, The New York Times, The Guardian, "
-    "and NewsAPI by keyword and date range."
+    "Retrieve date-bounded market news from GDELT, MediaCloud, ACLED, "
+    "The New York Times, The Guardian, and NewsAPI for human forecast "
+    "practice and AI-agent backtests."
 )
 APP_VERSION = "0.1.0"
 SERVER_HOST = "127.0.0.1"

@@ -64,7 +64,7 @@ class AppRouteTests(unittest.TestCase):
         response = self.client.get("/")
 
         self.assertEqual(response.status_code, 200)
-        self.assertIn("Historical News", response.text)
+        self.assertIn("Historical Market News Search", response.text)
         self.assertIn("copy-link-btn", response.text)
 
     def test_config_and_source_endpoints_return_json(self) -> None:

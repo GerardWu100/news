@@ -2,8 +2,9 @@
 
 ## Purpose
 
-The `news` package retrieves historical news from several providers. It also
-retrieves Google Trends search interest for the same query and date window.
+The `news` package implements Historical Market News Search. It retrieves
+date-bounded market news from several providers and Google Trends search
+interest for the same query and date window.
 
 ## Package map
 

@@ -15,7 +15,7 @@ import html
 
 from fastapi.responses import HTMLResponse
 
-PAGE_TITLE = "Sign in - News Search Engine"
+PAGE_TITLE = "Sign in - Historical Market News Search"
 
 _PAGE_STYLES = """
 :root {
@@ -150,7 +150,7 @@ def render_login_page(
 </head>
 <body>
 <main class="card">
-<p class="eyebrow">Historical news</p>
+<p class="eyebrow">Historical Market News Search</p>
 <h1>Sign in</h1>
 <p class="subtitle">Search results and exports need an account.</p>
 {message_block}
