@@ -1,6 +1,6 @@
 ---
 title: "Recherche de nouvelles historiques sur les marchés"
-description: "Un outil de nouvelles historiques avec deux fonctions : entraîner l'intuition de marché et fournir des données limitées dans le temps aux backtests d'agents IA."
+description: "Rechercher les nouvelles passées pour entraîner les prévisions humaines ou fournir des données à date au backtest d'un agent IA."
 date: 2026-08-12
 image: images/historical-market-news-search.png
 categories: ["Quantitative Research", "Artificial Intelligence", "Computer Science"]
@@ -10,72 +10,56 @@ categories: ["Quantitative Research", "Artificial Intelligence", "Computer Scien
 
 Ce projet remplit deux fonctions :
 
-1. **Entraîner l'intuition de marché.** Une personne choisit une période passée, lit uniquement les nouvelles disponibles pendant cette période, note une prévision de marché, puis vérifie le résultat ultérieur.
-2. **Fournir des nouvelles aux backtests d'agents IA.** Un agent d'intelligence artificielle (IA) reçoit les mêmes données limitées dans le temps, produit une prévision et transmet celle-ci à un backtest de stratégie séparé.
+1. **Entraîner l'intuition de marché :** s'arrêter à une date passée, lire uniquement les nouvelles disponibles à ce moment, faire une prévision, puis révéler le résultat.
+2. **Tester les stratégies d'agents IA :** fournir les mêmes nouvelles limitées dans le temps à un agent d'intelligence artificielle (IA), puis transmettre sa prévision à un backtest séparé.
 
-Le code source et les instructions d'installation se trouvent dans le [Historical Market News Search GitHub repository](https://github.com/GerardWu100/news).
+Dépôt : [github.com/GerardWu100/news](https://github.com/GerardWu100/news)
 
 ![Historical Market News Search browser](images/historical-market-news-search.png)
 
-L'interface web présente les deux fonctions dès le début. L'utilisateur choisit ensuite un sujet, une date de début, une date de fin, les sources de nouvelles, la langue et les filtres.
+L'interface web affiche d'abord ces deux usages, puis la requête, la date limite, les sources et les filtres.
 
-## Ce que fait le projet
+## Ce que l'outil permet de faire
 
-Historical Market News Search récupère les articles publiés dans une période inclusive. La même recherche est accessible dans un navigateur, avec l'interface en ligne de commande (CLI) `news-search` et par une interface de programmation d'application HTTP (API).
+Rechercher `semiconductor demand` du 1er au 31 juillet, sélectionner The New York Times et The Guardian, conserver les articles en anglais et supprimer les doublons. Le résultat contient :
 
-Le service effectue le travail de préparation nécessaire aux deux méthodes de recherche :
+- Les articles datés de cette période, classés du plus récent au plus ancien ou dans l'ordre inverse.
+- Un rapport par source : disponible, en panne, aucun résultat, nombre d'articles et présence d'une autre page.
+- Des téléchargements JSON et CSV qui conservent la requête et les filtres actifs.
+- Une adresse partageable qui restaure la même recherche dans le navigateur.
 
-- Interroger plusieurs fournisseurs en parallèle.
-- Convertir leurs différentes réponses dans un même format d'article.
-- Appliquer des filtres de date, de langue, d'expression, de terme, de domaine, de section et de source.
-- Supprimer, sur demande, les adresses identiques et les copies évidentes publiées le même jour.
-- Renvoyer un rapport pour chaque source, y compris les pannes et les recherches sans résultat.
+D'autres contrôles filtrent par expression exacte, termes exclus, domaines inclus ou exclus, section, rubrique du New York Times, tag du Guardian et champ NewsAPI. La recherche fonctionne dans le navigateur, avec l'interface en ligne de commande (CLI) `news-search` ou par l'interface de programmation d'application HTTP (API).
 
-Les résultats peuvent être téléchargés en CSV ou en JSON depuis le navigateur. La CLI accepte aussi un tableau lisible, JSON Lines et SQLite. Le format JSON Lines place un enregistrement JSON sur chaque ligne, ce qui facilite le traitement de nombreux articles par un agent.
+La CLI peut regrouper plusieurs pages et exporter un tableau, un fichier CSV, JSON, JSON Lines ou SQLite. JSON Lines place un article sur chaque ligne, ce qui facilite le traitement de grands résultats par un agent.
 
-Le projet récupère et exporte des données. Il ne résume pas les articles, n'appelle pas de modèle de langage, ne calcule pas les rendements, ne crée pas de positions et n'exécute pas de backtest.
+Google Trends affiche l'intérêt de recherche relatif pour les mêmes mots et les mêmes dates. Une date de décision facultative retire les observations ultérieures avant de recalculer le graphique.
 
-## Sources de nouvelles et API
+## Sources
 
-Le service se connecte à six fournisseurs de nouvelles :
+- **GDELT Project :** index mondial ouvert; aucune clé API.
+- **The New York Times Article Search API :** `NYT_API_KEY`.
+- **The Guardian Open Platform :** `GUARDIAN_API_KEY`.
+- **NewsAPI :** `NEWSAPI_API_KEY`.
+- **MediaCloud API :** `MEDIACLOUD_API_KEY` et collections de médias sélectionnées.
+- **ACLED API :** événements de conflit et de manifestation accessibles avec OAuth.
 
-- **GDELT Project :** un index mondial ouvert qui ne demande aucune clé API.
-- **The New York Times Article Search API :** les archives de l'éditeur, accessibles avec `NYT_API_KEY`.
-- **The Guardian Open Platform et NewsAPI :** une API d'éditeur et une API d'agrégation, accessibles avec `GUARDIAN_API_KEY` et `NEWSAPI_API_KEY`.
-- **MediaCloud API :** une base de données de recherche sur les médias, accessible avec `MEDIACLOUD_API_KEY` et des collections configurées.
-- **ACLED API :** des données sur les conflits et les manifestations, accessibles avec OAuth, une norme d'autorisation utilisée pour obtenir temporairement un jeton d'accès.
+Le service interroge les sources sélectionnées en parallèle et convertit leurs réponses dans un même format d'article. La panne d'une API ne masque pas les résultats des autres.
 
-Google Trends reste séparé des fournisseurs d'articles. Il mesure l'intérêt relatif des recherches pour les mêmes mots et les mêmes dates dans le navigateur, avec la commande `news-trends` et par `GET /api/trends/interest`.
+## Méthode humaine
 
-Chaque fournisseur couvre une partie différente de l'actualité. Ajouter des sources améliore la couverture, mais ne supprime pas les biais géographiques, éditoriaux, linguistiques ou liés aux archives. La réponse conserve la source de chaque article afin que la recherche puisse mesurer ces différences.
+Choisir une ancienne date de résultats financiers. Rechercher les 30 jours précédents. Noter la direction attendue, l'horizon de cinq séances, la confiance et les faits qui invalideraient la prévision. Ouvrir ensuite seulement le graphique des prix.
 
-## Première fonction : entraîner l'intuition de marché
+La répétition rend les erreurs visibles : un titre marquant a reçu trop de poids, cinq copies d'une dépêche ont semblé être cinq confirmations, ou la prévision a changé après la révélation du résultat.
 
-L'intuition de marché est la capacité à formuler une opinion claire et vérifiable à partir d'informations incomplètes. L'interface web transforme cette compétence en exercice répétable :
+## Méthode par agent IA
 
-1. Choisir une entreprise, un sujet de marché et une période historique.
-2. Lire les articles renvoyés et vérifier quelles sources ont réussi ou échoué.
-3. Noter une prévision, son horizon, le niveau de confiance et les faits qui l'invalideraient.
-4. Révéler le résultat de marché ultérieur et évaluer la prévision sans réécrire l'opinion initiale.
+Pour chaque date de décision historique, conserver la requête, les articles, les rapports de sources, le modèle, le prompt et la prévision. Exécuter la transaction seulement après un délai réaliste de collecte et de traitement. Le service fournit les données; l'agent externe prévoit; le backtest séparé gère les positions, les coûts et les rendements.
 
-Par exemple, un chercheur peut s'arrêter à une ancienne date de publication de résultats financiers, lire uniquement les 30 jours précédents et prévoir les cinq séances suivantes avant d'ouvrir le graphique des prix. La répétition révèle des habitudes que la lecture rétrospective masque, comme donner trop de poids à un article marquant ou considérer plusieurs copies d'une même dépêche comme des confirmations indépendantes.
+La date limite réduit le biais d'anticipation, mais elle ne prouve pas le moment où un article est devenu exploitable. Les articles peuvent être révisés, les archives incomplètes et le modèle peut connaître les événements ultérieurs grâce à ses données d'entraînement.
 
-Google Trends ajoute un deuxième regard sur l'environnement informationnel. Les articles montrent ce que les éditeurs ont publié; l'intérêt de recherche montre ce que le public cherchait pendant la même période.
+## Feuille de route
 
-## Deuxième fonction : fournir les données d'un backtest de stratégie par agent IA
+- **Recherche approximative :** rapprocher des formes liées comme `Fed` et `Federal Reserve`, tolérer les fautes et afficher le score et les termes correspondants.
+- **Meilleure détection des doublons :** reconnaître les versions réécrites d'une même dépêche, conserver la première publication et indiquer les articles regroupés.
 
-La méthode automatisée utilise la CLI ou l'API HTTP plutôt que le navigateur. À chaque date de décision historique, un agent IA externe reçoit uniquement la période de nouvelles autorisée. L'agent produit une prévision, tandis qu'un backtest séparé applique les règles de trading et mesure le résultat ultérieur.
-
-Un test valide doit conserver la requête, les dates, la réponse brute, les rapports de sources, le modèle, le prompt et la prévision de chaque décision. Il doit aussi retarder toute transaction simulée jusqu'au moment où les nouvelles auraient réellement pu être collectées, traitées et utilisées.
-
-La séparation entre la collecte, l'agent et le backtest facilite le diagnostic des erreurs. Un article manquant est un problème de données. Une prévision sans fondement est un problème d'agent. Une exécution impossible ou l'absence de coûts de transaction est un problème de backtest.
-
-## Ce que la date limite ne peut pas garantir
-
-La date de fin réduit le biais d'anticipation, c'est-à-dire l'utilisation accidentelle d'informations futures dans une décision historique. Elle ne peut pas éliminer ce risque à elle seule.
-
-Un article peut avoir été modifié après sa publication. Une archive peut être incomplète. La date d'un fournisseur peut différer du moment où un trader pouvait agir. Un modèle de langage peut connaître le résultat ultérieur grâce à ses données d'entraînement. Google Trends remet aussi chaque requête à l'échelle selon son propre sommet; la date de décision facultative supprime donc les observations ultérieures et recalcule les valeurs restantes avec les informations disponibles à cette date.
-
-Ces limites comptent surtout pour la méthode automatisée. Un backtest sérieux doit conserver chaque réponse historique, laisser intacte la période d'évaluation finale, consigner chaque variation du prompt ou de la stratégie et représenter un délai réaliste entre l'information et l'exécution.
-
-Historical Market News Search fournit les nouvelles datées, la couverture des sources, les filtres et les exportations nécessaires à ces deux méthodes. La personne ou l'agent IA formule la prévision; le projet garde la période d'information visible et reproductible.
+Historical Market News Search récupère et exporte les données. Il ne résume pas les articles, n'appelle pas de modèle de langage et n'exécute pas le backtest de stratégie.
