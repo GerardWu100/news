@@ -48,6 +48,18 @@ sorted_articles = sort_articles(processed_articles, request.sort_order)
 
 The `source_reports` output is as important as the article list. Zero results from a working source and zero results because a source failed are different observations. A backtest that treats them as the same can turn a data outage into a trading signal.
 
+## What the current implementation includes
+
+The research idea only works if the service is dependable enough for both interactive and repeated use. The current implementation therefore includes the operational pieces around the search itself:
+
+- The six providers run in parallel. A failed provider does not erase successful results from the others, and every requested source receives its own status report.
+- The browser, CLI, and HTTP API use the same validation, filtering, deduplication, sorting, and normalized article schema. Identical requests already in progress share one provider search, while a short-lived cache reduces repeated use of provider quotas.
+- Every route that returns news requires an account. The browser uses a session cookie, the CLI uses HTTP Basic authentication, and file locks keep sessions and failed-attempt limits consistent across server processes.
+- Results can be downloaded as CSV or JSON from the browser and exported as tables, CSV, JSON, JSON Lines, or SQLite through the CLI. JSON Lines means one JSON record per line, which is useful for streaming large result sets.
+- The package runs on Python 3.13 and can be installed with `uv` or deployed with Docker. The supplied Compose setup publishes only to the host loopback interface on port 50024, leaving public access to a separate Transport Layer Security (TLS) proxy or private network.
+
+These are not separate versions of the product. They are different entry points into the same retrieval rules, which is what makes a browser exercise reproducible later from code.
+
 ## Function one: train human market intuition
 
 Here, **market intuition** means the ability to form a testable view from incomplete information: what matters, what the market may already expect, which evidence conflicts, and what would change the view. It is not a claim that instinct should replace measurement.

@@ -48,6 +48,18 @@ sorted_articles = sort_articles(processed_articles, request.sort_order)
 
 La sortie `source_reports` compte autant que la liste d'articles. Une source fonctionnelle qui ne renvoie aucun résultat et une source en panne qui ne renvoie rien sont deux observations différentes. Un backtest qui les confond peut transformer une panne de données en signal de trading.
 
+## Ce que comprend l'implémentation actuelle
+
+L'idée de recherche n'est utile que si le service est assez fiable pour une utilisation interactive comme pour des requêtes répétées. L'implémentation actuelle comprend donc les éléments opérationnels qui entourent la recherche :
+
+- Les six fournisseurs sont interrogés en parallèle. La panne d'un fournisseur n'efface pas les résultats des autres, et chaque source demandée reçoit son propre rapport d'état.
+- Le navigateur, la CLI et l'API HTTP partagent la même validation, les mêmes filtres, le même dédoublonnage, le même tri et le même format d'article normalisé. Des requêtes identiques déjà en cours partagent une seule interrogation des fournisseurs, tandis qu'un cache de courte durée limite l'utilisation répétée de leurs quotas.
+- Chaque route qui renvoie des nouvelles exige un compte. Le navigateur utilise un cookie de session, la CLI utilise l'authentification HTTP Basic, et des verrous de fichiers gardent les sessions et les limites de tentatives infructueuses cohérentes entre les processus du serveur.
+- Les résultats peuvent être téléchargés en CSV ou en JSON depuis le navigateur et exportés sous forme de tableaux, de fichiers CSV, JSON, JSON Lines ou SQLite avec la CLI. Le format JSON Lines place un enregistrement JSON sur chaque ligne, ce qui facilite le traitement progressif de grands résultats.
+- Le paquet fonctionne avec Python 3.13 et peut être installé avec `uv` ou déployé avec Docker. La configuration Compose fournie publie uniquement sur l'interface loopback de l'hôte au port 50024; l'accès public doit passer par un proxy protégé par Transport Layer Security (TLS) ou par un réseau privé.
+
+Il ne s'agit pas de produits distincts. Ce sont plusieurs points d'entrée vers les mêmes règles de collecte, ce qui permet de reproduire plus tard, dans du code, un exercice réalisé dans le navigateur.
+
 ## Première fonction : entraîner l'intuition de marché
 
 Ici, **l'intuition de marché** désigne la capacité à formuler une opinion vérifiable à partir d'informations incomplètes : ce qui compte, ce que le marché anticipe peut-être déjà, les éléments qui se contredisent et les faits qui feraient changer d'avis. Cela ne veut pas dire que l'instinct doit remplacer la mesure.
