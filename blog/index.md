@@ -1,143 +1,113 @@
 ---
-title: "A News Research Service for Both Humans and AI Agents"
-description: "How a small Docker deployment turns a historical news search tool into a reusable browser and command-line service."
-date: 2026-07-29
-categories:
-  - Software
-  - AI
+title: "Read the News Before the Outcome"
+description: "A historical news service with two jobs: train human market intuition and provide point-in-time inputs for AI-agent backtests."
+date: 2026-08-12
+image: images/historical-news-interface.png
+categories: ["Quantitative Research", "Artificial Intelligence", "Computer Science"]
 ---
 
-# A News Research Service for Both Humans and AI Agents
+# Read the News Before the Outcome
 
-News research has an awkward interface problem. A person wants a browser with
-visible dates, source controls, readable headlines, and links worth opening. An
-artificial intelligence (AI) agent wants almost the opposite: a stable command,
-structured output, clear search details, and no hidden state.
+Most market research starts with a hidden advantage: we already know what happened. Once the outcome is visible, old headlines seem more informative and the warning signs seem more obvious than they did in real time.
 
-The useful design is to put one search engine behind three small interfaces:
+I built [Historical News](https://github.com/GerardWu100/news) to remove some of that advantage. It searches a fixed historical window across several news archives, places every result behind an explicit cutoff date, and exposes the same search through a browser, a command-line interface (CLI), and an HTTP application programming interface (API).
 
-```mermaid
-flowchart LR
-    P[News sources] --> S[Common search service]
-    S --> B[Browser for human research]
-    S --> C[CLI for AI agents]
-    S --> A[HTTP API for applications]
+The project has two jobs. The front end is a practice environment for a human who wants to develop market intuition. The machine interface supplies date-bounded evidence to an artificial intelligence (AI) agent that predicts a later market outcome inside a walk-forward backtest. The service does not make the prediction or run the backtest; it controls one of their most important inputs.
+
+![Historical News browser interface](images/historical-news-interface.png)
+
+The browser keeps the research rule on screen: choose the cutoff before forming a view. It also makes the active dates, selected sources, and duplicate-removal setting visible.
+
+## One retrieval layer, two research workflows
+
+The common layer searches GDELT, MediaCloud, ACLED, The New York Times, The Guardian, and NewsAPI. Provider responses are converted into one article format, filtered, optionally deduplicated, sorted, and returned with a report for every requested source. Google Trends adds a separate measure of what people were searching for during the same window.
+
+**Human path:** historical sources → date-bounded retrieval → browser exercise → human market view → reveal the later outcome.
+
+**AI path:** historical sources → date-bounded retrieval → CLI or HTTP API → AI-agent prediction → separate walk-forward backtest.
+
+This shared retrieval layer matters. A person and an agent can inspect the same query, dates, articles, source failures, and duplicate count. Differences in their conclusions then come from the research process rather than from two undocumented data pipelines.
+
+The core search path is deliberately plain:
+
+```python
+raw_articles, source_reports = await executor(
+    source_options,
+    request.source_names,
+)
+
+filtered_articles = apply_post_filters(raw_articles, request)
+
+if request.deduplicate:
+    processed_articles = deduplicate_articles(filtered_articles)
+else:
+    processed_articles = filtered_articles
+
+sorted_articles = sort_articles(processed_articles, request.sort_order)
 ```
 
-The browser and command-line interface (CLI) then share the same validation,
-source adapters, filtering, duplicate removal, and date cutoff. That common
-core matters more than the interface: a result inspected by a person and a
-result summarized by an agent were produced under the same rules.
+The `source_reports` output is as important as the article list. Zero results from a working source and zero results because a source failed are different observations. A backtest that treats them as the same can turn a data outage into a trading signal.
 
-## The date is part of the result
+## Function one: train human market intuition
 
-For historical research, the end date is not a cosmetic filter. It is the
-cutoff: the latest publication date the search is allowed to include.
+Here, **market intuition** means the ability to form a testable view from incomplete information: what matters, what the market may already expect, which evidence conflicts, and what would change the view. It is not a claim that instinct should replace measurement.
 
-That restriction helps reduce **look-ahead bias**, which occurs when a
-historical decision uses information that was not available at the time. It
-does not eliminate the problem. Sources can revise articles, archives can be
-incomplete, timestamps may not match the moment information became tradable,
-and a large language model (LLM) may know later events from training.
+A useful exercise takes four steps:
 
-The practical rule is simple: every summary should repeat its query, inclusive
-date window, source coverage, result count, and source failures. A polished
-paragraph without that search context is less useful than it looks.
+1. Pick a company, topic, and historical cutoff date.
+2. Read only articles dated inside the allowed window and inspect which sources answered.
+3. Write down a prediction, confidence level, time horizon, and evidence that would prove it wrong.
+4. Reveal the later price path or economic release, score the prediction, and record what was missed.
 
-## Why Docker helps
+For example, a researcher could stop on an earnings date, search the preceding 30 days, and predict the next five trading days before opening the chart. Repeating the exercise creates feedback. It also exposes habits that ordinary retrospective reading hides: overweighting one vivid article, mistaking repeated wire copies for independent confirmation, or changing the forecast after seeing the result.
 
-The application already runs as an installable Python package. Docker adds an
-operational boundary around it:
+The front end supports this exercise directly. The cutoff is labelled as part of the search, advanced filters remain available when a broad query is noisy, and the result page reports source-level coverage. The Google Trends panel adds another question: did public attention change before the news narrative did?
 
-- Python 3.13 and dependencies are fixed by the image and `uv.lock`.
-- Source credentials enter through environment variables rather than the
-  image.
-- A mounted data directory owns the editable `config.toml`.
-- A health check confirms that the configuration endpoint responds.
-- `restart: unless-stopped` brings the service back after a host restart.
-- The host publishes only `127.0.0.1:50024`, so the API is not accidentally
-  exposed to the internet.
+## Function two: supply an AI-agent backtest
 
-The container seeds `${HOME}/.containers/news/config.toml` only on first boot.
-This is a small but important detail. Defaults are convenient on day one, while
-operator changes survive later image rebuilds.
+The second workflow replaces the browser with the CLI or HTTP API. At each historical decision date $d$, an outside agent receives only articles with publication dates no later than $d$. It produces a forecast for a later horizon, and a separate backtest records the signal, applies an execution delay, and measures the subsequent return.
 
-The Compose service also joins an external network called `single`. An existing
-reverse proxy can reach the container on that network without publishing the
-application port broadly. Remote access should pass through an authenticated
-Transport Layer Security (TLS) proxy or a private virtual private network
-(VPN). The news application does not implement its own user accounts, and an
-open endpoint could let strangers spend the configured source quotas.
+A minimal walk-forward loop is:
 
-## One CLI, local or remote
+1. Set decision date $d$ and retrieve the allowed news window ending at $d$.
+2. Save the raw response, query, source reports, agent model, and prompt.
+3. Ask the agent for a prediction that includes direction, horizon, confidence, and invalidating evidence.
+4. Convert the prediction into a position only after a realistic delay, then value it with later prices.
+5. Move $d$ forward and repeat without changing earlier outputs.
 
-The agent-facing interface is the `news-search` command. Locally, its default
-server is `http://localhost:8000`. For a remote Docker deployment, the same
-command reads `NEWS_SERVER_URL`:
+This design can test questions such as whether an agent can predict the next day's market direction from the previous week's news, or whether its confidence contains information about the size of the later move. The exact target, asset universe, transaction costs, and evaluation metric belong in the backtest, not in the retrieval service.
 
-```bash
-NEWS_SERVER_URL="https://news.example.com" \
-uv run news-search "central bank policy" \
-  --start 2026-01-01 \
-  --end 2026-01-31 \
-  --english \
-  --all-pages \
-  --max-pages 10 \
-  --format json \
-  --quiet
-```
+That separation is intentional. If retrieval, prompting, portfolio rules, and performance accounting live in one opaque process, a strong result is hard to diagnose. With a fixed retrieval boundary, I can test the agent while keeping the historical evidence inspectable.
 
-The output contains two objects. `results` holds normalized articles. `meta`
-holds the query, dates, page state, duplicate count, requested sources, and a
-report for each source. JSON Lines (JSONL), where each line is one JSON record,
-is useful for streaming. Full JSON is better for research summaries because it
-retains the details needed to judge coverage.
+## Google Trends needs its own cutoff treatment
 
-The `--max-pages` option is not mere caution. Broad news queries can create
-large, expensive inputs for an LLM. A page limit makes the retrieval budget
-visible and prevents an agent from turning a vague request into an unbounded
-collection job.
+Google Trends reports a relative index from 0 to 100, not a search count. Its scaling can introduce a less obvious form of look-ahead bias.
 
-## The service retrieves; it does not summarize
+Define $v_t$ as the unobserved search volume at time $t$. Let the requested window be $W=[s,e]$, where $s$ is the start date and $e$ is the end date. Let $m_W=\max_{u \in W} v_u$ be the highest volume anywhere in that window. Google reports the index $I_t$:
 
-The service contains no model of its own. There is no API call to a language
-model, no prompt, and no generated prose about the articles. An agent reads the
-same JSON any other program would and does its own work with it.
+$$
+I_t = 100 \times \frac{v_t}{m_W}.
+$$
 
-What the repository does ship is a skill file: a short set of operating
-instructions meant to be copied into an agent's own skills folder. It covers
-signing in to a deployment, running the commands, and checking which providers
-actually answered. It deliberately stops there and does not ask for a summary.
+If a decision occurs at date $d$, values after $d$ were not yet known. Define $m_d=\max_{u \in [s,d]}v_u$, the maximum available by the decision date. The service drops later observations and rebases the observed index:
 
-That split is deliberate rather than a gap waiting to be filled. Retrieval and
-interpretation fail in different ways and are best fixed separately: a missing
-source is a retrieval bug, while an overconfident paragraph is a prompt problem.
-Keeping them apart means the model choice, the wording, and the API key belong
-to whoever runs the agent, and this project stays responsible for one thing.
+$$
+\begin{aligned}
+\widetilde{I}_t
+&= 100 \times \frac{I_t}{\max_{u \in [s,d]} I_u} \\
+&= 100 \times \frac{100v_t/m_W}{100m_d/m_W} \\
+&= 100 \times \frac{v_t}{m_d}, \qquad t \le d.
+\end{aligned}
+$$
 
-What the service does provide is the material an honest summary needs. Every
-response carries a `meta` block naming the date boundary, which sources answered,
-which failed, how many duplicates were removed, and whether more pages exist. An
-agent that reads that block before the articles can tell the difference between
-"nothing was published" and "two sources timed out", which is the distinction a
-confident narrative usually hides.
+Here, $\widetilde{I}_t$ is the index rescaled using only the information available by $d$. The second line substitutes the definition of $I_t$ into both the numerator and denominator. The common full-window scale $m_W$ cancels in the third line.
 
-## What the service still does not prove
+This correction preserves the relative shape of the values that Google returned. It cannot recover precision already lost when Google rounded small values, so fetching a window that ends near $d$ is still safer.
 
-The system retrieves news; it does not establish truth, causal impact, or a
-profitable trading signal. Repeated syndicated headlines are not independent
-confirmation. Provider snippets are not full-article review. Publication dates
-are not guaranteed tradability timestamps. Deduplication is useful for input
-quality, but it can also hide how widely one wire story was republished.
+## What the cutoff does not solve
 
-Those limitations suggest the next layer of work:
+Publication dates reduce look-ahead bias; they do not prove that every input was tradable at that time. An article can be revised after publication. Archives can be incomplete. Provider timestamps can use different meanings. A language model may already know the later event from its training data.
 
-- archive the raw response beside every generated summary;
-- record the model and prompt used for the summary;
-- lag any derived signal until it could realistically be acted on;
-- test sensitivity to provider choice and query wording;
-- keep market returns and backtests outside the retrieval service.
+For an investable claim, the backtest must also keep observation time, retrieval time, decision time, order time, and fill time separate. It needs an untouched chronological test period, realistic costs, and a record of every prompt or strategy variation tried. Otherwise, the process can overfit the historical sample even when every article passes the date filter.
 
-The larger lesson is architectural. Human research and agent research do not
-need separate data systems. They need a shared, inspectable retrieval boundary
-and interfaces designed for their different ways of working.
+Historical News provides the input boundary and the audit trail needed to start that work. Its browser turns market history into deliberate practice for a person. Its machine interfaces make the same evidence reusable for an agent. The source code and setup instructions are in the [GitHub repository](https://github.com/GerardWu100/news).
