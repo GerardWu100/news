@@ -1,7 +1,7 @@
 ---
 title: "Recherche de nouvelles historiques sur les marchés"
 description: "Rechercher les nouvelles passées pour entraîner les prévisions humaines ou fournir des données à date au backtest d'un agent IA."
-date: 2026-08-12
+date: 2026-07-30
 image: images/historical-market-news-search.png
 categories: ["Quantitative Research", "Artificial Intelligence", "Computer Science"]
 ---
@@ -59,6 +59,9 @@ La date limite réduit le biais d'anticipation, mais elle ne prouve pas le momen
 
 ## Feuille de route
 
+- **Mouvement des actifs clés :** afficher le prix de l'actif pertinent pendant la période recherchée et après celle-ci. Masquer le mouvement postérieur à la date limite jusqu'à l'enregistrement de la prévision humaine et l'exclure des données fournies à l'agent IA.
+- **Résumé IA intégré :** résumer uniquement les articles renvoyés, relier chaque affirmation à ses sources et conserver la période, les pannes de fournisseurs, le modèle, le prompt et la sortie.
+- **Contexte macroéconomique :** ajouter les taux directeurs, l'inflation, le chômage, la croissance du produit intérieur brut et les niveaux de la courbe des taux pour la période recherchée. Utiliser uniquement les chiffres publiés à la date de décision et conserver les versions historiques lorsque les données ont été révisées.
 - **Recherche approximative :** rapprocher des formes liées comme `Fed` et `Federal Reserve`, tolérer les fautes et afficher le score et les termes correspondants.
 - **Meilleure détection des doublons :** reconnaître les versions réécrites d'une même dépêche, conserver la première publication et indiquer les articles regroupés.
 

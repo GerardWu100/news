@@ -155,6 +155,22 @@ article count and any error.
 
 ## Roadmap
 
+**Key asset movement.** After a search, show the price movement of relevant
+assets during and after the selected window. In human practice mode, keep the
+post-cutoff movement hidden until the forecast is saved. In backtests, store
+observation, decision, and tradable timestamps separately so the chart cannot
+become a source of future information.
+
+**Built-in AI summary.** Summarize only the returned articles and cite the
+source records behind each claim. Save the date window, provider reports,
+model, prompt, and output beside the summary. A failed provider must remain
+visible instead of being silently interpreted as no news.
+
+**Macroeconomic context.** Add figures such as policy rates, inflation,
+unemployment, gross domestic product growth, and yield-curve levels for the
+searched period. Use the release available at each decision date, including
+historical vintages when data were revised later.
+
 **Fuzzy search.** Current matching is exact: `Fed` does not match `Federal
 Reserve`, and misspellings return nothing. A future local matching pass should
 show its score, threshold, and matched terms instead of hiding low-confidence

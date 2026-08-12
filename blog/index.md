@@ -1,7 +1,7 @@
 ---
 title: "Historical Market News Search"
 description: "Search past market news to practise human forecasts or supply date-limited evidence to an AI-agent backtest."
-date: 2026-08-12
+date: 2026-07-30
 image: images/historical-market-news-search.png
 categories: ["Quantitative Research", "Artificial Intelligence", "Computer Science"]
 ---
@@ -59,6 +59,9 @@ The date cutoff reduces look-ahead bias, but it cannot prove when an article bec
 
 ## Roadmap
 
+- **Key asset movement:** show the relevant asset's price during the search window and afterward. Keep the post-cutoff move hidden until the human forecast is saved, and keep it out of AI inputs.
+- **Built-in AI summary:** summarize only the returned articles, link every claim to its sources, and save the window, provider failures, model, prompt, and output.
+- **Macroeconomic context:** add policy rates, inflation, unemployment, gross domestic product growth, and yield-curve levels for the searched period. Use only figures released by the decision date and preserve historical vintages when later revisions exist.
 - **Fuzzy search:** match related forms such as `Fed` and `Federal Reserve`, tolerate misspellings, and show the match score and terms.
 - **Stronger duplicate detection:** identify rewritten versions of the same wire story, keep the earliest record, and report which articles were merged.
 
