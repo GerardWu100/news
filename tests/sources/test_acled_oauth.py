@@ -213,6 +213,27 @@ class OAuthPersistenceTests(unittest.TestCase):
 
         self.assertEqual(permission_bits, ENV_FILE_PERMISSION_MODE)
 
+    def test_new_token_removes_stale_optional_metadata(self) -> None:
+        """An omitted lifetime or refresh token must not describe the old bearer."""
+        with TemporaryDirectory() as temporary_directory:
+            env_file = Path(temporary_directory) / ".env"
+            env_file.write_text(
+                "ACLED_BEARER_TOKEN=old\n"
+                "ACLED_BEARER_EXPIRES_IN=1\n"
+                "ACLED_REFRESH_TOKEN=old-refresh\n",
+                encoding="utf-8",
+            )
+
+            persist_token_fields(
+                {"access_token": "new-token"},
+                env_file,
+                clock=lambda: FIXED_TIME,
+            )
+            contents = env_file.read_text(encoding="utf-8")
+
+        self.assertNotIn("ACLED_BEARER_EXPIRES_IN=", contents)
+        self.assertNotIn("ACLED_REFRESH_TOKEN=", contents)
+
     def test_obtain_and_persist_accepts_network_and_clock_injection(self) -> None:
         """The combined workflow should remain fully offline in tests."""
         with TemporaryDirectory() as temporary_directory:

@@ -92,9 +92,12 @@ class ConcurrentSearchTests(unittest.IsolatedAsyncioTestCase):
 
         await asyncio.gather(
             run_search(_build_request("inflation"), executor=executor, use_cache=False),
-            run_search(_build_request("employment"), executor=executor, use_cache=False),
-            run_search(_build_request("inflation", page=2), executor=executor,
-                       use_cache=False),
+            run_search(
+                _build_request("employment"), executor=executor, use_cache=False
+            ),
+            run_search(
+                _build_request("inflation", page=2), executor=executor, use_cache=False
+            ),
         )
 
         self.assertEqual(executor.call_count, 3)
@@ -141,6 +144,37 @@ class ConcurrentSearchTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(executor.call_count, 1)
         self.assertEqual(len(result.articles), 1)
+
+    async def test_creator_giving_up_does_not_cancel_joiners(self) -> None:
+        """The first caller has no special power to cancel shared provider work."""
+        executor = _CountingExecutor()
+        request = _build_request()
+        creator = asyncio.create_task(run_search(request, executor, use_cache=False))
+        await asyncio.sleep(0)
+        joiner = asyncio.create_task(run_search(request, executor, use_cache=False))
+        creator.cancel()
+
+        with self.assertRaises(asyncio.CancelledError):
+            await creator
+        third = asyncio.create_task(run_search(request, executor, use_cache=False))
+        first_result, second_result = await asyncio.gather(joiner, third)
+
+        self.assertEqual(executor.call_count, 1)
+        self.assertEqual(first_result.articles, second_result.articles)
+
+    async def test_distinct_executors_do_not_share_identical_requests(self) -> None:
+        """Application-specific provider dependencies must not leak results."""
+        first_executor = _CountingExecutor()
+        second_executor = _CountingExecutor()
+        request = _build_request()
+
+        await asyncio.gather(
+            run_search(request, first_executor, use_cache=False),
+            run_search(request, second_executor, use_cache=False),
+        )
+
+        self.assertEqual(first_executor.call_count, 1)
+        self.assertEqual(second_executor.call_count, 1)
 
 
 if __name__ == "__main__":

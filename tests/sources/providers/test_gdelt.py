@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 import unittest
+from unittest.mock import AsyncMock, patch
+
+import httpx
 
 from news.sources.base import SourceSearchOptions
 from news.sources.providers.gdelt import GdeltSource, _format_gdelt_date
@@ -27,6 +30,31 @@ class GdeltSourceTests(unittest.IsolatedAsyncioTestCase):
         )
 
         self.assertEqual(result.articles, [])
+        self.assertFalse(result.has_more)
+
+    async def test_full_single_page_does_not_advertise_unreachable_page_two(
+        self,
+    ) -> None:
+        """A capped first page is still final until pagination is implemented."""
+        response = httpx.Response(
+            200,
+            json={"articles": [{} for _row in range(50)]},
+            headers={"content-type": "application/json"},
+            request=httpx.Request("GET", "https://example.test"),
+        )
+        with patch(
+            "news.sources.providers.gdelt.get_with_retry",
+            new=AsyncMock(return_value=response),
+        ):
+            result = await GdeltSource().search(
+                SourceSearchOptions(
+                    query="inflation",
+                    start_date="2026-07-01",
+                    end_date="2026-07-10",
+                )
+            )
+
+        self.assertEqual(len(result.articles), 50)
         self.assertFalse(result.has_more)
 
     def test_compact_timestamp_is_normalized_to_iso_date(self) -> None:

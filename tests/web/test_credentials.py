@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 import json
+import os
 import unittest
+from multiprocessing import get_context
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from typing import Any
 from unittest.mock import patch
 
 from news.web.credentials import (
@@ -18,6 +21,22 @@ from news.web.credentials import (
 )
 from news.web.passwords import verify_password
 from news.web.paths import CREDENTIALS_FILENAME, SESSION_STATE_FILENAME
+
+
+def _concurrent_credential_sync(data_directory: str, start_gate: Any) -> None:
+    """Run one credential sync after every test worker reaches the barrier.
+
+    Parameters
+    ----------
+    data_directory : str
+        Shared temporary directory used by all worker processes.
+    start_gate : Any
+        Multiprocessing barrier whose ``wait`` method releases workers together.
+    """
+    os.environ[ENV_USERNAME_KEY] = "analyst"
+    os.environ[ENV_PASSWORD_KEY] = "concurrent-password"
+    start_gate.wait()
+    sync_ui_credentials(Path(data_directory))
 
 
 class CredentialSyncTests(unittest.TestCase):
@@ -206,6 +225,27 @@ class CredentialSyncTests(unittest.TestCase):
 
         self.credentials_file.write_text(json.dumps({"accounts": {}}), encoding="utf-8")
         self.assertEqual(load_ui_accounts(self.credentials_file), [])
+
+    def test_concurrent_startups_share_one_credentials_transaction(self) -> None:
+        """Several workers starting together must not rename one temp file."""
+        process_count = 4
+        process_context = get_context("fork")
+        start_gate = process_context.Barrier(process_count)
+        processes = [
+            process_context.Process(
+                target=_concurrent_credential_sync,
+                args=(str(self.data_directory), start_gate),
+            )
+            for _worker in range(process_count)
+        ]
+
+        for process in processes:
+            process.start()
+        for process in processes:
+            process.join(timeout=10)
+
+        self.assertEqual([process.exitcode for process in processes], [0] * process_count)
+        self.assertEqual(len(load_ui_accounts(self.credentials_file)), 1)
 
 
 if __name__ == "__main__":

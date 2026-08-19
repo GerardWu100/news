@@ -71,6 +71,14 @@ class CsvExportTests(unittest.TestCase):
 
         self.assertEqual(rows[1]["matched_sources"], '["nyt", "gdelt"]')
 
+    def test_format_csv_neutralizes_spreadsheet_formulas(self) -> None:
+        """Provider text must remain inert when a CSV is opened in a spreadsheet."""
+        dangerous_article = {**SAMPLE_ARTICLES[0], "title": '=HYPERLINK("x")'}
+
+        rows = list(csv.DictReader(io.StringIO(format_csv([dangerous_article]))))
+
+        self.assertEqual(rows[0]["title"], '\'=HYPERLINK("x")')
+
 
 class JsonExportTests(unittest.TestCase):
     """Test JSON formatting."""

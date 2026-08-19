@@ -7,8 +7,10 @@ DATA_DIR="${NEWS_DATA_DIR:-/data}"
 CONFIG_PATH="${NEWS_CONFIG:-$DATA_DIR/config.toml}"
 DEFAULT_CONFIG_PATH="/app/config.toml"
 
-# Seed the mounted data directory on first boot.
+# Seed the mounted data directory on first boot. A custom NEWS_CONFIG may point
+# at a nested location inside that mount, so create its parent as well.
 mkdir -p "$DATA_DIR"
+mkdir -p "$(dirname "$CONFIG_PATH")"
 
 # Keep operator changes in the mounted data directory across image upgrades.
 if [ ! -f "$CONFIG_PATH" ]; then

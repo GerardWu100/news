@@ -85,6 +85,21 @@ class SettingsLoadingTests(unittest.TestCase):
 
                 self.assertIn("cache.ttl_seconds", str(context.exception))
 
+    def test_non_finite_trends_pacing_is_rejected(self) -> None:
+        """NaN and infinity cannot become a meaningful request delay."""
+        for invalid_value in ("nan", "+inf", "-inf"):
+            with (
+                self.subTest(invalid_value=invalid_value),
+                TemporaryDirectory() as temporary_directory,
+            ):
+                config_path = Path(temporary_directory) / "invalid-trends.toml"
+                config_path.write_text(
+                    f"[trends]\nseconds_between_requests = {invalid_value}\n",
+                    encoding="utf-8",
+                )
+                with self.assertRaises(SettingsError):
+                    load_settings(config_path)
+
     def test_unknown_setting_key_is_rejected(self) -> None:
         """A misspelled key must not silently fall back to a default."""
         with TemporaryDirectory() as temporary_directory:

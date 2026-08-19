@@ -67,8 +67,9 @@ class AcledSource(BaseSource):
 
         raw_events = data.get("data") or []
         articles = [self._to_article(e) for e in raw_events]
-        has_more = len(raw_events) >= ACLED_PAGE_SIZE
-        return SourcePageResult(articles=articles, has_more=has_more)
+        # This adapter intentionally exposes only the first ACLED page. A full
+        # response therefore cannot honestly advertise a page two.
+        return SourcePageResult(articles=articles, has_more=False)
 
     @staticmethod
     def _to_article(raw: dict) -> Article:

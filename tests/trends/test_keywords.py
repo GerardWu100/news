@@ -46,6 +46,20 @@ class KeywordExtractionTests(unittest.TestCase):
             ("bitcoin", "ethereum"),
         )
 
+    def test_commas_separate_keywords(self) -> None:
+        """The comma-separated syntax shown by the CLI must not keep commas."""
+        self.assertEqual(
+            keywords_from_query("inflation, recession"),
+            ("inflation", "recession"),
+        )
+
+    def test_excluded_quoted_phrase_is_removed_as_one_token(self) -> None:
+        """A minus sign before quotes excludes the complete phrase."""
+        self.assertEqual(
+            keywords_from_query('bitcoin -"crypto mining"'),
+            ("bitcoin",),
+        )
+
     def test_repeats_are_removed_ignoring_capitalization(self) -> None:
         """The first spelling wins and later repeats are skipped."""
         self.assertEqual(

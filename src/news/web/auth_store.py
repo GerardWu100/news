@@ -1,6 +1,6 @@
 """Save browser sign-in state in locked, safely replaced JSON files.
 
-Two files live in the data directory:
+Three files live in the data directory:
 
 ``.ui_sessions.json``
     ``{"<session id>": {"created_at": <unix seconds>}}``. The session id is the
@@ -9,6 +9,9 @@ Two files live in the data directory:
 ``.login_state.json``
     ``{"<client address>": {"failed": <int>, "last_failed": <unix seconds>,
     "banned_until": <unix seconds>}}``. This drives the failed-login limit.
+``.login_form_tokens.json``
+    One-time sign-in form tokens and their creation times. Atomic consumption
+    lets a form page and its submission reach different worker processes.
 
 Every write goes to a temporary sibling file that is then renamed over the
 target. A rename is one step for readers, so a reader sees either the old file
@@ -25,6 +28,7 @@ from collections.abc import Callable
 from pathlib import Path
 
 from news.web.file_locks import locked_text_file
+from news.web.paths import FORM_TOKEN_STATE_FILENAME
 
 type JsonScalar = float | int | str
 type JsonRecord = dict[str, JsonScalar]
@@ -47,7 +51,8 @@ class AuthStore:
     def __init__(self, session_file: Path, login_state_file: Path) -> None:
         self.session_file = session_file
         self.login_state_file = login_state_file
-        for state_file in (session_file, login_state_file):
+        self.form_token_file = login_state_file.with_name(FORM_TOKEN_STATE_FILENAME)
+        for state_file in (session_file, login_state_file, self.form_token_file):
             if state_file.exists():
                 state_file.chmod(AUTH_STATE_FILE_PERMISSION_MODE)
 
@@ -123,6 +128,30 @@ class AuthStore:
     def load_login_state(self) -> JsonState:
         """Return the current failed-login counters for every client address."""
         return self._read(self.login_state_file)
+
+    def update_form_tokens(self, update: Callable[[JsonState], None]) -> JsonState:
+        """Apply one atomic update to cross-worker sign-in form tokens.
+
+        Parameters
+        ----------
+        update : Callable[[JsonState], None]
+            Function that edits the token mapping while the exclusive file
+            lock is held.
+
+        Returns
+        -------
+        JsonState
+            Token mapping exactly as written.
+        """
+        with locked_text_file(
+            self._lock_file(self.form_token_file),
+            "a+",
+            fcntl.LOCK_EX,
+        ):
+            state = self._read_unlocked(self.form_token_file)
+            update(state)
+            self._write_unlocked(self.form_token_file, state)
+            return state
 
     def update_sessions(
         self,

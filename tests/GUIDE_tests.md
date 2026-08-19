@@ -114,7 +114,8 @@ Package marker files are omitted from the tree.
   promise is sent only over HTTPS.
 - `api/test_sessions_across_processes.py` points two instances at one data
   directory to stand in for two worker processes, then checks that a session
-  and its sign-out token are recognized by both.
+  and its sign-out token are recognized by both, and that a sign-in form token
+  issued by one can be consumed by the other.
 - `api/test_config.py` checks packaged defaults, partial overrides, immutable
   settings, malformed TOML, misspelled keys, source names, and cache limits.
 - `api/test_openapi_contract.py` compares generated OpenAPI output with the
@@ -144,7 +145,8 @@ Package marker files are omitted from the tree.
 - `search/test_deduplication.py` checks cleaned URLs and full-field merging.
 - `search/test_concurrent_searches.py` checks that identical requests running at
   the same moment query the sources once, that different requests still run
-  separately, and that a caller giving up does not cancel the others.
+  separately, that different injected executors never share results, and that
+  either the creator or a later caller can leave without cancelling the others.
 - `search/test_service.py` checks provider-facing options, local processing,
   pagination metadata, and source reports through typed fake executors.
 - `search/test_cache.py` checks expiry, eviction, invariants, and service
@@ -185,8 +187,9 @@ frames.
   apart rather than released together.
 - `trends/test_rebase.py` checks the as-of rescaling: later points dropped, the
   highest known value becoming the top of the scale, ratios between days
-  preserved, one divisor shared across keywords, and the original left
-  unmodified. Its key test rebases a real long-window fetch and compares it
+  preserved, one divisor shared across keywords, the original left unmodified,
+  and coarse periods rejected before they can leak later days. Its key test
+  rebases a real long-window fetch and compares it
   with a real short-window fetch of the same days, which is the evidence that
   local rescaling can stand in for one request per decision date.
 - `api/test_trends_endpoint.py` checks that the route passes the search query
@@ -245,6 +248,7 @@ uv run python -m unittest discover -s tests -v
 
 ## Part 4 -- Short Journal
 
+- 2026-08-19: Added regression coverage for cross-worker form tokens, guarded static HTML, creator cancellation, cross-executor isolation, inclusive date limits, cross-page coverage, safe exports, and coarse-period Trends leakage.
 - 2026-07-26: Organized tests by production responsibility and kept live provider checks outside the deterministic default suite.
 - 2026-07-29: Added deployment tests that do not need a Docker daemon because Docker socket access is not available in every development environment.
 - 2026-08-08: Added a cross-source date-format test after one adapter silently emitted a datetime, which broke sorting and duplicate matching without failing its own source test.

@@ -7,9 +7,14 @@ import unittest
 from contextlib import redirect_stdout
 from io import StringIO
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
-from news.cli.output import format_table
+from news.cli.output import (
+    format_table,
+    resolve_output_path,
+    should_download_api_export,
+)
 from news.cli.parser import (
     DEFAULT_SERVER_URL,
     SERVER_URL_ENVIRONMENT_VARIABLE,
@@ -279,10 +284,100 @@ class PaginatedCollectionTests(unittest.TestCase):
             payload = collect_all_pages(args)
 
         self.assertEqual(fetch.call_count, 2)
-        self.assertEqual(payload["results"], [{"title": "First"}, {"title": "Second"}])
+        self.assertEqual(
+            [article["title"] for article in payload["results"]],
+            ["First", "Second"],
+        )
         self.assertEqual(payload["meta"]["returned"], 2)
         self.assertEqual(payload["meta"]["duplicates_removed"], 3)
         self.assertFalse(payload["meta"]["has_more"])
+
+    def test_filtered_empty_page_does_not_hide_a_later_page(self) -> None:
+        """Explicit provider pagination wins over an empty locally filtered page."""
+        args = build_arg_parser().parse_args(
+            ["fed", "-s", "2025-01-01", "-e", "2025-03-01", "--all-pages", "--quiet"]
+        )
+        payloads = [
+            {"results": [], "meta": {"duplicates_removed": 0, "has_more": True}},
+            {
+                "results": [{"title": "Later", "url": "https://example.com/later"}],
+                "meta": {"duplicates_removed": 0, "has_more": False},
+            },
+        ]
+
+        with patch("news.cli.workflow.fetch_page", side_effect=payloads) as fetch:
+            payload = collect_all_pages(args)
+
+        self.assertEqual(fetch.call_count, 2)
+        self.assertEqual(payload["results"][0]["title"], "Later")
+
+    def test_cross_page_duplicates_are_merged_and_failures_are_preserved(self) -> None:
+        """Combined output must be unique and retain every page's coverage warning."""
+        args = build_arg_parser().parse_args(
+            ["fed", "-s", "2025-01-01", "-e", "2025-03-01", "--all-pages", "--quiet"]
+        )
+        article = {"title": "Repeated story", "url": "https://example.com/story"}
+        payloads = [
+            {
+                "results": [article],
+                "meta": {
+                    "duplicates_removed": 0,
+                    "has_more": True,
+                    "source_reports": [
+                        {"name": "nyt", "error": "timeout", "returned": 0}
+                    ],
+                },
+            },
+            {
+                "results": [article],
+                "meta": {
+                    "duplicates_removed": 0,
+                    "has_more": False,
+                    "source_reports": [{"name": "nyt", "error": "", "returned": 1}],
+                },
+            },
+        ]
+
+        with patch("news.cli.workflow.fetch_page", side_effect=payloads):
+            payload = collect_all_pages(args)
+
+        self.assertEqual(len(payload["results"]), 1)
+        self.assertEqual(payload["meta"]["duplicates_removed"], 1)
+        self.assertIn("Page 1: timeout", payload["meta"]["source_reports"][0]["error"])
+
+
+class ExportPathTests(unittest.TestCase):
+    """Check implicit export destinations and content-aware CSV behavior."""
+
+    def test_query_cannot_escape_the_working_directory(self) -> None:
+        """Slashes in a query are filename text, never path separators."""
+        args = build_arg_parser().parse_args(
+            ["/tmp/S&P/TSX", "-s", "2025-01-01", "-e", "2025-03-01", "--export", "csv"]
+        )
+        with (
+            TemporaryDirectory() as temporary_directory,
+            patch("pathlib.Path.cwd", return_value=Path(temporary_directory)),
+        ):
+            output_path = resolve_output_path(args)
+
+        self.assertEqual(output_path.parent, Path(temporary_directory))
+
+    def test_include_content_uses_the_already_fetched_payload(self) -> None:
+        """The compact API CSV route must not silently drop requested content."""
+        args = build_arg_parser().parse_args(
+            [
+                "fed",
+                "-s",
+                "2025-01-01",
+                "-e",
+                "2025-03-01",
+                "--export",
+                "csv",
+                "--include-content",
+            ]
+        )
+
+        self.assertFalse(should_download_api_export(args, {"page": 1}))
 
 
 class PackageEntryPointTests(unittest.TestCase):

@@ -73,14 +73,17 @@ class GdeltSource(BaseSource):
                     content_type,
                     resp.text[:200],
                 )
-                raise RuntimeError(f"GDELT refused this query: {_first_line(resp.text)}")
+                raise RuntimeError(
+                    f"GDELT refused this query: {_first_line(resp.text)}"
+                )
 
             data = resp.json()
 
         raw_articles = data.get("articles") or []
         articles = [self._to_article(a) for a in raw_articles]
-        has_more = len(raw_articles) >= GDELT_PAGE_SIZE
-        return SourcePageResult(articles=articles, has_more=has_more)
+        # This adapter intentionally exposes only the first GDELT page. A full
+        # response therefore cannot honestly advertise a page two.
+        return SourcePageResult(articles=articles, has_more=False)
 
     @staticmethod
     def _to_article(raw: dict) -> Article:

@@ -104,6 +104,17 @@ class SignedOutAccessTests(AuthenticationTestCase):
         self.assertEqual(self.client.get("/healthz").status_code, 200)
         self.assertEqual(self.client.get("/static/favicon.svg").status_code, 200)
 
+    def test_guarded_html_is_not_reachable_through_static_paths(self) -> None:
+        """Public assets must not expose alternate URLs for protected pages."""
+        guarded_paths = (
+            "/static/index.html",
+            "/static/docs.html",
+            "/static/GUIDE_static.md",
+        )
+        for path in guarded_paths:
+            with self.subTest(path=path):
+                self.assertEqual(self.client.get(path).status_code, 404)
+
     def test_sign_in_page_carries_a_one_time_token(self) -> None:
         """The form must arrive with the token the server will check."""
         response = self.client.get("/login")

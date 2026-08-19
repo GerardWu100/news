@@ -93,6 +93,9 @@ Run `uv run news-search --help` for source filters, phrase matching, domain
 filters, pagination, and exports. Use `--server URL` or `NEWS_SERVER_URL` for a
 remote deployment. The CLI sends the account in an HTTP header on every
 request, so use TLS or a private VPN; never expose a plain-HTTP public port.
+`--all-pages` continues through locally filtered empty pages, removes duplicates
+across page boundaries, and keeps a provider failure from any fetched page in
+`source_reports`.
 
 `.agents/skills/news-cli/SKILL.md` is an optional skill file for an outside AI
 agent. It explains sign-in, both commands, and provider-coverage checks. The
@@ -152,6 +155,10 @@ Start with [GUIDE_ROOT.md](GUIDE_ROOT.md) and
 The API returns JSON. The CLI can also write a table, CSV, JSON, JSON Lines, or
 SQLite. Every response includes `source_reports`, which shows each provider's
 article count and any error.
+
+Google Trends `as_of` rescaling is supported only for hourly and daily points.
+Weekly and monthly labels describe whole periods that can extend past a
+decision date, so locally relabeling them would introduce look-ahead bias.
 
 ## Roadmap
 

@@ -15,8 +15,9 @@ curl -u "$UI_USERNAME:$UI_PASSWORD" "http://127.0.0.1:8000/api/config"
 
 Without valid credentials the route answers `401` with a JSON `detail`. The
 response has no `WWW-Authenticate` header, so a browser shows the application's
-own sign-in page rather than a native password box. `GET /healthz` and the files
-under `/static` need no account. Full rules are in `docs/user/SIGN_IN.md`.
+own sign-in page rather than a native password box. `GET /healthz`, the
+stylesheet, icon, and browser scripts need no account; HTML pages do. Full
+rules are in `docs/user/SIGN_IN.md`.
 
 ## Common query parameters
 
@@ -48,7 +49,7 @@ Validation rules:
 
 - Dates must use strict `YYYY-MM-DD`.
 - `start` must be on or before `end`.
-- A date range cannot exceed 366 days.
+- An inclusive date range cannot exceed 366 calendar dates.
 - An unknown source returns HTTP 422.
 
 ## `GET /api/config`
@@ -169,7 +170,9 @@ curl "http://127.0.0.1:8000/api/search?q=inflation&start=2025-01-01&end=2025-03-
 ## `GET /api/export/csv`
 
 Runs the same single-page search as `/api/search` and returns a downloadable
-CSV file.
+CSV file. Text that begins like a spreadsheet formula is prefixed with an
+apostrophe so opening the file cannot execute provider-controlled content. Use
+JSON when the exact original text must be preserved.
 
 ```bash
 curl -OJ "http://127.0.0.1:8000/api/export/csv?q=inflation&start=2025-01-01&end=2025-03-01"
@@ -263,6 +266,9 @@ curl -u "$UI_USERNAME:$UI_PASSWORD" \
 - HTTP 422 when the query holds no searchable term, the dates are malformed or
   reversed, the start predates Google's 2004 archive, or `as_of` falls outside
   the window.
+- HTTP 422 when `as_of` would truncate weekly, monthly, or
+  unknown-granularity points. Those period labels do not prove the aggregate
+  was complete at the decision date; request a window ending on that date.
 - HTTP 502 when Google rejects the request, rate limits it (HTTP 429), or the
   network fails. Requests are already spaced by
   `trends.seconds_between_requests`; raise that setting if 502 keeps appearing.

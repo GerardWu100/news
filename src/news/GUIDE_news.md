@@ -32,11 +32,12 @@ There is no separate hashing command.
 `api/auth.py` checks one hash even when the account name is wrong, so the
 response time does not reveal which part of the login failed.
 
-`web/auth_store.py` stores sessions and failed-attempt counters in locked,
-atomically replaced JSON files. Sessions are read from disk for each check
-rather than cached in memory. This lets several server workers share sign-in
-state, at the cost of one small file read per signed-in request. The sign-out
-token lives in the same record for the same reason.
+`web/auth_store.py` stores sessions, failed-attempt counters, and short-lived
+sign-in form tokens in locked, atomically replaced JSON files. Sessions are
+read from disk for each check rather than cached in memory. This lets several
+server workers share sign-in state, at the cost of one small file read per
+signed-in request. The sign-out token lives in the same record for the same
+reason.
 
 `web/security.py` controls response headers, client addresses, and HTTPS
 detection. Forwarded headers are trusted only when enabled and when the direct
@@ -103,7 +104,14 @@ search operators.
 Only historical windows are supported. Google scales each value against the
 peak of the requested window. An `as_of` date drops later points and rescales
 the remaining series to prevent later information from affecting earlier
-values. See `trends/GUIDE_trends.md` for the measured example.
+values when Google returned hourly or daily points. Weekly, monthly, and
+unknown-granularity series require a fresh fetch ending on the decision date,
+because one labelled period can contain later observations. See
+`trends/GUIDE_trends.md` for the measured example.
+
+`news-search --all-pages` trusts provider pagination even when local filters
+empty an intermediate page. It then removes duplicates across page boundaries
+and aggregates provider reports so an early failure remains visible.
 
 `api/app.py` creates one Trends client per application so request pacing is
 shared. The route is synchronous because the client performs blocking HTTP and

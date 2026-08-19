@@ -16,10 +16,13 @@ wheels/
 
 # Sign-in state written into the data directory at runtime.
 .ui_credentials.json
+.ui_credentials.json.lock
 .ui_sessions.json
 .ui_sessions.json.lock
 .login_state.json
 .login_state.json.lock
+.login_form_tokens.json
+.login_form_tokens.json.lock
 
 # macOS Finder metadata
 .DS_Store

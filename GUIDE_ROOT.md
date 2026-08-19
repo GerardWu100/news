@@ -27,9 +27,10 @@ configuration, deployment, tests, and documentation.
   working directory; Docker maps it to `/data`.
 - `.env` stores accounts, provider credentials, and the optional CLI server
   address. It is never tracked.
-- `.ui_credentials.json`, `.ui_sessions.json`, and `.login_state.json` store
-  password hashes, active sessions, and failed-attempt counters. They are
-  owner-only and updated under a file lock so several workers can share them.
+- `.ui_credentials.json`, `.ui_sessions.json`, `.login_state.json`, and
+  `.login_form_tokens.json` store password hashes, active sessions,
+  failed-attempt counters, and short-lived one-time sign-in tokens. They are
+  owner-only and updated under file locks so several workers can share them.
 - Settings come from `--config`, `NEWS_CONFIG`, `config.toml`, or packaged
   defaults, in that order.
 - Docker seeds defaults into `${HOME}/.containers/news` once and preserves
@@ -62,6 +63,8 @@ See `docs/reference/PROJECT_STRUCTURE.md` for the exact tree and
 
 ## Short journal
 
+- 2026-08-19: Moved one-time sign-in tokens and credential startup changes behind cross-process locks, and stopped public static routes from exposing guarded HTML files.
+- 2026-08-19: Made multi-page exports preserve page-level failures and deduplicate across page boundaries.
 - 2026-08-12: Renamed the product to Historical Market News Search so its market scope and search function are explicit.
 - 2026-07-26: Packaged browser assets and defaults so installed wheels do not need the repository root.
 - 2026-07-26: Replaced loose configuration dictionaries with validated settings and explicit cache passing.

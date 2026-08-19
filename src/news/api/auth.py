@@ -92,9 +92,8 @@ class LoginSessions:
     goes through the locked store rather than through a copy held in memory.
     That costs one small file read per signed-in request and buys correctness
     when more than one process serves the application: a browser that signs in
-    through one worker is recognized by all of them. Form tokens and the
-    password-hash cache are per process, so at worst a caller reloads a form or
-    pays one hash.
+    through one worker is recognized by all of them. One-time form tokens use
+    the same locked store, while the password-hash cache remains per process.
 
     Parameters
     ----------
@@ -118,8 +117,6 @@ class LoginSessions:
         self.credentials_file = credentials_file
         self.trust_forwarded_headers = trust_forwarded_headers
         self._lock = threading.RLock()
-        # one-time form token identifier -> {"token": str, "created_at": float}
-        self._form_tokens: dict[str, dict[str, float | str]] = {}
         # digest of an accepted Authorization header -> expiry time
         self._accepted_basic_headers: dict[str, float] = {}
         # Modification time of the account file the cache above was filled
@@ -237,28 +234,45 @@ class LoginSessions:
             ``(token_id, token)``. The page carries both; the server keeps the
             token under the identifier until the form comes back or expires.
         """
-        with self._lock:
-            self._drop_expired_form_tokens()
-            token_id = secrets.token_urlsafe(16)
-            token = secrets.token_urlsafe(32)
-            self._form_tokens[token_id] = {"token": token, "created_at": time.time()}
+        token_id = secrets.token_urlsafe(16)
+        token = secrets.token_urlsafe(32)
+        issued_at = time.time()
 
-            # Drop the oldest tokens once the cap is reached. Python keeps
-            # insertion order, so the first key is always the oldest.
-            while len(self._form_tokens) > MAX_PENDING_FORM_TOKENS:
-                oldest_token_id = next(iter(self._form_tokens))
-                self._form_tokens.pop(oldest_token_id, None)
+        def add_token(form_tokens: JsonState) -> None:
+            """Drop expired rows, add the token, and enforce the shared cap."""
+            _drop_expired_form_tokens(form_tokens, now=issued_at)
+            form_tokens[token_id] = {"token": token, "created_at": issued_at}
+            while len(form_tokens) > MAX_PENDING_FORM_TOKENS:
+                oldest_token_id = min(
+                    form_tokens,
+                    key=lambda stored_id: float(
+                        form_tokens[stored_id].get("created_at", 0) or 0
+                    ),
+                )
+                form_tokens.pop(oldest_token_id, None)
+
+        self.auth_store.update_form_tokens(add_token)
         return token_id, token
 
     def consume_form_token(self, token_id: str, token: str) -> bool:
         """Check a returned form token and remove it so it cannot be reused."""
-        with self._lock:
-            stored_token = self._form_tokens.pop(token_id, None)
+        consumed: dict[str, JsonRecord] = {}
+        current_time = time.time()
+
+        def consume_token(form_tokens: JsonState) -> None:
+            """Remove the submitted token while holding the cross-worker lock."""
+            _drop_expired_form_tokens(form_tokens, now=current_time)
+            stored_token = form_tokens.pop(token_id, None)
+            if stored_token is not None:
+                consumed["token"] = stored_token
+
+        self.auth_store.update_form_tokens(consume_token)
+        stored_token = consumed.get("token")
         if stored_token is None:
             return False
         expected_token = str(stored_token.get("token", ""))
         issued_at = float(stored_token.get("created_at", 0) or 0)
-        if time.time() - issued_at > FORM_TOKEN_TTL_SECONDS:
+        if current_time - issued_at > FORM_TOKEN_TTL_SECONDS:
             return False
         return bool(expected_token) and secrets.compare_digest(token, expected_token)
 
@@ -437,15 +451,6 @@ class LoginSessions:
         with self._lock:
             self._accepted_basic_headers.clear()
 
-    def _drop_expired_form_tokens(self) -> None:
-        """Remove sign-in form tokens that were never returned."""
-        cutoff = time.time() - FORM_TOKEN_TTL_SECONDS
-        self._form_tokens = {
-            token_id: token_data
-            for token_id, token_data in self._form_tokens.items()
-            if float(token_data.get("created_at", 0) or 0) >= cutoff
-        }
-
 
 def request_is_signed_in(request: Request) -> bool:
     """Return whether a request proves the account by cookie or by header.
@@ -483,6 +488,26 @@ def request_is_signed_in(request: Request) -> bool:
         return True
     sessions.record_failure(address)
     return False
+
+
+def _drop_expired_form_tokens(form_tokens: JsonState, *, now: float) -> None:
+    """Remove expired or malformed one-time form tokens in place.
+
+    Parameters
+    ----------
+    form_tokens : JsonState
+        Mutable token identifier to token-details mapping.
+    now : float
+        Current Unix time used for one consistent expiry decision.
+    """
+    cutoff = now - FORM_TOKEN_TTL_SECONDS
+    for token_id, token_data in list(form_tokens.items()):
+        try:
+            created_at = float(token_data.get("created_at", 0) or 0)
+        except (TypeError, ValueError):
+            created_at = 0.0
+        if not math.isfinite(created_at) or created_at < cutoff or created_at > now:
+            form_tokens.pop(token_id, None)
 
 
 def require_signed_in(request: Request) -> None:

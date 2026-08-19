@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import re
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -205,6 +206,10 @@ def should_download_api_export(
         return False
     if args.all_pages:
         return False
+    if args.include_content:
+        # The API export route intentionally returns the compact CSV schema.
+        # Write the already-fetched payload locally when content was requested.
+        return False
     if args.export not in {"csv", "json"}:
         return False
 
@@ -218,7 +223,11 @@ def resolve_output_path(args: argparse.Namespace) -> Path:
         return Path(args.output).expanduser().resolve()
 
     timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-    safe_query = "-".join(args.query.lower().split())[:40] or "search"
+    # A search query is data, not a path. Replace slashes, drive markers, dots,
+    # and punctuation so the implicit destination always stays in the current
+    # directory.
+    safe_query = re.sub(r"[^\w]+", "-", args.query.lower(), flags=re.UNICODE)
+    safe_query = safe_query.strip("-")[:40] or "search"
     suffix = {"csv": ".csv", "json": ".json", "sqlite": ".db"}[args.export]
     filename = f"{safe_query}-{args.start}-{args.end}-{timestamp}{suffix}"
     return (Path.cwd() / filename).resolve()

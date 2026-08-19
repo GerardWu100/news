@@ -26,7 +26,8 @@ SearchExecutor = Callable[
 # Sources are rate limited, so two callers asking the same question at the same
 # moment should cost one round of provider requests, not two. Entries are
 # removed as soon as the search finishes.
-_searches_in_flight: dict[SearchRequest, asyncio.Task[SearchResult]] = {}
+InFlightSearchKey = tuple[SearchRequest, int, int]
+_searches_in_flight: dict[InFlightSearchKey, asyncio.Task[SearchResult]] = {}
 
 
 async def run_search(
@@ -65,24 +66,50 @@ async def run_search(
         if cached_result is not None:
             return cached_result
 
-    running_search = _searches_in_flight.get(request)
+    # Execution dependencies are part of the key. Two application instances
+    # may ask the same question while using different source executors or
+    # caches, and their results must never cross that boundary.
+    search_key = (request, id(executor), id(cache))
+    running_search = _searches_in_flight.get(search_key)
     if running_search is None:
         running_search = asyncio.ensure_future(
             _execute_search(request, executor, use_cache=use_cache, cache=cache)
         )
-        _searches_in_flight[request] = running_search
-        try:
-            result = await running_search
-        finally:
-            _searches_in_flight.pop(request, None)
-    else:
-        # Wait without cancelling: cancelling this caller must not cancel the
-        # search the other callers are also waiting on.
-        result = await asyncio.shield(running_search)
+        _searches_in_flight[search_key] = running_search
+        running_search.add_done_callback(
+            lambda completed: _remove_completed_search(search_key, completed)
+        )
+
+    # Shield every caller, including the one that created the task. Otherwise
+    # closing the first browser request cancels the provider work for everyone
+    # who joined it.
+    result = await asyncio.shield(running_search)
 
     # Every caller gets its own copy, so one caller editing the response cannot
     # change what another caller sees.
     return copy.deepcopy(result)
+
+
+def _remove_completed_search(
+    search_key: InFlightSearchKey,
+    completed_search: asyncio.Task[SearchResult],
+) -> None:
+    """Remove one finished shared search without deleting a replacement task.
+
+    Parameters
+    ----------
+    search_key : InFlightSearchKey
+        Request and application-specific execution dependencies.
+    completed_search : asyncio.Task[SearchResult]
+        Provider task that reached a terminal state.
+    """
+    if _searches_in_flight.get(search_key) is completed_search:
+        _searches_in_flight.pop(search_key, None)
+
+    # Read the exception so a creator that disconnected without any remaining
+    # waiter does not leave an unhandled-task warning in the server log.
+    if not completed_search.cancelled():
+        completed_search.exception()
 
 
 async def _execute_search(

@@ -140,6 +140,10 @@ common one.
   7 days gives hourly points, up to 9 months daily, up to 5 years weekly, and
   longer monthly. The result reports which one arrived, so a caller that
   assumed daily can notice it received weekly.
+- Local `as_of` rescaling is allowed only for hourly and daily points. Weekly
+  and monthly labels mark a period rather than its completion time, so a point
+  labelled before the decision date can still contain later searches. Fetch a
+  window ending on the decision date for those granularities.
 - Windows longer than about 9 months cannot return daily points in one
   request. Assembling a longer daily history from overlapping fetches is not
   built.
@@ -182,9 +186,10 @@ common one.
   spacing back from the returned timestamps, and `_format_timestamps` chooses
   one label format for the whole series so an hourly point at midnight does not
   silently lose its time.
-- `rebase.py`: `rebase_as_of` drops points after a decision date and divides
-  the rest by the largest value up to it, returning a new object with
-  `anchor_date` and `end_date` moved back.
+- `rebase.py`: `rebase_as_of` drops hourly or daily points after a decision date
+  and divides the rest by the largest value up to it, returning a new object
+  with `anchor_date` and `end_date` moved back. It rejects coarser points when
+  the decision date precedes the fetched window end.
 - `__init__.py`: the package's public surface, listed in `__all__`.
 
 ### Consumed by
@@ -227,6 +232,7 @@ same five days that differ only in the end date, which is what lets
 
 ## Part 3 -- Short Journal
 
+- 2026-08-19: Rejected local as-of rebasing for weekly, monthly, and unknown point spacing because their labels do not prove the aggregate was complete at the decision date.
 - 2026-08-10: Re-probed every library function against the live endpoints before building anything; all present-moment functions returned HTTP 404 and the library's own long-history helper had been removed, which narrowed the package to one date-window function.
 - 2026-08-10: Chose local as-of rescaling over one fetch per decision date, because the leak is a single constant divisor and the endpoints are rate limited; the accuracy cost is confined to values Google had already rounded.
 - 2026-08-10: Chose request spacing over a response cache as the first rate-limit defence, since spacing is what the feature needs to work at all and caching only reduces repeat cost.

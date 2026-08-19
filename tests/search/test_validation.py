@@ -119,6 +119,28 @@ class BuildSearchRequestTests(unittest.TestCase):
 
         self.assertIn("366 days", context.exception.message)
 
+    def test_inclusive_date_limit_accepts_366_dates_and_rejects_367(self) -> None:
+        """The limit counts both publication-date boundaries."""
+        accepted = build_search_request(
+            query="inflation",
+            start_date="2024-01-02",
+            end_date="2025-01-01",
+            source_names=None,
+            language="",
+            deduplicate=True,
+        )
+        self.assertEqual(accepted.end_date, "2025-01-01")
+
+        with self.assertRaises(SearchValidationError):
+            build_search_request(
+                query="inflation",
+                start_date="2024-01-01",
+                end_date="2025-01-01",
+                source_names=None,
+                language="",
+                deduplicate=True,
+            )
+
     def test_parses_provider_aware_advanced_filters(self) -> None:
         """Comma-separated advanced fields should normalize into tuples."""
         request = build_search_request(

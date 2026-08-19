@@ -87,9 +87,10 @@ The exact tree is maintained in `docs/reference/PROJECT_STRUCTURE.md`.
    leaves a session cookie, and a program through an HTTP Basic header.
 5. The browser or CLI sends one validated search request.
 6. The search package checks whether the same request is already in its short-
-   lived memory cache, and then whether an identical request is already
-   running. A second caller joins the search in flight rather than spending the
-   provider rate limits twice.
+   lived memory cache, and then whether the same application dependencies are
+   already running it. A second caller joins that search in flight rather than
+   spending provider limits twice; either caller can disconnect without
+   cancelling the shared provider work.
 7. If neither applies, the selected sources are queried in parallel.
 8. Each source response is converted to the common article format.
 9. Local filters apply the same language, phrase, term, and domain rules to all
@@ -121,15 +122,16 @@ optional numbered pairs; startup turns each password into a PBKDF2 hash, stores
 only the hashes, and re-verifies them on every boot. The accounts separate
 people, not permissions: any of them opens every route. Failed
 attempts are counted per client address and a run of them refuses that address
-for a while, through both the form and the header. Sessions and counters live
-in files read and written under a lock, so a restart does not sign everyone out,
-a limit is not reset, and several server processes agree about who is signed in.
-Three routes stay open because none reveal results: the sign-in page, the
-browser's own static files, and the health check.
+for a while, through both the form and the header. Sessions, one-time form
+tokens, and counters live in files read and written under a lock, so a restart
+does not sign everyone out, a limit is not reset, and several server processes
+agree about who is signed in. Public access is limited to the sign-in page,
+stylesheet, icon, browser scripts, and health check. The search and
+documentation HTML remain guarded.
 
 Anything a caller can add to without proving the account is bounded: the
 failed-attempt file drops records once their window and ban have passed, and
-the sign-in form tokens held in memory have a ceiling. Proxy headers naming a
+the stored sign-in form tokens have a ceiling. Proxy headers naming a
 different client are believed only when the machine that opened the connection
 is itself local or private, so the failed-attempt limit cannot be sidestepped
 by setting a header.
@@ -152,7 +154,9 @@ That scaling hides a form of look-ahead bias the project's date filter cannot
 catch: the divisor is the peak of the whole window, including days after the
 one being read, so a long window tells its early days about a spike that had
 not happened yet. Supplying a decision date drops the later points and rescales
-to what was known then. Features built on ratios or changes survive the
+to what was known then for hourly or daily points. Weekly and monthly
+aggregates are rejected because a period labelled before the decision date can
+contain later observations. Features built on ratios or changes survive the
 original scaling because it is a single constant multiplier; features that
 compare levels against a fixed threshold do not.
 

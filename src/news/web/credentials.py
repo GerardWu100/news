@@ -22,11 +22,13 @@ from ``UI_USERNAME``.
 
 from __future__ import annotations
 
+import fcntl
 import json
 import os
 from pathlib import Path
 from typing import NamedTuple
 
+from news.web.file_locks import locked_text_file
 from news.web.passwords import hash_password, verify_password
 from news.web.paths import (
     CREDENTIALS_FILENAME,
@@ -223,6 +225,25 @@ def _reuse_or_hash(
 
 
 def sync_ui_credentials(data_directory: Path) -> str:
+    """Synchronize credentials under one cross-process startup lock.
+
+    Parameters
+    ----------
+    data_directory : Path
+        Directory holding the credentials, session, and lock files.
+
+    Returns
+    -------
+    str
+        Status line describing the verified or newly hashed accounts.
+    """
+    credentials_file = data_directory / CREDENTIALS_FILENAME
+    lock_file = credentials_file.with_name(f"{credentials_file.name}.lock")
+    with locked_text_file(lock_file, "a+", fcntl.LOCK_EX):
+        return _sync_ui_credentials_unlocked(data_directory)
+
+
+def _sync_ui_credentials_unlocked(data_directory: Path) -> str:
     """Refresh ``.ui_credentials.json`` from the environment and self-test it.
 
     Reads up to :data:`MAX_ACCOUNTS` account slots from the process

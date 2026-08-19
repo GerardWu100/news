@@ -55,7 +55,12 @@ class TrendsWindow:
         return f"{self.start_date.isoformat()} {self.end_date.isoformat()}"
 
 
-def build_trends_window(start_date: str, end_date: str) -> TrendsWindow:
+def build_trends_window(
+    start_date: str,
+    end_date: str,
+    *,
+    today: date | None = None,
+) -> TrendsWindow:
     """Validate two ISO dates and return the window they describe.
 
     Parameters
@@ -64,6 +69,9 @@ def build_trends_window(start_date: str, end_date: str) -> TrendsWindow:
         Inclusive window start in ``YYYY-MM-DD`` format.
     end_date : str
         Inclusive window end in ``YYYY-MM-DD`` format.
+    today : date | None, optional
+        Current calendar date used to reject future windows. Tests may inject a
+        fixed date; production uses the machine's local date.
 
     Returns
     -------
@@ -85,6 +93,11 @@ def build_trends_window(start_date: str, end_date: str) -> TrendsWindow:
         raise TrendsValidationError(
             "Google Trends history begins on "
             f"{EARLIEST_SUPPORTED_DATE.isoformat()}; choose a later start_date."
+        )
+    current_date = today or date.today()
+    if parsed_end > current_date:
+        raise TrendsValidationError(
+            f"end_date cannot be after today ({current_date.isoformat()})."
         )
 
     return TrendsWindow(start_date=parsed_start, end_date=parsed_end)

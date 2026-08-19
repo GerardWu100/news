@@ -103,9 +103,11 @@ function buildSafeArticleUrl(rawUrl) {
 
 export function renderSources(sources, defaultSources = []) {
     const container = document.getElementById("source-checks");
+    const useAllAvailableDefaults = defaultSources.length === 0;
     container.innerHTML = sources.map(function buildSourceCheckbox(source) {
         const disabled = source.available ? "" : "disabled";
-        const shouldCheck = source.available && defaultSources.includes(source.name);
+        const shouldCheck = source.available
+            && (useAllAvailableDefaults || defaultSources.includes(source.name));
         const checked = shouldCheck ? "checked" : "";
         const label = source.available
             ? source.display_name

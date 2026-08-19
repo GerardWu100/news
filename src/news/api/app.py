@@ -156,10 +156,12 @@ def create_app(
     application.state.search_cache = active_cache
     application.state.login_sessions = active_sessions
     application.state.trends_client = active_trends_client
+    # Mount only executable modules. Guarded HTML files share the package
+    # directory but must not become reachable through a second public URL.
     application.mount(
-        "/static",
-        StaticFiles(directory=str(static_assets)),
-        name="static",
+        "/static/scripts",
+        StaticFiles(directory=str(static_assets / "scripts")),
+        name="static-scripts",
     )
     application.include_router(build_auth_router())
 
@@ -193,6 +195,16 @@ def create_app(
     async def healthz() -> dict[str, str]:
         """Report that the process is serving, without exposing any data."""
         return {"status": "ok"}
+
+    @application.get("/static/styles.css", include_in_schema=False)
+    async def stylesheet() -> FileResponse:
+        """Serve the public stylesheet without exposing guarded HTML files."""
+        return FileResponse(str(static_assets / "styles.css"))
+
+    @application.get("/static/favicon.svg", include_in_schema=False)
+    async def favicon() -> FileResponse:
+        """Serve the public tab icon without exposing guarded HTML files."""
+        return FileResponse(str(static_assets / "favicon.svg"))
 
     @application.get("/", include_in_schema=False)
     async def index(request: Request) -> Response:

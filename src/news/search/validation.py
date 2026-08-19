@@ -109,7 +109,9 @@ def build_search_request(
     parsed_end = _parse_iso_date(end_date, field_name="end")
     if parsed_start > parsed_end:
         raise SearchValidationError("Start date must be on or before end date")
-    date_range_days = (parsed_end - parsed_start).days
+    # Both boundaries are included. The difference counts gaps between dates,
+    # so add one before enforcing the documented calendar-day limit.
+    date_range_days = (parsed_end - parsed_start).days + 1
     if date_range_days > MAX_DATE_RANGE_DAYS:
         raise SearchValidationError(
             "Date range cannot exceed 366 days. "

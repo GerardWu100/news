@@ -50,7 +50,12 @@ Two properties worth knowing:
 
 from __future__ import annotations
 
-from news.trends.models import InterestOverTime, TrendsValidationError
+from news.trends.models import (
+    GRANULARITY_DAILY,
+    GRANULARITY_HOURLY,
+    InterestOverTime,
+    TrendsValidationError,
+)
 from news.trends.window import parse_iso_date
 
 # Google's index tops out at 100, and the rebased series uses the same top.
@@ -107,6 +112,17 @@ def rebase_as_of(series: InterestOverTime, decision_date: str) -> InterestOverTi
         raise TrendsValidationError(
             f"decision_date {normalized_decision_date} is outside the series "
             f"window {series.start_date} to {series.end_date}."
+        )
+
+    safe_local_granularities = {GRANULARITY_HOURLY, GRANULARITY_DAILY}
+    if (
+        parsed_decision_date < window_end
+        and series.granularity not in safe_local_granularities
+    ):
+        raise TrendsValidationError(
+            "Local as-of rescaling requires hourly or daily points. Weekly, "
+            "monthly, and unknown-granularity points can include observations "
+            "after the decision date; fetch a window ending on that date instead."
         )
 
     kept_count = _count_points_up_to(series.dates, normalized_decision_date)

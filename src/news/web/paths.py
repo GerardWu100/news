@@ -14,6 +14,8 @@ Data-directory files
     Remembered browser sessions.
 ``.login_state.json``
     Failed-login counters used to slow down password guessing.
+``.login_form_tokens.json``
+    Short-lived one-time sign-in tokens shared by server workers.
 """
 
 from __future__ import annotations
@@ -29,6 +31,7 @@ DOTENV_FILENAME = ".env"
 CREDENTIALS_FILENAME = ".ui_credentials.json"
 SESSION_STATE_FILENAME = ".ui_sessions.json"
 LOGIN_STATE_FILENAME = ".login_state.json"
+FORM_TOKEN_STATE_FILENAME = ".login_form_tokens.json"
 
 
 def data_dir() -> Path:

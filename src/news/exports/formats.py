@@ -109,6 +109,7 @@ def format_csv(
         row["matched_sources"] = _serialize_matched_sources(
             row.get("matched_sources", [])
         )
+        row = {key: _csv_safe_value(value) for key, value in row.items()}
         writer.writerow(row)
 
     return output.getvalue()
@@ -196,3 +197,24 @@ def _serialize_matched_sources(value: object) -> str:
     if isinstance(value, Sequence) and not isinstance(value, (str, bytes, bytearray)):
         return json.dumps(list(value))
     return str(value)
+
+
+def _csv_safe_value(value: object) -> object:
+    """Neutralize text that spreadsheet programs would execute as a formula.
+
+    Parameters
+    ----------
+    value : object
+        One normalized article field before CSV serialization.
+
+    Returns
+    -------
+    object
+        Original value, or text prefixed with an apostrophe when a spreadsheet
+        would otherwise interpret it as a formula.
+    """
+    if not isinstance(value, str):
+        return value
+    if value.lstrip().startswith(("=", "+", "-", "@")):
+        return f"'{value}"
+    return value

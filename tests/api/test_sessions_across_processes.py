@@ -63,6 +63,13 @@ class SharedSessionTests(unittest.TestCase):
         self.assertTrue(token)
         self.assertTrue(self.second_worker.sign_out_token_is_valid(request, token))
 
+    def test_a_sign_in_form_built_by_one_worker_is_consumed_by_the_other(self) -> None:
+        """Round-robin routing must not make a valid sign-in form expire."""
+        token_id, token = self.first_worker.issue_form_token()
+
+        self.assertTrue(self.second_worker.consume_form_token(token_id, token))
+        self.assertFalse(self.first_worker.consume_form_token(token_id, token))
+
     def test_the_same_session_keeps_one_sign_out_token(self) -> None:
         """A second page load must not invalidate the first page's form."""
         session_id = self.first_worker.start_session(TEST_USERNAME)

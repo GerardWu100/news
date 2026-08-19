@@ -90,6 +90,14 @@ class SourceSettingsValidationTests(unittest.TestCase):
 
         self.assertIn("sources.read_timeout_seconds", str(raised.exception))
 
+    def test_non_finite_timeouts_are_rejected(self) -> None:
+        """NaN and infinity must fail at startup rather than reach HTTPX."""
+        for field_name in ("connect_timeout_seconds", "read_timeout_seconds"):
+            for invalid_value in ("nan", "+inf", "-inf"):
+                with self.subTest(field_name=field_name, invalid_value=invalid_value):
+                    with self.assertRaises(SettingsError):
+                        _load(f"[sources]\n{field_name} = {invalid_value}\n")
+
     def test_empty_collection_list_is_rejected(self) -> None:
         """MediaCloud answers HTTP 422 when a search names no collection."""
         with self.assertRaises(SettingsError) as raised:

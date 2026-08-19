@@ -246,11 +246,12 @@ def persist_token_fields(
         "ACLED_BEARER_TOKEN": stored_token.access_token,
         "ACLED_BEARER_TOKEN_TYPE": stored_token.token_type,
         "ACLED_BEARER_OBTAINED_AT_UTC": stored_token.obtained_at_utc,
+        # Remove metadata from the previous token when the new response omits
+        # it. Keeping an old lifetime or refresh token beside a new bearer
+        # token creates a false expiry date and can refresh the wrong token.
+        "ACLED_BEARER_EXPIRES_IN": stored_token.expires_in or None,
+        "ACLED_REFRESH_TOKEN": stored_token.refresh_token or None,
     }
-    if stored_token.expires_in:
-        updates["ACLED_BEARER_EXPIRES_IN"] = stored_token.expires_in
-    if stored_token.refresh_token:
-        updates["ACLED_REFRESH_TOKEN"] = stored_token.refresh_token
     _update_env_file(env_file, updates)
     return stored_token
 
@@ -320,7 +321,7 @@ def _clean_optional_value(value: object) -> str:
     return "" if value is None else str(value).strip()
 
 
-def _update_env_file(path: Path, updates: Mapping[str, str]) -> None:
+def _update_env_file(path: Path, updates: Mapping[str, str | None]) -> None:
     """Update dotenv keys while preserving unrelated lines and comments.
 
     The file is left readable only by its owner. It holds the browser sign-in
@@ -342,12 +343,18 @@ def _update_env_file(path: Path, updates: Mapping[str, str]) -> None:
 
         # Replace the first occurrence and remove duplicate definitions.
         if key in pending_updates:
-            output_lines.append(f"{key}={pending_updates.pop(key)}")
+            replacement = pending_updates.pop(key)
+            if replacement is not None:
+                output_lines.append(f"{key}={replacement}")
 
     if pending_updates:
         if output_lines and output_lines[-1].strip():
             output_lines.append("")
-        output_lines.extend(f"{key}={value}" for key, value in pending_updates.items())
+        output_lines.extend(
+            f"{key}={value}"
+            for key, value in pending_updates.items()
+            if value is not None
+        )
 
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text("\n".join(output_lines) + "\n", encoding="utf-8")

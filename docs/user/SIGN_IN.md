@@ -1,8 +1,9 @@
 # Sign-in and security
 
-Every route that returns news data requires an account. Three things stay open,
-because none of them reveal search results: the sign-in page, the browser's own
-static files under `/static`, and the `/healthz` check the container uses.
+Every route that returns news data requires an account. The sign-in page,
+stylesheet, icon, browser script modules, and `/healthz` check stay open. The
+search and documentation HTML cannot be fetched through `/static`; their only
+routes require an account.
 
 ## Set the accounts
 
@@ -148,7 +149,9 @@ the server issued and remembers:
 
 - The sign-in form gets a one-time token that expires after 10 minutes and
   cannot be replayed. The number of tokens waiting to come back is capped, so
-  requesting sign-in forms in a loop cannot exhaust memory.
+  requesting sign-in forms in a loop cannot exhaust storage. Tokens are kept
+  in `.login_form_tokens.json` under a lock, so the page and submission may
+  reach different worker processes.
 - The sign-out button gets a token tied to the session, fetched by the page
   from `/api/session`. It is stored with the session, so the page and the
   submission need not reach the same worker process.
@@ -157,7 +160,7 @@ the server issued and remembers:
 
 Every response carries `Referrer-Policy: same-origin`,
 `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, and a Content
-Security Policy. Anything that is not a package-owned file under `/static` also
+Security Policy. Anything that is not an allowed public asset under `/static` also
 carries `Cache-Control: no-store`, so search results are never written to a
 shared cache.
 

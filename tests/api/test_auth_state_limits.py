@@ -98,8 +98,11 @@ class FormTokenLimitTests(unittest.TestCase):
         for _request in range(MAX_PENDING_FORM_TOKENS + 50):
             self.sessions.issue_form_token()
 
+        stored_tokens = self.sessions.auth_store.update_form_tokens(
+            lambda _tokens: None
+        )
         self.assertLessEqual(
-            len(self.sessions._form_tokens),
+            len(stored_tokens),
             MAX_PENDING_FORM_TOKENS,
         )
 

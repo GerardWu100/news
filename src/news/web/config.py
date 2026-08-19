@@ -7,6 +7,7 @@ non-positive cache limits fail before the application starts.
 
 from __future__ import annotations
 
+import math
 import re
 import tomllib
 from collections.abc import Mapping
@@ -309,7 +310,12 @@ def _parse_settings(config: Mapping[str, Any]) -> AppSettings:
 
 def _positive_number(value: object, field_name: str) -> float:
     """Validate a setting that must be greater than zero, rejecting booleans."""
-    if isinstance(value, bool) or not isinstance(value, int | float) or value <= 0:
+    if (
+        isinstance(value, bool)
+        or not isinstance(value, int | float)
+        or not math.isfinite(value)
+        or value <= 0
+    ):
         raise SettingsError(f"{field_name} must be a number greater than zero")
     return float(value)
 
@@ -334,7 +340,12 @@ def _collection_ids(value: object, field_name: str) -> tuple[int, ...]:
 
 def _non_negative_number(value: object, field_name: str) -> float:
     """Validate a setting that may be zero but never negative or boolean."""
-    if isinstance(value, bool) or not isinstance(value, int | float) or value < 0:
+    if (
+        isinstance(value, bool)
+        or not isinstance(value, int | float)
+        or not math.isfinite(value)
+        or value < 0
+    ):
         raise SettingsError(f"{field_name} must be a number of zero or more")
     return float(value)
 

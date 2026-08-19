@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import unittest
 
-from news.trends.models import TrendsValidationError
+from news.trends.models import InterestOverTime, TrendsValidationError
 from news.trends.rebase import rebase_as_of
 from tests.fixtures.trends_results import (
     LONG_WINDOW_SERIES,
@@ -108,6 +108,24 @@ class RebaseAsOfTests(unittest.TestCase):
         """Only exact calendar dates are accepted, never Google shorthands."""
         with self.assertRaises(TrendsValidationError):
             rebase_as_of(LONG_WINDOW_SERIES, "today 3-m")
+
+    def test_weekly_period_cannot_be_relabelled_as_known_midweek(self) -> None:
+        """A weekly aggregate may contain days after a midweek decision date."""
+        weekly_series = InterestOverTime(
+            keywords=("inflation",),
+            start_date="2017-01-01",
+            end_date="2017-01-31",
+            geo="US",
+            granularity="weekly",
+            dates=("2017-01-01", "2017-01-08", "2017-01-15"),
+            is_partial=(False, False, False),
+            values={"inflation": (20.0, 30.0, 40.0)},
+            anchor_date="2017-01-31",
+            fetched_at="2026-08-19T00:00:00+00:00",
+        )
+
+        with self.assertRaisesRegex(TrendsValidationError, "hourly or daily"):
+            rebase_as_of(weekly_series, "2017-01-03")
 
 
 if __name__ == "__main__":

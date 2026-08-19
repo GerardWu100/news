@@ -64,6 +64,19 @@ class FrontendResearchWorkflowTests(unittest.TestCase):
         self.assertIn('buildExportUrl("csv"', app_source)
         self.assertIn("renderResearchWindow(payload.meta)", app_source)
 
+    def test_empty_default_source_list_visibly_selects_available_sources(self) -> None:
+        """The form must not show none selected while the API searches all."""
+        render_source = RENDER_JS_PATH.read_text(encoding="utf-8")
+
+        self.assertIn(
+            "const useAllAvailableDefaults = defaultSources.length === 0",
+            render_source,
+        )
+        self.assertIn(
+            "useAllAvailableDefaults || defaultSources.includes",
+            render_source,
+        )
+
 
 class FrontendSearchAttentionTests(unittest.TestCase):
     """Check the search-attention section the browser draws beside articles."""
@@ -91,7 +104,7 @@ class FrontendSearchAttentionTests(unittest.TestCase):
         html = INDEX_HTML_PATH.read_text(encoding="utf-8")
         trends_source = TRENDS_JS_PATH.read_text(encoding="utf-8")
 
-        self.assertNotIn("<script src=\"http", html)
+        self.assertNotIn('<script src="http', html)
         self.assertIn("createElementNS", trends_source)
 
     def test_relative_scale_is_explained_where_the_chart_is_read(self) -> None:

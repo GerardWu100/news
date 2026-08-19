@@ -213,6 +213,15 @@ class InterestOverTimeValidationTests(unittest.TestCase):
                 end_date="2015-01-01",
             )
 
+    def test_future_window_is_rejected_before_the_network(self) -> None:
+        """Historical retrieval must not accept dates after today."""
+        with self.assertRaisesRegex(TrendsValidationError, "after today"):
+            client_without_pacing().interest_over_time(
+                ["bitcoin"],
+                start_date="2099-01-01",
+                end_date="2099-01-02",
+            )
+
     def test_today_anchored_timeframe_is_rejected(self) -> None:
         """Google's shorthands are unreproducible and never accepted."""
         with self.assertRaises(TrendsValidationError):

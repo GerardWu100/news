@@ -42,13 +42,17 @@ from news.trends.models import TrendsValidationError
 MAX_KEYWORDS = 5
 # Words that join terms in a provider query and carry no search meaning.
 BOOLEAN_OPERATORS = frozenset({"and", "or", "not"})
-# Characters that structure a boolean query but are not part of any term.
-STRUCTURAL_CHARACTERS = "()"
-# One quoted phrase, or one run of non-space characters.
-TOKEN_PATTERN = re.compile(r'"([^"]*)"|(\S+)')
+# Characters that separate or structure terms but are not keywords themselves.
+STRUCTURAL_CHARACTERS = "(),"
+# Optional inclusion/exclusion sign followed by a quoted phrase, or one run of
+# non-space, non-comma characters. Keeping the sign outside the phrase lets
+# ``-"crypto mining"`` remain one excluded token.
+TOKEN_PATTERN = re.compile(r'([+-]?)(?:"([^"]*)"|([^\s,]+))')
 
 
-def keywords_from_query(query: str, *, max_keywords: int = MAX_KEYWORDS) -> tuple[str, ...]:
+def keywords_from_query(
+    query: str, *, max_keywords: int = MAX_KEYWORDS
+) -> tuple[str, ...]:
     """Extract plain Trends keywords from a news search query.
 
     Parameters
@@ -81,11 +85,11 @@ def keywords_from_query(query: str, *, max_keywords: int = MAX_KEYWORDS) -> tupl
     next_term_is_excluded = False
 
     for match in TOKEN_PATTERN.finditer(query):
-        quoted_phrase, bare_word = match.group(1), match.group(2)
+        sign, quoted_phrase, bare_word = match.groups()
 
         if quoted_phrase is not None:
             candidate = quoted_phrase.strip()
-            is_excluded = next_term_is_excluded
+            is_excluded = next_term_is_excluded or sign == "-"
             next_term_is_excluded = False
         else:
             word = bare_word.strip(STRUCTURAL_CHARACTERS)
@@ -93,9 +97,9 @@ def keywords_from_query(query: str, *, max_keywords: int = MAX_KEYWORDS) -> tupl
                 # "NOT" marks the following term; "AND"/"OR" only join terms.
                 next_term_is_excluded = word.lower() == "not"
                 continue
-            is_excluded = next_term_is_excluded or word.startswith("-")
+            is_excluded = next_term_is_excluded or sign == "-"
             next_term_is_excluded = False
-            candidate = word.lstrip("+-").strip()
+            candidate = word.strip()
 
         if is_excluded or not candidate:
             continue

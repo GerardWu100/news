@@ -44,6 +44,12 @@ The hero badges use list semantics for assistive technology. The page requires
 sign-in. It loads the account and sign-out token from the server, and sends a
 401 response to `/login` instead of displaying a failed search.
 
+An empty configured default-source list means every currently available source
+is visibly checked. This matches the API rule that an omitted source list means
+all available sources. Only the stylesheet, icon, and script modules are public
+under `/static`; the search and documentation HTML are served only by their
+guarded routes.
+
 ## Logic spine
 
 1. Load the session, account name, and sign-out token.
@@ -114,6 +120,7 @@ overflow.
 
 ## Short journal
 
+- 2026-08-19: Made empty source defaults visibly select every available source and limited public static routes to non-HTML assets.
 - 2026-08-12: Replaced the abstract outcome-focused name and hero copy with Historical Market News Search and its two explicit uses.
 - 2026-07-26: Packaged browser assets so installed wheels can serve them without the repository root.
 - 2026-07-26: Kept the dependency-free editorial theme and made the research sequence drive the layout.
